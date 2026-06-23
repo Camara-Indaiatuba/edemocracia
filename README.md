@@ -205,6 +205,14 @@ docker push ghcr.io/camara-indaiatuba/edemocracia-audiencias:1.0.0-rc1
 docker push ghcr.io/camara-indaiatuba/edemocracia-discourse:1.0.0-rc1
 ```
 
+Também existe um script para fazer o login e publicar as três imagens:
+
+```bash
+IMAGE_REGISTRY=ghcr.io/camara-indaiatuba IMAGE_TAG=1.0.0-rc1 ./scripts/publish-ghcr.sh
+```
+
+O script pede o token no terminal com entrada oculta e executa `docker logout ghcr.io` ao terminar.
+
 No GitHub, confirme que os packages ficaram públicos. Se ficarem privados, outra câmara não conseguirá baixar as imagens sem autenticação.
 
 Por organização e licença, mantenha também as fontes, patches ou receitas de build usadas para gerar essas imagens. Publicar só a imagem resolve a instalação, mas não é suficiente para manutenção de longo prazo.

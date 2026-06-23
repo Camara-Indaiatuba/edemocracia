@@ -28,6 +28,7 @@ Preparar o projeto para ser publicado como distribuicao municipal mais simples d
 - `.env.example`
 - `README.md`
 - `docker-compose.prod.yml`
+- `scripts/publish-ghcr.sh`
 - `src/templates/edem-navigation/`
 
 ### Resumo tecnico
@@ -38,6 +39,7 @@ Preparar o projeto para ser publicado como distribuicao municipal mais simples d
 - `docker-compose.yml` passou a apontar Wikilegis, Audiencias e Discourse para imagens versionadas via `IMAGE_REGISTRY` e `IMAGE_TAG`.
 - `.env.example`, `.env.local.example` e `.env.prod.example` passaram a declarar `IMAGE_REGISTRY` e `IMAGE_TAG`.
 - README passou a documentar publicacao das imagens no GitHub Container Registry.
+- Criado `scripts/publish-ghcr.sh` para publicar as tres imagens no GHCR com token informado no terminal.
 - O antigo submodulo `src/templates/edem-navigation` foi transformado em pasta normal do repositorio:
   - removido `.gitmodules`;
   - removido o arquivo `.git` interno do componente;
