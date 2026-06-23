@@ -1,0 +1,60 @@
+diff --git a/wikilegis/urls.py b/wikilegis/urls.py
+--- a/wikilegis/urls.py
++++ b/wikilegis/urls.py
+@@
+ from django.conf import settings
+ from django.conf.urls.static import static
+ from django.contrib import admin
++from django.contrib.auth import views as auth_views
+ from django.urls import include, re_path
+ 
+ urlpatterns = [
++    re_path(r'^admin/logout/$',
++            auth_views.LogoutView.as_view(next_page='/wikilegis/admin/login/')),
+     re_path(r'^admin/', admin.site.urls),
+     re_path(r'^', include('core.urls')),
+     re_path(r'^', include('notification.urls')),
+diff --git a/accounts/backends.py b/accounts/backends.py
+--- a/accounts/backends.py
++++ b/accounts/backends.py
+@@
+-from django.contrib.auth.backends import RemoteUserBackend
++from django.contrib.auth.backends import ModelBackend, RemoteUserBackend
+ from django.contrib.auth import get_user_model
++from django.db.models import Q
+ import json
+ UserModel = get_user_model()
+@@
+         if created:
+             user.first_name = remote_user_data['first_name']
+             user.last_name = remote_user_data['last_name']
+ 
+         return user
++
++
++class EmailOrUsernameModelBackend(ModelBackend):
++
++    def authenticate(self, request=None, username=None, password=None, **kwargs):
++        if username is None:
++            username = kwargs.get(UserModel.USERNAME_FIELD)
++        if username is None or password is None:
++            return None
++
++        try:
++            user = UserModel._default_manager.get(
++                Q(username=username) | Q(email=username))
++        except UserModel.DoesNotExist:
++            UserModel().set_password(password)
++        else:
++            if user.check_password(password) and self.user_can_authenticate(user):
++                return user
+diff --git a/wikilegis/settings/auth.py b/wikilegis/settings/auth.py
+--- a/wikilegis/settings/auth.py
++++ b/wikilegis/settings/auth.py
+@@
+ if config('ENABLE_REMOTE_USER', default=0, cast=bool):
+     AUTHENTICATION_BACKENDS = (
+         'accounts.backends.WikilegisAuthBackend',
++        'accounts.backends.EmailOrUsernameModelBackend',
+         'django.contrib.auth.backends.ModelBackend',
+     )

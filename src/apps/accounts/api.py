@@ -1,11 +1,20 @@
 from django.contrib.auth.models import User
+from django.conf import settings
 from rest_framework import filters, generics
+from rest_framework import permissions
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from django_filters import FilterSet
 from django_filters import rest_framework as django_filters
 from apps.accounts.serializers import UserSerializer
+
+
+class HasInternalApiKey(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        api_key = getattr(settings, 'INTERNAL_API_KEY', '')
+        return bool(api_key and request.GET.get('api_key') == api_key)
 
 
 class UserFilter(FilterSet):
@@ -25,6 +34,7 @@ class UserFilter(FilterSet):
 class UserListAPI(generics.ListAPIView):
     queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
+    permission_classes = (HasInternalApiKey,)
     filter_class = UserFilter
     filter_backends = (
         django_filters.DjangoFilterBackend,

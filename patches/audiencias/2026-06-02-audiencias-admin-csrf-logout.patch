@@ -1,0 +1,94 @@
+diff --git a/audiencias_publicas/settings.py b/audiencias_publicas/settings.py
+--- a/audiencias_publicas/settings.py
++++ b/audiencias_publicas/settings.py
+@@
+ SESSION_COOKIE_NAME = config('SESSION_COOKIE_NAME', default='sessionid')
+ SESSION_COOKIE_PATH = config('SESSION_COOKIE_PATH', default='/')
++CSRF_COOKIE_NAME = config('CSRF_COOKIE_NAME', default='csrftoken')
+ 
+ # Social auth
+ if config('ENABLE_REMOTE_USER', default=0, cast=bool):
+diff --git a/audiencias_publicas/urls.py b/audiencias_publicas/urls.py
+--- a/audiencias_publicas/urls.py
++++ b/audiencias_publicas/urls.py
+@@
+ from django.urls import path, include, re_path
+ from django.conf import settings
+ from django.contrib import admin
++from django.contrib.auth import views as auth_views
+ from apps.core import urls as core_urls
+ from apps.notification import urls as notification_urls
+ from apps.reports import urls as reports_urls
+@@
+ urlpatterns = [
+     path('', include(core_urls)),
+     path('notification/', include(notification_urls)),
++    path('admin/logout/',
++         auth_views.LogoutView.as_view(next_page='/audiencias/admin/login/')),
+     path('admin/', admin.site.urls),
+     path('reports/', include(reports_urls)),
+ ]
+diff --git a/static/js/helpers/cookies.js b/static/js/helpers/cookies.js
+--- a/static/js/helpers/cookies.js
++++ b/static/js/helpers/cookies.js
+@@
+ function getCookie(name) {
+-    let cookieValue = null;
++    const names = name === 'csrftoken' ? ['audiencias_csrftoken', 'csrftoken'] : [name];
++
+     if (document.cookie && document.cookie !== '') {
+         var cookies = document.cookie.split(';');
+-        for (var i = 0; i < cookies.length; i++) {
+-            var cookie = cookies[i].trim();
+-            // Does this cookie string begin with the name we want?
+-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+-                break;
++        for (var n = 0; n < names.length; n++) {
++            var cookieName = names[n];
++            for (var i = 0; i < cookies.length; i++) {
++                var cookie = cookies[i].trim();
++                if (cookie.substring(0, cookieName.length + 1) === (cookieName + '=')) {
++                    return decodeURIComponent(cookie.substring(cookieName.length + 1));
++                }
+             }
+         }
+     }
+-    return cookieValue;
++
++    return null;
+ }
+ 
+ export { getCookie }
+diff --git a/public/js/helpers/cookies.js b/public/js/helpers/cookies.js
+--- a/public/js/helpers/cookies.js
++++ b/public/js/helpers/cookies.js
+@@
+ function getCookie(name) {
+-    let cookieValue = null;
++    const names = name === 'csrftoken' ? ['audiencias_csrftoken', 'csrftoken'] : [name];
++
+     if (document.cookie && document.cookie !== '') {
+         var cookies = document.cookie.split(';');
+-        for (var i = 0; i < cookies.length; i++) {
+-            var cookie = cookies[i].trim();
+-            // Does this cookie string begin with the name we want?
+-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+-                break;
++        for (var n = 0; n < names.length; n++) {
++            var cookieName = names[n];
++            for (var i = 0; i < cookies.length; i++) {
++                var cookie = cookies[i].trim();
++                if (cookie.substring(0, cookieName.length + 1) === (cookieName + '=')) {
++                    return decodeURIComponent(cookie.substring(cookieName.length + 1));
++                }
+             }
+         }
+     }
+-    return cookieValue;
++
++    return null;
+ }
+ 
+ export { getCookie }

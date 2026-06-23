@@ -1,11 +1,13 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from apps.accounts.models import UserProfile
 import requests
 
@@ -109,8 +111,7 @@ class UserProfileForm(forms.ModelForm):
         return instance
 
 
-class CustomPasswordResetForm(forms.Form):
-    email = forms.EmailField(label=_("Email"), max_length=254)
+class CustomPasswordResetForm(PasswordResetForm):
 
     def get_users(self, email):
         active_users = User._default_manager.filter(**{
@@ -125,6 +126,18 @@ class CustomPasswordResetForm(forms.Form):
              use_https=False, token_generator=default_token_generator,
              from_email=None, request=None, html_email_template_name=None,
              extra_email_context=None):
+        if not settings.REGISTRATION_USE_RDSTATION:
+            return super().save(
+                domain_override=domain_override,
+                subject_template_name=subject_template_name,
+                email_template_name=email_template_name,
+                use_https=use_https,
+                token_generator=token_generator,
+                from_email=from_email,
+                request=request,
+                html_email_template_name=html_email_template_name,
+                extra_email_context=extra_email_context)
+
         email = self.cleaned_data["email"]
         for user in self.get_users(email):
             if not domain_override:
@@ -152,4 +165,4 @@ class CustomPasswordResetForm(forms.Form):
                        'nome': user.first_name}
 
             requests.post("https://www.rdstation.com.br/api/1.3/conversions",
-                          data=payload)  # to send email
+                          data=payload, timeout=10)  # to send email

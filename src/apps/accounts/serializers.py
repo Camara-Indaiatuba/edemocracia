@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
         request = self.context.get('request', None)
         if request:
             api_key = request.GET.get('api_key', None)
-            if api_key != settings.SECRET_KEY:
+            if api_key != settings.INTERNAL_API_KEY:
                 ret.pop('email')
         else:
             ret.pop('email')

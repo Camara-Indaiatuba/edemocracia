@@ -1,0 +1,291 @@
+diff --git a/Dockerfile b/Dockerfile
+index 9fe4431..c122cd3 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -36,7 +36,9 @@ ADD . /var/labhacker/wikilegis
+ ADD ./config/plugins.json /var/labhacker/wikilegis/wikilegis/.plugins
+ 
+ WORKDIR /var/labhacker/wikilegis/wikilegis
+-RUN python manage.py bower_install --allow-root && \
++RUN ../node_modules/.bin/bower install --allow-root --config.directory=static/bower_components \
++      normalize.css#5.0.0 \
++      https://github.com/labhackercd/fontastic-labhacker.git && \
+     python manage.py compilemessages
+ 
+ ADD ./config/etc/cron.d/wikilegis /etc/cron.d/wikilegis
+diff --git a/requirements.txt b/requirements.txt
+index 4721777..3736424 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -4,15 +4,14 @@ charset-normalizer==3.4.0
+ click==8.1.7
+ defusedxml==0.7.1
+ dj-database-url==1.0.0
+-Django==3.2.25
++Django==5.2.14
+ django-appconf==1.0.6
+-django-bower==5.2.0
+-django-compressor==2.4.1
++django-compressor==4.6.0
+ django-compressor-toolkit==0.6.0
+-django-constance==2.9.1
+-django-cors-headers==3.14.0
+-django-crispy-forms==1.14.0
+-django-debug-toolbar==3.8.1
++django-constance==4.3.5
++django-cors-headers==4.9.0
++django-crispy-forms==2.6
++django-debug-toolbar==6.3.0
+ django-embed-video==1.4.10
+ django-picklefield==3.1
+ django-tastypie==0.15.1
+@@ -28,10 +27,10 @@ python-decouple==3.8
+ python-mimeparse==2.0.0
+ python3-openid==3.2.0
+ pytz==2024.2
+-rcssmin==1.0.6
++rcssmin==1.2.2
+ requests==2.32.3
+ requests-oauthlib==2.0.0
+-rjsmin==1.1.0
++rjsmin==1.2.5
+ six==1.16.0
+ social-auth-app-django==5.4.2
+ social-auth-core==4.5.4
+diff --git a/wikilegis/accounts/urls.py b/wikilegis/accounts/urls.py
+index aa78e25..290748d 100644
+--- a/wikilegis/accounts/urls.py
++++ b/wikilegis/accounts/urls.py
+@@ -1,16 +1,16 @@
+-from django.conf.urls import url, include
+ from django.views.generic.edit import CreateView
++from django.urls import include, re_path
+ from accounts.forms import UserCreationForm
+ from accounts.views import WidgetLoginView
+ 
+ urlpatterns = [
+-    url('^accounts/register/', CreateView.as_view(
++    re_path('^accounts/register/', CreateView.as_view(
+         template_name='registration/register.html',
+         form_class=UserCreationForm,
+         success_url='/')),
+-    url('^accounts/', include('django.contrib.auth.urls')),
+-    url(r'^widget/login/$', WidgetLoginView.as_view(), name='widget_login'),
+-    url(r'^widget/signup/$', CreateView.as_view(
++    re_path('^accounts/', include('django.contrib.auth.urls')),
++    re_path(r'^widget/login/$', WidgetLoginView.as_view(), name='widget_login'),
++    re_path(r'^widget/signup/$', CreateView.as_view(
+         template_name='registration/register.html',
+         form_class=UserCreationForm,
+         success_url='widget_login'), name='widget_signup'),
+diff --git a/wikilegis/api/resources.py b/wikilegis/api/resources.py
+index 0e64fd0..0d5b972 100644
+--- a/wikilegis/api/resources.py
++++ b/wikilegis/api/resources.py
+@@ -1,7 +1,7 @@
+ from django.conf import settings
+-from django.conf.urls import url
+ from django.contrib.auth import get_user_model
+ from django.contrib.contenttypes.models import ContentType
++from django.urls import re_path
+ from api.authorization import UpdateUserAuthorization
+ from tastypie.resources import ModelResource, ALL_WITH_RELATIONS, ALL
+ from tastypie import fields
+@@ -101,8 +101,8 @@ class UserResource(ModelResource):
+             self._meta.resource_name
+         )
+         return [
+-            url(re_url, self.wrap_view('dispatch_detail'),
+-                name="api_dispatch_detail"),
++            re_path(re_url, self.wrap_view('dispatch_detail'),
++                    name="api_dispatch_detail"),
+         ]
+ 
+     class Meta:
+diff --git a/wikilegis/api/urls.py b/wikilegis/api/urls.py
+index 1721c5f..8f29acb 100644
+--- a/wikilegis/api/urls.py
++++ b/wikilegis/api/urls.py
+@@ -1,5 +1,5 @@
+-from django.conf.urls import url, include
+ from tastypie.api import Api
++from django.urls import include, re_path
+ from api import resources
+ 
+ v1_api = Api(api_name='v1')
+@@ -17,5 +17,5 @@ v1_api.register(resources.SupressAmendmentResource())
+ v1_api.register(resources.UpDownVoteResource())
+ 
+ urlpatterns = [
+-    url(r'^api/', include(v1_api.urls)),
++    re_path(r'^api/', include(v1_api.urls)),
+ ]
+diff --git a/wikilegis/core/urls.py b/wikilegis/core/urls.py
+index 65e881f..20da538 100644
+--- a/wikilegis/core/urls.py
++++ b/wikilegis/core/urls.py
+@@ -1,39 +1,39 @@
+-from django.conf.urls import url
++from django.urls import re_path
+ from django.views.decorators.csrf import ensure_csrf_cookie
+ from core import views
+ 
+ 
+ urlpatterns = [
+-    url(r'^$', ensure_csrf_cookie(views.HomeView.as_view()),
+-        name='home'),
+-    url(r'^widget/(?P<pk>\d+)/?$',
+-        ensure_csrf_cookie(views.WidgetView.as_view()),
+-        name='widget_index'),
+-    url(r'^bill/(?P<bill_id>\d+)/?$',
+-        ensure_csrf_cookie(views.HomeView.as_view()),
+-        name='bill_index'),
+-    url(r'^bill/(?P<pk>\d+)/report/$', views.BillReportView.as_view(),
+-        name='bill_report'),
+-    url(r'^bill/(?P<bill_id>\d+)/amendments/(?P<segment_id>\d+)/?$',
+-        ensure_csrf_cookie(views.HomeView.as_view()),
+-        name='amendments_index'),
+-    url(r'^render/bill_info/(?P<bill_id>\d+)/$',
+-        views.render_bill_info, name='render_bill_info'),
+-    url(r'^render/bill_content/(?P<bill_id>\d+)/$',
+-        views.render_bill_content, name='render_bill_content'),
+-    url(r'^render/bill_amendments/(?P<segment_id>\d+)/$',
+-        views.render_bill_amendments, name='render_bill_amendments'),
+-    url(r'^render/bill_amendment_segment/(?P<segment_id>\d+)/$',
+-        views.render_amendment_segment, name='render_bill_amendment_segment'),
+-    url(r'^render/amendment_comments/(?P<amendment_type>\w+)/'
+-        r'(?P<amendment_id>\d+)/$',
+-        views.render_amendment_comments, name='render_amendment_comments'),
+-    url(r'^render/segment_comments/(?P<segment_id>\d+)/$',
+-        views.render_segment_comments, name='render_segment_comments'),
+-    url(r'^render/new_comment/(?P<segment_id>\d+)/(?P<segment_type>\w+)/$',
+-        views.render_new_comment, name='render_new_segment_comments'),
+-    url(r'^render/vote/(?P<segment_id>\d+)/(?P<segment_type>\w+)/$',
+-        views.render_votes, name='render_new_vote'),
+-    url(r'^render/new_amendment/(?P<segment_id>\d+)/(?P<amendment_type>\w+)/$',
+-        views.render_new_amendment, name='render_new_amendment'),
++    re_path(r'^$', ensure_csrf_cookie(views.HomeView.as_view()),
++            name='home'),
++    re_path(r'^widget/(?P<pk>\d+)/?$',
++            ensure_csrf_cookie(views.WidgetView.as_view()),
++            name='widget_index'),
++    re_path(r'^bill/(?P<bill_id>\d+)/?$',
++            ensure_csrf_cookie(views.HomeView.as_view()),
++            name='bill_index'),
++    re_path(r'^bill/(?P<pk>\d+)/report/$', views.BillReportView.as_view(),
++            name='bill_report'),
++    re_path(r'^bill/(?P<bill_id>\d+)/amendments/(?P<segment_id>\d+)/?$',
++            ensure_csrf_cookie(views.HomeView.as_view()),
++            name='amendments_index'),
++    re_path(r'^render/bill_info/(?P<bill_id>\d+)/$',
++            views.render_bill_info, name='render_bill_info'),
++    re_path(r'^render/bill_content/(?P<bill_id>\d+)/$',
++            views.render_bill_content, name='render_bill_content'),
++    re_path(r'^render/bill_amendments/(?P<segment_id>\d+)/$',
++            views.render_bill_amendments, name='render_bill_amendments'),
++    re_path(r'^render/bill_amendment_segment/(?P<segment_id>\d+)/$',
++            views.render_amendment_segment, name='render_bill_amendment_segment'),
++    re_path(r'^render/amendment_comments/(?P<amendment_type>\w+)/'
++            r'(?P<amendment_id>\d+)/$',
++            views.render_amendment_comments, name='render_amendment_comments'),
++    re_path(r'^render/segment_comments/(?P<segment_id>\d+)/$',
++            views.render_segment_comments, name='render_segment_comments'),
++    re_path(r'^render/new_comment/(?P<segment_id>\d+)/(?P<segment_type>\w+)/$',
++            views.render_new_comment, name='render_new_segment_comments'),
++    re_path(r'^render/vote/(?P<segment_id>\d+)/(?P<segment_type>\w+)/$',
++            views.render_votes, name='render_new_vote'),
++    re_path(r'^render/new_amendment/(?P<segment_id>\d+)/(?P<amendment_type>\w+)/$',
++            views.render_new_amendment, name='render_new_amendment'),
+ ]
+diff --git a/wikilegis/notification/urls.py b/wikilegis/notification/urls.py
+index 19d03c9..f2a7827 100644
+--- a/wikilegis/notification/urls.py
++++ b/wikilegis/notification/urls.py
+@@ -1,8 +1,8 @@
+-from django.conf.urls import url
++from django.urls import re_path
+ from notification import views
+ 
+ urlpatterns = [
+-    url(r'^subscribe/(?P<bill_id>\d+)/$',
+-        views.render_newsletter_info,
+-        name='subscribe_newsletter'),
++    re_path(r'^subscribe/(?P<bill_id>\d+)/$',
++            views.render_newsletter_info,
++            name='subscribe_newsletter'),
+ ]
+diff --git a/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss b/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss
+index 667db70..580063a 100644
+--- a/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss
++++ b/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss
+@@ -1,4 +1,4 @@
+-@import '../../static/styles/app';
++@use 'styles/app' as *;
+ 
+ $segment-type-padding: (
+   artigo: 0,
+diff --git a/wikilegis/wikilegis/settings/apps.py b/wikilegis/wikilegis/settings/apps.py
+index d69859a..231981f 100644
+--- a/wikilegis/wikilegis/settings/apps.py
++++ b/wikilegis/wikilegis/settings/apps.py
+@@ -21,7 +21,6 @@ THIRD_PARTY = [
+     'debug_toolbar',
+     'tastypie',
+     'corsheaders',
+-    'djangobower',
+     'crispy_forms',
+     'embed_video',
+ ]
+diff --git a/wikilegis/wikilegis/settings/staticfiles.py b/wikilegis/wikilegis/settings/staticfiles.py
+index 502703e..c02a307 100644
+--- a/wikilegis/wikilegis/settings/staticfiles.py
++++ b/wikilegis/wikilegis/settings/staticfiles.py
+@@ -11,7 +11,6 @@ STATIC_URL = config('STATIC_URL', default='/static/')
+ STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, 'public'))
+ 
+ STATICFILES_FINDERS = [
+-    'djangobower.finders.BowerFinder',
+     'compressor.finders.CompressorFinder',
+ ] + default.STATICFILES_FINDERS
+ 
+@@ -20,13 +19,6 @@ STATICFILES_DIRS = [
+     os.path.abspath(os.path.join(BASE_DIR, 'static'))
+ ]
+ 
+-BOWER_COMPONENTS_ROOT = os.path.join(BASE_DIR, 'static')
+-BOWER_PATH = os.path.join(NODE_MODULES, '.bin/bower')
+-BOWER_INSTALLED_APPS = [
+-    'normalize.css#5.0.0',
+-    'https://github.com/labhackercd/fontastic-labhacker.git',
+-]
+-
+ COMPRESS_PRECOMPILERS = [
+     ('text/x-scss', 'compressor_toolkit.precompilers.SCSSCompiler'),
+     ('module', 'compressor_toolkit.precompilers.ES6Compiler'),
+diff --git a/wikilegis/wikilegis/urls.py b/wikilegis/wikilegis/urls.py
+index a827df4..e7f5013 100644
+--- a/wikilegis/wikilegis/urls.py
++++ b/wikilegis/wikilegis/urls.py
+@@ -14,16 +14,16 @@ Including another URLconf
+     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
+ """
+ from django.conf import settings
+-from django.conf.urls import url, include
+ from django.conf.urls.static import static
+ from django.contrib import admin
++from django.urls import include, re_path
+ 
+ urlpatterns = [
+-    url(r'^admin/', admin.site.urls),
+-    url(r'^', include('core.urls')),
+-    url(r'^', include('notification.urls')),
+-    url(r'^', include('api.urls')),
+-    url(r'^', include('accounts.urls')),
++    re_path(r'^admin/', admin.site.urls),
++    re_path(r'^', include('core.urls')),
++    re_path(r'^', include('notification.urls')),
++    re_path(r'^', include('api.urls')),
++    re_path(r'^', include('accounts.urls')),
+ ]
+ 
+ urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

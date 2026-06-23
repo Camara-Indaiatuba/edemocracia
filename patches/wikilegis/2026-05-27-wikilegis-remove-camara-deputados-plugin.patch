@@ -1,0 +1,943 @@
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/admin.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/admin.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/admin.py	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/admin.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,28 +0,0 @@
+-from django.contrib import admin
+-from plugins.camara_deputados import models, forms
+-from plugins.camara_deputados.import_file import import_txt
+-
+-
+-class BillInfoAdmin(admin.ModelAdmin):
+-    list_display = ('bill', 'proposal_type', 'proposal_number',
+-                    'proposal_year', 'situation')
+-    readonly_fields = ('author', 'situation')
+-    form = forms.BillInfoAdminForm
+-
+-    def save_form(self, request, form, change):
+-        bill_info = form.save(commit=False)
+-        try:
+-            import_txt(form.files['file_txt'], bill_info.bill.id)
+-        except:
+-            pass
+-        return form.save(commit=False)
+-
+-
+-class ProposalTypeAdmin(admin.ModelAdmin):
+-    list_display = ('initials', 'description')
+-    list_filter = ('initials',)
+-    search_fields = ('initials',)
+-
+-
+-admin.site.register(models.ProposalType, ProposalTypeAdmin)
+-admin.site.register(models.BillInfo, BillInfoAdmin)
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/apps.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/apps.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/apps.py	2026-05-18 14:14:57.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/apps.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,5 +0,0 @@
+-from django.apps import AppConfig
+-
+-
+-class CamaraDeputadosConfig(AppConfig):
+-    name = 'plugins.camara_deputados'
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/forms.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/forms.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/forms.py	2026-05-18 14:07:14.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/forms.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,12 +0,0 @@
+-from django import forms
+-from django.utils.translation import gettext_lazy as _
+-from plugins.camara_deputados.models import BillInfo
+-
+-
+-class BillInfoAdminForm(forms.ModelForm):
+-    file_txt = forms.FileField(label=_('File in txt format'), required=False)
+-
+-    class Meta:
+-        model = BillInfo
+-        fields = ('bill', 'author', 'reporting_member', 'proposal_type',
+-                  'proposal_number', 'proposal_year', 'situation')
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/import_file.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/import_file.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/import_file.py	2026-05-20 14:14:35.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/import_file.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,143 +0,0 @@
+-from __future__ import unicode_literals
+-from django.template.defaultfilters import slugify
+-from core.models import BillSegment, SegmentType
+-import re
+-import roman
+-import string
+-
+-
+-def create_segment(type_id, order, bill_pk, number, content):
+-    segments = BillSegment.objects.filter(bill_id=bill_pk)
+-    segment = BillSegment()
+-    segment.order = order
+-    segment.bill_id = bill_pk
+-    segment.segment_type_id = type_id
+-    if type_id == SegmentType.objects.get(name="paragrafo").id:
+-        type_parent = SegmentType.objects.get(name="artigo").id
+-        segment.parent = segments.filter(order__lt=order,
+-                                         segment_type_id=type_parent).last()
+-    elif type_id == SegmentType.objects.get(name="inciso").id:
+-        type_parents = []
+-        type_parents.append(SegmentType.objects.get(name="artigo").id)
+-        type_parents.append(SegmentType.objects.get(name="paragrafo").id)
+-        segment.parent = segments.filter(order__lt=order,
+-                                         segment_type__in=type_parents).last()
+-    elif type_id == SegmentType.objects.get(name="alinea").id:
+-        type_parents = []
+-        type_parents.append(SegmentType.objects.get(name="inciso").id)
+-        type_parents.append(SegmentType.objects.get(name="paragrafo").id)
+-        segment.parent = segments.filter(order__lt=order,
+-                                         segment_type__in=type_parents).last()
+-    elif type_id == SegmentType.objects.get(name="item").id:
+-        type_parent = SegmentType.objects.get(name="alinea").id
+-        segment.parent = segments.filter(order__lt=order,
+-                                         segment_type_id=type_parent).last()
+-    elif type_id == SegmentType.objects.get(name="citacao").id:
+-        segment.parent = segments.exclude(
+-            segment_type_id=type_id).filter(order__lt=order).last()
+-    segment.number = number
+-    segment.content = content
+-    segment.save()
+-
+-
+-def import_txt(bill_txt, bill_pk):
+-    response = bill_txt.read()
+-    lines = response.splitlines()
+-    order = 1
+-    is_quote = False
+-    for line in lines:
+-        type_id = None
+-        if re.match(b"^\"", line) or is_quote:
+-            type_id = SegmentType.objects.get(name="citacao").id
+-            content = line.decode('utf-8')
+-            number = None
+-            if line.decode('utf-8').endswith('"'):
+-                is_quote = False
+-            elif line.decode('utf-8').endswith('(NR)'):
+-                is_quote = False
+-            else:
+-                is_quote = True
+-        elif slugify(line).startswith('livro') and not is_quote:
+-            type_id = SegmentType.objects.get(name="livro").id
+-            number = roman.fromRoman(
+-                re.sub(b"^Livro ", b'', line).decode('utf-8')
+-            )
+-            content = lines[order].decode('utf-8')
+-        elif slugify(line).startswith('titulo') and not is_quote:
+-            type_id = SegmentType.objects.get(name="titulo").id
+-            number = roman.fromRoman(
+-                re.sub(b"^T\xc3\xadtulo ", b'', line).decode('utf-8')
+-            )
+-            content = lines[order].decode('utf-8')
+-        elif slugify(line).startswith('capitulo') and not is_quote:
+-            type_id = SegmentType.objects.get(name="capitulo").id
+-            number = roman.fromRoman(
+-                re.sub(b"^CAP\xc3\x8dTULO ", b'', line).decode('utf-8')
+-            )
+-            content = lines[order].decode('utf-8')
+-        elif slugify(line).startswith('secao') and not is_quote:
+-            type_id = SegmentType.objects.get(name="secao").id
+-            number = roman.fromRoman(
+-                re.sub(b"^Se\xc3\xa7\xc3\xa3o ", b'', line).decode('utf-8')
+-            )
+-            content = lines[order].decode('utf-8')
+-        elif slugify(line).startswith('subsecao') and not is_quote:
+-            type_id = SegmentType.objects.get(name="subsecao").id
+-            number = roman.fromRoman(
+-                re.sub(b"^Subse\xc3\xa7\xc3\xa3o ", b'', line).decode('utf-8')
+-            )
+-            content = lines[order].decode('utf-8')
+-        elif (re.match(rb"^Art. \d+ \W+", line) or
+-              re.match(rb"^Art. \d+\.", line) and not is_quote):
+-            try:
+-                label = re.match(rb"^Art. \d+ \W{2}\s", line).group(0)
+-            except:
+-                label = re.match(rb"^Art. \d+\.", line).group(0)
+-            type_id = SegmentType.objects.get(name="artigo").id
+-            number = re.search(rb'\d+', label).group(0)
+-            content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif re.match(rb"^\W+ \d+\W+", line) and not is_quote:
+-            label = re.match(rb"^\W+ \d+\W+", line).group(0)
+-            type_id = SegmentType.objects.get(name="paragrafo").id
+-            number = re.search(rb'\d+', label).group(0)
+-            content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif slugify(line).startswith('paragrafo-unico') and not is_quote:
+-            segment_type_id = SegmentType.objects.get(name="paragrafo").id
+-            type_id = segment_type_id
+-            number = 1
+-            content = line.decode('utf-8').replace('Parágrafo único. ', '')
+-        elif re.match(rb"^[A-Z\d]+ \W+ ", line) and not is_quote:
+-            label = re.match(rb"^[A-Z\d]+ \W+ ", line).group(0)
+-            type_id = SegmentType.objects.get(name="inciso").id
+-            number = roman.fromRoman(
+-                re.search(rb"^[A-Z\d]+", line).group(0).decode('utf-8')
+-            )
+-            content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif re.match(rb"^[a-z]\W ", line) and not is_quote:
+-            label = re.match(rb"^[a-z]\W ", line).group(0)
+-            type_id = SegmentType.objects.get(name="alinea").id
+-            number = string.ascii_lowercase.index(
+-                re.search(b"^[a-z]", line).group(0).decode('utf-8')) + 1
+-            content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif re.match(rb"^\d+\. ", line) and not is_quote:
+-            label = re.match(rb"^\d+\. ", line).group(0)
+-            type_id = SegmentType.objects.get(name="item").id
+-            number = re.search(rb"^\d+", line).group(0)
+-            content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif line.decode('utf-8').startswith('Pena') and not is_quote:
+-            type_id = SegmentType.objects.get(name="citacao").id
+-            content = line.decode('utf-8')
+-            number = None
+-        else:
+-            if (not slugify(lines[order - 2]).startswith('livro') and not
+-                    slugify(lines[order - 2]).startswith('titulo') and not
+-                    slugify(lines[order - 2]).startswith('capitulo') and not
+-                    slugify(lines[order - 2]).startswith('secao') and not
+-                    slugify(lines[order - 2]).startswith('subsecao')):
+-                type_id = SegmentType.objects.get(name="citacao").id
+-                content = line.decode('utf-8')
+-                number = None
+-        if type_id:
+-            create_segment(type_id, order, bill_pk, number, content)
+-
+-        order += 1
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/management/commands/fetch_deputies.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/management/commands/fetch_deputies.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/management/commands/fetch_deputies.py	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/management/commands/fetch_deputies.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,24 +0,0 @@
+-from django.core.management.base import BaseCommand
+-from django.db import transaction
+-from pygov_br.camara_deputados import cd
+-from plugins.camara_deputados import models
+-import click
+-
+-
+-class Command(BaseCommand):
+-
+-    @transaction.atomic
+-    def handle(self, *args, **options):
+-        click.secho('Fetching data...', bold=True)
+-        deputies = cd.deputies.all()
+-        with click.progressbar(deputies, label="Importing deputies") as data:
+-            for deputy_data in data:
+-                models.ReportingMember.objects.update_or_create(
+-                    id=deputy_data['ideCadastro'],
+-                    defaults={
+-                        "name": deputy_data['nomeParlamentar'],
+-                        "party": deputy_data['partido'],
+-                        "region": deputy_data['uf'],
+-                        "email": deputy_data['email'],
+-                    }
+-                )
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/migrations/0001_initial.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/migrations/0001_initial.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/migrations/0001_initial.py	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/migrations/0001_initial.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,84 +0,0 @@
+-# -*- coding: utf-8 -*-
+-# Generated by Django 1.10.6 on 2017-03-21 18:04
+-from __future__ import unicode_literals
+-
+-from django.db import migrations, models
+-import django.db.models.deletion
+-
+-
+-class Migration(migrations.Migration):
+-
+-    initial = True
+-
+-    dependencies = [
+-        ('core', '0002_auto_20170321_1504'),
+-    ]
+-
+-    operations = [
+-        migrations.CreateModel(
+-            name='BillAuthor',
+-            fields=[
+-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+-                ('name', models.CharField(max_length=255, verbose_name='Nome do autor')),
+-                ('region', models.CharField(blank=True, max_length=255, null=True, verbose_name='Região')),
+-                ('party', models.CharField(blank=True, max_length=255, null=True, verbose_name='Partido')),
+-                ('register_id', models.CharField(blank=True, max_length=255, null=True, verbose_name='Id de registro')),
+-            ],
+-            options={
+-                'verbose_name': 'Bill Author',
+-                'verbose_name_plural': 'Bill Authors',
+-            },
+-        ),
+-        migrations.CreateModel(
+-            name='BillInfo',
+-            fields=[
+-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+-                ('proposal_number', models.IntegerField(verbose_name='Número da Proposição')),
+-                ('proposal_year', models.IntegerField(verbose_name='Ano da Proposição')),
+-                ('situation', models.CharField(blank=True, max_length=400, null=True, verbose_name='Situação')),
+-                ('author', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='camara_deputados.BillAuthor', verbose_name='Autor')),
+-                ('bill', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='infos', to='core.Bill', verbose_name='Projeto de lei')),
+-            ],
+-            options={
+-                'verbose_name': 'Bill Info',
+-                'verbose_name_plural': 'Bill Infos',
+-            },
+-        ),
+-        migrations.CreateModel(
+-            name='ProposalType',
+-            fields=[
+-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+-                ('initials', models.CharField(max_length=50)),
+-                ('description', models.CharField(max_length=255)),
+-            ],
+-            options={
+-                'verbose_name': 'Proposal Type',
+-                'verbose_name_plural': 'Proposal Types',
+-            },
+-        ),
+-        migrations.CreateModel(
+-            name='ReportingMember',
+-            fields=[
+-                ('id', models.IntegerField(primary_key=True, serialize=False, verbose_name='Id do Relator')),
+-                ('name', models.CharField(max_length=255, verbose_name='Nome Parlamentar')),
+-                ('party', models.CharField(max_length=255, verbose_name='Partido')),
+-                ('region', models.CharField(max_length=2, verbose_name='Região')),
+-                ('email', models.EmailField(max_length=254, verbose_name='Email')),
+-            ],
+-            options={
+-                'verbose_name': 'ReportingMember',
+-                'verbose_name_plural': 'ReportingMembers',
+-                'ordering': ('name',),
+-            },
+-        ),
+-        migrations.AddField(
+-            model_name='billinfo',
+-            name='proposal_type',
+-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='camara_deputados.ProposalType', verbose_name='Tipo da Proposição'),
+-        ),
+-        migrations.AddField(
+-            model_name='billinfo',
+-            name='reporting_member',
+-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='camara_deputados.ReportingMember', verbose_name='Relator'),
+-        ),
+-    ]
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/migrations/0002_auto_20170405_1557.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/migrations/0002_auto_20170405_1557.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/migrations/0002_auto_20170405_1557.py	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/migrations/0002_auto_20170405_1557.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,21 +0,0 @@
+-# -*- coding: utf-8 -*-
+-# Generated by Django 1.10.6 on 2017-04-05 18:57
+-from __future__ import unicode_literals
+-
+-from django.db import migrations, models
+-import django.db.models.deletion
+-
+-
+-class Migration(migrations.Migration):
+-
+-    dependencies = [
+-        ('camara_deputados', '0001_initial'),
+-    ]
+-
+-    operations = [
+-        migrations.AlterField(
+-            model_name='billinfo',
+-            name='reporting_member',
+-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='camara_deputados.ReportingMember', verbose_name='Relator'),
+-        ),
+-    ]
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/models.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/models.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/models.py	2026-05-18 14:09:03.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/models.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,105 +0,0 @@
+-from django.db import models
+-from django.utils.translation import gettext as _
+-from pygov_br.camara_deputados import cd
+-
+-
+-class BillAuthor(models.Model):
+-    name = models.CharField(max_length=255, verbose_name=_('Author Name'))
+-    region = models.CharField(max_length=255, blank=True, null=True,
+-                              verbose_name=_('Region'))
+-    party = models.CharField(max_length=255, blank=True, null=True,
+-                             verbose_name=_('Party'))
+-    register_id = models.CharField(max_length=255, blank=True, null=True,
+-                                   verbose_name=_('Register ID'))
+-
+-    class Meta:
+-        verbose_name = "Bill Author"
+-        verbose_name_plural = "Bill Authors"
+-
+-    def __str__(self):
+-        details = ''
+-        if self.register_id:
+-            details = ' - {}({})'.format(self.party, self.region)
+-        return '{}{}'.format(self.name, details)
+-
+-
+-class BillInfo(models.Model):
+-
+-    class Meta:
+-        verbose_name = "Bill Info"
+-        verbose_name_plural = "Bill Infos"
+-
+-    def __str__(self):
+-        return self.bill.title
+-
+-    def save(self, *args, **kwargs):
+-        try:
+-            proposal = cd.proposals.get(
+-                self.proposal_type.initials,
+-                self.proposal_number,
+-                self.proposal_year,
+-            )
+-        except KeyError:
+-            raise Exception('Invalid proposal_type, proposal_number or '
+-                            'proposal_year')
+-        author = BillAuthor.objects.update_or_create(
+-            name=proposal['Autor'],
+-            region=proposal['ufAutor'],
+-            party=proposal['partidoAutor'],
+-            register_id=proposal['ideCadastro'],
+-        )[0]
+-        self.situation = proposal['Situacao']
+-        self.author = author
+-
+-        return super(BillInfo, self).save(args, kwargs)
+-
+-    bill = models.OneToOneField('core.Bill', verbose_name=_('Bill'),
+-                                related_name='infos',
+-                                on_delete=models.CASCADE)
+-    author = models.ForeignKey('BillAuthor', verbose_name=_('Author'),
+-                               null=True, blank=True,
+-                               on_delete=models.CASCADE)
+-    reporting_member = models.ForeignKey('ReportingMember',
+-                                         null=True, blank=True,
+-                                         verbose_name=_('Reporting Member'),
+-                                         on_delete=models.CASCADE)
+-    proposal_type = models.ForeignKey('ProposalType',
+-                                      verbose_name=_('Proposal Type'),
+-                                      on_delete=models.CASCADE)
+-    proposal_number = models.IntegerField(verbose_name=_('Proposal Number'))
+-    proposal_year = models.IntegerField(verbose_name=_('Proposal Year'))
+-    situation = models.CharField(max_length=400, blank=True, null=True,
+-                                 verbose_name=_('Situation'))
+-
+-
+-class ProposalType(models.Model):
+-
+-    initials = models.CharField(max_length=50)
+-    description = models.CharField(max_length=255)
+-
+-    class Meta:
+-        verbose_name = "Proposal Type"
+-        verbose_name_plural = "Proposal Types"
+-
+-    def __str__(self):
+-        return '{} - {}'.format(self.initials, self.description)
+-
+-
+-class ReportingMember(models.Model):
+-    id = models.IntegerField(primary_key=True,
+-                             verbose_name=_('Reporting Member ID'))
+-    name = models.CharField(max_length=255,
+-                            verbose_name=_('Parliamentary Name'))
+-    party = models.CharField(max_length=255,
+-                             verbose_name=_('Party'))
+-    region = models.CharField(max_length=2,
+-                              verbose_name=_('Region'))
+-    email = models.EmailField(verbose_name=_('Email'))
+-
+-    class Meta:
+-        verbose_name = "ReportingMember"
+-        verbose_name_plural = "ReportingMembers"
+-        ordering = ('name', )
+-
+-    def __str__(self):
+-        return self.name
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/settings.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/settings.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/settings.py	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/settings.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,4 +0,0 @@
+-DEPENDENCIES = [
+-    'git+https://github.com/tenhodito/pygov-br.git',
+-    'roman==2.0.0',
+-]
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss	2026-05-19 08:46:25.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/static/styles/camara_deputados.scss	1969-12-31 21:00:00.000000000 -0300
+@@ -1,136 +0,0 @@
+-@use 'styles/app' as *;
+-
+-$segment-type-padding: (
+-  artigo: 0,
+-  paragrafo: 1,
+-  inciso: 2,
+-  alinea: 3,
+-  item: 4,
+-);
+-
+-@each $type, $ratio in $segment-type-padding {
+-  .segment--#{$type} {
+-    padding-left: #{1 * $ratio}em;
+-  }
+-}
+-
+-.segment__text--number {
+-  font-weight: bold;
+-}
+-
+-.segment__section-top--uneditable {
+-  text-align: center;
+-  margin-top: 1em;
+-
+-  &:last-of-type {
+-    margin-bottom: 1em;
+-  }
+-
+-  .segment__text {
+-    font-weight: normal;
+-  }
+-
+-  .segment__text--type {
+-    text-transform: uppercase;
+-  }
+-
+-  .segment__text--content {
+-    text-transform: uppercase;
+-  }
+-
+-  .segment__text--number {
+-    font-weight: normal;
+-  }
+-}
+-
+-.segment--secao,
+-.segment--subsecao {
+-  .segment__text--type {
+-    text-transform: none;
+-  }
+-
+-  .segment__text--content {
+-    text-transform: none;
+-  }
+-}
+-
+-.segment--subsecao {
+-  .segment__text--type {
+-    text-transform: none;
+-  }
+-
+-  .segment__text--content {
+-    text-transform: none;
+-  }
+-}
+-
+-.info__bill-members-wrapper {
+-  padding: 1em 0 0 0;
+-  border-top: 1px solid $color-gray-55;
+-}
+-
+-.info__bill-member {
+-  align-items: center;
+-  display: flex;
+-  justify-content: flex-start;
+-  margin: 0 0 1em 0;
+-}
+-
+-.bill-member__title {
+-  font-weight: 800;
+-  margin: 0;
+-  text-transform: uppercase;
+-}
+-
+-.bill-member__name {
+-  color: black;
+-  font-weight: 300;
+-  text-decoration: none;
+-  font-size: 1.25em;
+-  transition: 0.3s $swift-out;
+-
+-  &:hover {
+-    color: $color-gray-75;
+-  }
+-}
+-
+-.bill-member__image-wrapper {
+-  align-items: flex-start;
+-  border-radius: 50%;
+-  border: 0.25em solid $color-accent;
+-  display: flex;
+-  flex: 0 0 4em;
+-  height: 4em;
+-  justify-content: center;
+-  margin: 0 0.5em 0 0;
+-  overflow: hidden;
+-  width: 4em;
+-}
+-
+-.bill-member__image {
+-  width: 4em;
+-}
+-
+-.bill-member__content {
+-  display: flex;
+-  flex-direction: column;
+-}
+-
+-.bill-member__party {
+-  color: $color-gray-75;
+-  font-size: 0.9em;
+-  font-weight: 600;
+-}
+-
+-.info__bill-status {
+-  .bill-status__title {
+-      font-weight: 800;
+-      text-transform: uppercase;
+-  }
+-
+-  .bill-status__text {
+-      margin: 0;
+-      font-weight: 300;
+-      font-size: 1em;
+-  }
+-}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/amendments/_segment.html /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/amendments/_segment.html
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/amendments/_segment.html	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/amendments/_segment.html	1969-12-31 21:00:00.000000000 -0300
+@@ -1,6 +0,0 @@
+-{% extends "amendments/_segment.html" %}
+-{% load camara_deputados_utils %}
+-
+-{% block segment_type %}
+-  <span class="segment__text--number">{% segment_numbering segment %}</span>
+-{% endblock segment_type %}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/base.html /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/base.html
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/base.html	2026-05-18 14:07:14.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/base.html	1969-12-31 21:00:00.000000000 -0300
+@@ -1,8 +0,0 @@
+-{% extends "base.html" %}
+-{% load compress static %}
+-
+-{% block styles %}
+-  {% compress css %}
+-  <link type="text/x-scss" rel="stylesheet" href="{% static 'styles/camara_deputados.scss' %}"/>
+-  {% endcompress %}
+-{% endblock styles %}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/bill/_info.html /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/bill/_info.html
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/bill/_info.html	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/bill/_info.html	1969-12-31 21:00:00.000000000 -0300
+@@ -1,51 +0,0 @@
+-{% extends "bill/_info.html" %}
+-
+-{% block extra_info %}
+-  {% if bill.infos %}
+-    <div class="info__bill-members-wrapper">
+-      <div class="info__bill-member">
+-        {% if bill.infos.reporting_member %}
+-          {% with bill.infos.reporting_member as reporting_member %}
+-
+-            <div class="bill-member__image-wrapper">
+-              <img class="bill-member__image" src="http://www.camara.gov.br/internet/deputado/bandep/{{reporting_member.id}}.jpg">
+-            </div>
+-
+-            <div class="bill-member__content">
+-              <h4 class="bill-member__title">Relator</h4>
+-              <a href="http://www.camara.leg.br/Internet/Deputado/dep_Detalhe.asp?id={{reporting_member.id}}" class="bill-member__name">{{ reporting_member.name|title }}</a href="">
+-              <span class="bill-member__party">({{reporting_member.party}}-{{reporting_member.region}})</span>
+-            </div>
+-
+-          {% endwith %}
+-        {% endif %}
+-      </div>
+-
+-      <div class="info__bill-member">
+-        {% with bill.infos.author as author %}
+-
+-          {% if author.register_id %}
+-            <div class="bill-member__image-wrapper">
+-              <img class="bill-member__image" src="http://www.camara.gov.br/internet/deputado/bandep/{{author.register_id}}.jpg">
+-            </div>
+-          {% endif %}
+-
+-          <div class="bill-member__content">
+-            <h4 class="bill-member__title">Autor</h4>
+-            {% if not author.register_id %}
+-              <span class="bill-member__name">{{ author.name|title }}</span>
+-            {% else %}
+-              <a href="http://www.camara.leg.br/Internet/Deputado/dep_Detalhe.asp?id={{author.register_id}}" class="bill-member__name">{{ author.name|title }}</a>
+-              <span class="bill-member__party">({{author.party}}-{{author.region}})</span>
+-            {% endif %}
+-          </div>
+-
+-        {% endwith %}
+-      </div>
+-    </div>
+-    <div class="info__bill-status">
+-      <span class="bill-status__title">Situação</span>
+-      <p class="bill-status__text">{{bill.infos.situation}}</p>
+-    </div>
+-  {% endif %}
+-{% endblock extra_info %}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/report/bill_report.html /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/report/bill_report.html
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/report/bill_report.html	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/report/bill_report.html	1969-12-31 21:00:00.000000000 -0300
+@@ -1,13 +0,0 @@
+-{% extends "report/bill_report.html" %}
+-{% load camara_deputados_utils i18n %}
+-
+-{% block segment_align %}
+-  {% if segment|previous_article %}
+-    <h2>{% segment_numbering segment|previous_article %} ...</h2>
+-  {% endif %}
+-  <div class="original {% if segment|previous_article %}in-article{% endif %}" data-raw-content="{{ segment.content }}">
+-{% endblock segment_align %}
+-
+-{% block segment_type %}
+-  {% segment_numbering segment %}
+-{% endblock segment_type %}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/segment/_fixed_segment.html /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/segment/_fixed_segment.html
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/segment/_fixed_segment.html	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/segment/_fixed_segment.html	1969-12-31 21:00:00.000000000 -0300
+@@ -1,13 +0,0 @@
+-{% load i18n camara_deputados_utils %}
+-
+-{% if segment.segment_type.name|slugify == 'titulo' %}
+-  <h5 class="heading livro" id="title-{{segment.id}}">{% trans "TITLE" %} <span class="heading-number">{% segment_numbering segment %}</span> <span class="heading-title">{{ segment.content }}</span></h5>
+-{% elif segment.segment_type.name|slugify == 'livro' %}
+-  <h5 class="heading livro" id="book-{{segment.id}}">{% trans "BOOK" %} <span class="heading-number">{% segment_numbering segment %}</span> <span class="heading-title">{{ segment.content }}</span></h5>
+-{% elif segment.segment_type.name|slugify == 'capitulo' %}
+-  <h5 class="heading capitulo" id="chapter-{{segment.id}}">{% trans "CHAPTER" %}  <span class="heading-number">{% segment_numbering segment %}</span> <span class="heading-title">{{ segment.content }}</span></h5>
+-{% elif segment.segment_type.name|slugify == 'secao' %}
+-  <h5 class="heading secao" id="section-{{segment.id}}">{% trans "Section" %} <span class="heading-number">{% segment_numbering segment %}</span> <span class="heading-title">{{ segment.content }}</span></h5>
+-{% elif segment.segment_type.name|slugify == 'subsecao' %}
+-  <h5 class="heading subsecao" id="subsection-{{segment.id}}">{% trans "Subsection" %} <span class="heading-number">{% segment_numbering segment %}</span> <span class="heading-title">{{ segment.content }}</span></h5>
+-{% endif %}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/segment/_index.html /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/segment/_index.html
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templates/segment/_index.html	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templates/segment/_index.html	1969-12-31 21:00:00.000000000 -0300
+@@ -1,22 +0,0 @@
+-{% extends "segment/_index.html" %}
+-{% load camara_deputados_utils i18n %}
+-
+-{% block segment_type %}
+-  <span class="segment__text--number">{% segment_numbering segment %}</span>
+-{% endblock segment_type %}
+-
+-{% block segment_content %}
+-  {% if segment.segment_type.editable %}
+-    {{block.super}}
+-  {% else %}
+-    <div class="segment__section-top--uneditable">
+-      <h3 class="segment__text">
+-        <span class="segment__text--type">{{segment.segment_type.presentation_name}} </span>
+-        <span class="segment__text--number">{% segment_numbering segment %} </span>
+-      </h3>
+-      <h3 class="segment__text">
+-        <span class="segment__text--content">{{ segment.content }}</span>
+-      </h3>
+-    </div>
+-  {% endif %}
+-{% endblock segment_content %}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templatetags/camara_deputados_utils.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templatetags/camara_deputados_utils.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/templatetags/camara_deputados_utils.py	2026-05-18 14:07:14.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/templatetags/camara_deputados_utils.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,100 +0,0 @@
+-from django.template import Library
+-from collections import OrderedDict
+-from django.template.defaultfilters import slugify
+-from django.utils.translation import gettext_lazy as _
+-import string
+-
+-from core.models import BillSegment
+-
+-register = Library()
+-
+-
+-def int_to_letter(number):
+-    num2alpha = dict(zip(range(1, 27), string.ascii_lowercase))
+-    return num2alpha[number]
+-
+-
+-def int_to_roman(num):
+-
+-    roman = OrderedDict()
+-    roman[1000] = "M"
+-    roman[900] = "CM"
+-    roman[500] = "D"
+-    roman[400] = "CD"
+-    roman[100] = "C"
+-    roman[90] = "XC"
+-    roman[50] = "L"
+-    roman[40] = "XL"
+-    roman[10] = "X"
+-    roman[9] = "IX"
+-    roman[5] = "V"
+-    roman[4] = "IV"
+-    roman[1] = "I"
+-
+-    def roman_num(num):
+-        for r in roman.keys():
+-            x, y = divmod(num, r)
+-            yield roman[r] * x
+-            num -= (r * x)
+-            if num > 0:
+-                roman_num(num)
+-            else:
+-                break
+-
+-    return "".join([a for a in roman_num(num)])
+-
+-
+-@register.simple_tag
+-def segment_numbering(segment):
+-    if segment.number:
+-        type_name = slugify(segment.segment_type.name)
+-        if type_name == 'artigo':
+-            if segment.number <= 9:
+-                return "Art. %dº " % segment.number
+-            else:
+-                return "Art. %d " % segment.number
+-        elif type_name == 'paragrafo':
+-            if segment.number <= 9:
+-                siblings_count = BillSegment.objects.filter(
+-                    segment_type__name=segment.segment_type.name,
+-                    parent=segment.parent
+-                ).count()
+-                if segment.number == 1 and siblings_count == 1:
+-                        return "%s. " % _("Sole paragraph")
+-                else:
+-                    return "§ %dº " % segment.number
+-            else:
+-                return "§ %d " % segment.number
+-        elif type_name == 'inciso':
+-            return "%s - " % int_to_roman(segment.number)
+-        elif type_name == 'alinea':
+-            return "%s) " % int_to_letter(segment.number)
+-        elif type_name == 'titulo':
+-            return "%s" % int_to_roman(segment.number)
+-        elif type_name == 'livro':
+-            return "%s" % int_to_roman(segment.number)
+-        elif type_name == 'capitulo':
+-            return "%s" % int_to_roman(segment.number)
+-        elif type_name == 'secao':
+-            return "%s" % int_to_roman(segment.number)
+-        elif type_name == 'subsecao':
+-            return "%s" % int_to_roman(segment.number)
+-        elif type_name == 'item':
+-            return "%s." % segment.number
+-        else:
+-            return ''
+-    else:
+-        return ''
+-
+-
+-@register.filter
+-def previous_article(segment):
+-    try:
+-        if segment.segment_type.name != "artigo":
+-            article = BillSegment.objects.filter(bill_id=segment.bill_id,
+-                                                 id__lt=segment.id,
+-                                                 segment_type__name='artigo'
+-                                                 ).order_by('-id')[0]
+-            return article
+-    except:
+-        return {}
+diff -ruN '--exclude=.git' '--exclude=node_modules' '--exclude=wikilegis/public' '--exclude=**/__pycache__' '--exclude=*.pyc' /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/tests/test_models.py /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/tests/test_models.py
+--- /tmp/wikilegis-before-remove-camara/wikilegis/plugins/camara_deputados/tests/test_models.py	2019-07-17 15:31:38.000000000 -0300
++++ /tmp/wikilegis-municipal-build/wikilegis/plugins/camara_deputados/tests/test_models.py	1969-12-31 21:00:00.000000000 -0300
+@@ -1,96 +0,0 @@
+-from autofixture import AutoFixture
+-from django.test import TestCase
+-from core import models as core_models
+-from plugins.camara_deputados import models
+-import mock
+-
+-
+-class ModelsTestCase(TestCase):
+-
+-    def setUp(self):
+-        self.bill = AutoFixture(core_models.Bill, field_values={
+-            'title': 'Bill Title'
+-        }, generate_fk=True).create_one()
+-
+-    @mock.patch('pygov_br.camara_deputados.cd.proposals.get')
+-    def test_bill_info_str(self, mock_pygov):
+-        mock_pygov.return_value = {
+-            'Autor': 'author',
+-            'ufAutor': 'author region',
+-            'partidoAutor': 'author party',
+-            'ideCadastro': 131,
+-            'Situacao': 'situation'
+-        }
+-        proposal_type = AutoFixture(models.ProposalType, field_values={
+-            'initials': 'PL',
+-            'description': 'PL'
+-        }).create_one()
+-        bill_info = AutoFixture(models.BillInfo, field_values={
+-            'bill': self.bill,
+-            'proposal_type': proposal_type,
+-        }, generate_fk=True).create_one()
+-        self.assertEquals(bill_info.__str__(), 'Bill Title')
+-
+-    def test_proposal_type_str(self):
+-        proposal_type = AutoFixture(models.ProposalType, field_values={
+-            'initials': 'PL',
+-            'description': 'PL'
+-        }).create_one()
+-        self.assertEquals(proposal_type.__str__(), 'PL - PL')
+-
+-    def test_reporting_member_str(self):
+-        reporting_member = AutoFixture(models.ReportingMember, field_values={
+-            'name': 'reporting member',
+-        }).create_one()
+-        self.assertEquals(reporting_member.__str__(), 'reporting member')
+-
+-    def test_bill_author_str(self):
+-        author = AutoFixture(models.BillAuthor, field_values={
+-            'name': 'author name',
+-            'region': None,
+-            'party': None,
+-            'register_id': None
+-        }).create_one()
+-        self.assertEquals(author.__str__(), 'author name')
+-
+-    def test_bill_author_str_with_register_id(self):
+-        author = AutoFixture(models.BillAuthor, field_values={
+-            'name': 'author name',
+-            'region': 'UF',
+-            'party': 'TT',
+-            'register_id': 123
+-        }).create_one()
+-        self.assertEquals(author.__str__(), 'author name - TT(UF)')
+-
+-    @mock.patch('pygov_br.camara_deputados.cd.proposals.get')
+-    def test_get_proposal_situation(self, mock_pygov):
+-        mock_pygov.return_value = {
+-            'Autor': 'author',
+-            'ufAutor': 'author region',
+-            'partidoAutor': 'author party',
+-            'ideCadastro': 131,
+-            'Situacao': 'situation'
+-        }
+-        proposal_type = AutoFixture(models.ProposalType, field_values={
+-            'initials': 'PL',
+-            'description': 'PL'
+-        }).create_one()
+-        bill_info = AutoFixture(models.BillInfo, field_values={
+-            'bill': self.bill,
+-            'proposal_type': proposal_type,
+-        }, generate_fk=True).create_one()
+-        self.assertEquals(bill_info.situation, 'situation')
+-        self.assertEquals(bill_info.author.name, 'author')
+-
+-    @mock.patch('pygov_br.camara_deputados.cd.proposals.get')
+-    def test_get_proposal_situation_keyerror(self, mock_pygov):
+-        mock_pygov.side_effect = [KeyError()]
+-        proposal_type = AutoFixture(models.ProposalType, field_values={
+-            'initials': 'PL',
+-            'description': 'PL'
+-        }).create_one()
+-        with self.assertRaises(Exception):
+-            AutoFixture(models.BillInfo, field_values={
+-                'bill': self.bill,
+-                'proposal_type': proposal_type,
+-            }, generate_fk=True).create_one()

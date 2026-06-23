@@ -1,0 +1,195 @@
+diff --git a/apps/accounts/backends.py b/apps/accounts/backends.py
+index ec9ae32..75f6762 100644
+--- a/apps/accounts/backends.py
++++ b/apps/accounts/backends.py
+@@ -1,5 +1,6 @@
+-from django.contrib.auth.backends import RemoteUserBackend
++from django.contrib.auth.backends import ModelBackend, RemoteUserBackend
+ from django.contrib.auth import get_user_model
++from django.db.models import Q
+ import json
+ UserModel = get_user_model()
+ 
+@@ -19,6 +20,29 @@ class AudienciasAuthBackend(RemoteUserBackend):
+         user.username = remote_user
+         user.first_name = remote_user_data['first_name']
+         user.last_name = remote_user_data['last_name']
++        user.is_active = remote_user_data.get('is_active', user.is_active)
++        user.is_staff = remote_user_data.get('is_staff', user.is_staff)
++        user.is_superuser = remote_user_data.get(
++            'is_superuser', user.is_superuser)
+         user.save()
+ 
+         return user
++
++
++class EmailOrUsernameModelBackend(ModelBackend):
++
++    def authenticate(self, request=None, username=None, password=None,
++                     **kwargs):
++        if username is None:
++            username = kwargs.get(UserModel.USERNAME_FIELD)
++        if username is None or password is None:
++            return None
++
++        try:
++            user = UserModel._default_manager.get(
++                Q(username=username) | Q(email=username))
++        except UserModel.DoesNotExist:
++            UserModel().set_password(password)
++        else:
++            if user.check_password(password) and self.user_can_authenticate(user):
++                return user
+diff --git a/apps/accounts/middlewares.py b/apps/accounts/middlewares.py
+index 4032b95..768db86 100644
+--- a/apps/accounts/middlewares.py
++++ b/apps/accounts/middlewares.py
+@@ -43,12 +43,16 @@ class AudienciasRemoteUser(RemoteUserMiddleware):
+             user.first_name = user_data['first_name']
+             user.last_name = user_data['last_name']
+             user.username = username
++            user.is_active = user_data.get('is_active', user.is_active)
++            user.is_staff = user_data.get('is_staff', user.is_staff)
++            user.is_superuser = user_data.get(
++                'is_superuser', user.is_superuser)
+             if not hasattr(user, 'profile'):
+                 profile = UserProfile()
+                 profile.user = user
+             else:
+                 profile = user.profile
+-            profile.avatar_url = user_data['avatar']
++            profile.avatar_url = user_data.get('avatar')
+             profile.save()
+             user.save()
+ 
+diff --git a/audiencias_publicas/settings.py b/audiencias_publicas/settings.py
+index 674d035..9600758 100644
+--- a/audiencias_publicas/settings.py
++++ b/audiencias_publicas/settings.py
+@@ -253,6 +253,7 @@ SESSION_COOKIE_PATH = config('SESSION_COOKIE_PATH', default='/')
+ if config('ENABLE_REMOTE_USER', default=0, cast=bool):
+     AUTHENTICATION_BACKENDS = (
+         'apps.accounts.backends.AudienciasAuthBackend',
++        'apps.accounts.backends.EmailOrUsernameModelBackend',
+     )
+ else:
+     AUTHENTICATION_BACKENDS = (
+@@ -381,4 +382,4 @@ CELERY_ACCEPT_CONTENT = ['application/json']
+ CELERY_TASK_SERIALIZER = 'json'
+ CELERY_RESULT_SERIALIZER = 'json'
+ CELERY_TIMEZONE = 'America/Sao_Paulo'
+-CELERY_ENABLE_UTC = False
+\ No newline at end of file
++CELERY_ENABLE_UTC = False
+diff --git a/static/js/components/room.js b/static/js/components/room.js
+index c4c0707..3153d23 100644
+--- a/static/js/components/room.js
++++ b/static/js/components/room.js
+@@ -210,12 +210,8 @@ function roomComponent(socket) {
+     const data = JSON.parse(message.data);
+ 
+     if (data.closed) {
+-      sendChatForm.close(data.time_to_close);
+-      sendQuestionForm.close();
++      sendChatForm.close(0);
+       $('.JS-shareListOpenBtn').addClass('hide');
+-      $('.JS-voteBtn').addClass('disabled');
+-      $('.JS-voteBtn').attr('disabled', true);
+-      $('.JS-totalVotes').addClass('disabled');
+       $('.JS-liveIcon').remove();
+       $('.JS-mainVideoLabel').addClass('-transmited').text('Transmitido');
+       $('.JS-roomStatus').text('Transmissão encerrada');
+diff --git a/static/js/helpers/send-form.js b/static/js/helpers/send-form.js
+index 1c45184..a9655fb 100644
+--- a/static/js/helpers/send-form.js
++++ b/static/js/helpers/send-form.js
+@@ -12,7 +12,7 @@ function sendChatFormHelper($wrapper) {
+ 
+   function createClosedFormEl() {
+     elements.$chatFooter.addClass('-closed');
+-    elements.$chatFooter.prepend('<p class="info JS-closedChatMessage">Audiência encerrada para participações.</p>');
++    elements.$chatFooter.prepend('<p class="info JS-closedChatMessage">Bate-papo disponível durante a transmissão.</p>');
+   }
+ 
+   function closeForm(){
+@@ -23,8 +23,12 @@ function sendChatFormHelper($wrapper) {
+   }
+ 
+   function showCountdown(time){
+-    elements.$countdown.addClass('-show');
+-    countdownTimerComponent(time, closeForm);
++    if (time > 0) {
++      elements.$countdown.addClass('-show');
++      countdownTimerComponent(time, closeForm);
++    } else {
++      closeForm();
++    }
+   }
+ 
+   function formIsBlank() {
+diff --git a/templates/components/edem-navigation.html b/templates/components/edem-navigation.html
+index 69f44f1..2666308 100644
+--- a/templates/components/edem-navigation.html
++++ b/templates/components/edem-navigation.html
+@@ -6,7 +6,7 @@
+ {% block edem_facebook_url %}/accounts/login/facebook/?next={{ request.path }}{% endblock %}
+ {% block edem_google_url %}/accounts/login/google-oauth2/?next={{ request.path }}{% endblock %}
+ {% block edem_profile_url %}/accounts/profile{% endblock %}
+-{% block edem_logout_url %}/accounts/logout{% endblock %}
++{% block edem_logout_url %}/accounts/logout/{% endblock %}
+ {% block edem_password_reset_url %}/accounts/password/reset/{% endblock %}
+ {% block edem_root_url %}/{% endblock %}
+ {% block edem_tos_url %}/sobre/tos/{% endblock %}
+diff --git a/templates/room.html b/templates/room.html
+index a0e4904..243d8e6 100644
+--- a/templates/room.html
++++ b/templates/room.html
+@@ -91,16 +91,16 @@
+           </ul>
+           <button class="read-more JS-readMoreQuestion"></button>
+         </div>
+-        <div class="action-footer {% if object.youtube_status == 2 %}-closed{% endif %} JS-questionFooter">
+-          {% if object.youtube_status != 2 and user.is_authenticated %}
++        <div class="action-footer {% if object.youtube_status == 3 %}-closed{% endif %} JS-questionFooter">
++          {% if object.youtube_status != 3 and user.is_authenticated %}
+             <button class="action JS-openQuestionForm">Fazer uma pergunta</button>
+-          {% elif object.youtube_status != 2 and not user.is_authenticated %}
++          {% elif object.youtube_status != 3 and not user.is_authenticated %}
+             {% if CAMARA_LOGIN %}
+             <p class="info"><a class="link" href="/accounts/login/camara_deputados/?next={{ request.path }}">Faça Login</a> para enviar uma pergunta!</p>
+             {% else %}
+             <p class="info"><a class="link JS-openSidebar" data-sidebar-content="signin">Faça Login</a> para enviar uma pergunta!</p>
+             {% endif %}
+-          {% elif object.youtube_status == 2 %}
++          {% elif object.youtube_status == 3 %}
+             <p class="info JS-closedQuestionMessage">Audiência encerrada para participações.</p>
+           {% endif %}
+           <form class="question-box JS-formQuestion" id="questionform">
+@@ -243,22 +243,22 @@
+ 
+       </div>
+ 
+-      <div class="action-footer {% if object.youtube_status == 2 and not object.time_to_close %}-closed{% endif %} JS-chatFooter">
+-        {% if object.youtube_status != 2 and user.is_authenticated or object.youtube_status == 2 and object.time_to_close > 0 and user.is_authenticated %}
++      <div class="action-footer {% if object.youtube_status != 1 %}-closed{% endif %} JS-chatFooter">
++        {% if object.youtube_status == 1 and user.is_authenticated %}
+           <form class="form JS-formChat" id="chatform">
+             <textarea class="input JS-formInputChat" id="message" name="message" placeholder="Digite mensagens do bate-papo aqui" autocomplete="off" required></textarea>
+             <div class="actions">
+               <button class="button" id="go" title="Enviar">Enviar</button>
+             </div>
+           </form>
+-        {% elif object.youtube_status == 2 and not object.time_to_close %}
+-          <p class="info JS-closedChatMessage">Audiência encerrada para participações.</p>
+-        {% elif not user.is_authenticated %}
++        {% elif object.youtube_status == 1 and not user.is_authenticated %}
+           {% if CAMARA_LOGIN %}
+           <p class="info"><a class="link" href="/accounts/login/camara_deputados/?next={{ request.path }}">Faça Login</a> para participar no chat!</p>
+           {% else %}
+           <p class="info"><a class="link JS-openSidebar" data-sidebar-content="signin">Faça Login</a> para participar no chat!</p>
+           {% endif %}
++        {% else %}
++          <p class="info JS-closedChatMessage">Bate-papo disponível durante a transmissão.</p>
+         {% endif %}
+ 
+         <p class="countdown info JS-countdown">O bate-papo se encerrará em <span class="time JS-countdownTimer"><span class="JS-countdownMinutes">00</span>:<span class="JS-countdownSeconds">00</span></span>.</p>

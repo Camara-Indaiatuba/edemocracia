@@ -1,0 +1,111 @@
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' wikilegis-django52/Dockerfile wikilegis-python312-20260520/Dockerfile
+--- wikilegis-django52/Dockerfile	2026-05-19 08:39:52.837733577 -0300
++++ wikilegis-python312-20260520/Dockerfile	2026-05-20 14:09:08.993283897 -0300
+@@ -1,6 +1,6 @@
+ FROM node:22-bookworm-slim AS node
+ 
+-FROM python:3.10-slim-bookworm
++FROM python:3.12-slim-bookworm
+ 
+ ENV PYTHONDONTWRITEBYTECODE=1 \
+     PYTHONUNBUFFERED=1
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' wikilegis-django52/requirements.txt wikilegis-python312-20260520/requirements.txt
+--- wikilegis-django52/requirements.txt	2026-05-19 08:39:52.836733513 -0300
++++ wikilegis-python312-20260520/requirements.txt	2026-05-20 14:11:53.563035251 -0300
+@@ -31,6 +31,7 @@
+ requests==2.32.3
+ requests-oauthlib==2.0.0
+ rjsmin==1.2.5
++setuptools==80.9.0
+ six==1.16.0
+ social-auth-app-django==5.4.2
+ social-auth-core==4.5.4
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' wikilegis-django52/wikilegis/core/views.py wikilegis-python312-20260520/wikilegis/core/views.py
+--- wikilegis-django52/wikilegis/core/views.py	2026-05-18 14:07:14.412130710 -0300
++++ wikilegis-python312-20260520/wikilegis/core/views.py	2026-05-20 14:09:26.986364500 -0300
+@@ -9,7 +9,6 @@
+ from django.views.generic.base import TemplateView
+ from django.views.generic import DetailView
+ from django.views.decorators.clickjacking import xframe_options_exempt
+-from distutils.util import strtobool
+ from django.contrib.sites.models import Site
+ from django.db.models import Q
+ from constance import config
+@@ -17,6 +16,15 @@
+ from core import models, model_mixins
+ 
+ 
++def strtobool(value):
++    normalized = str(value).lower()
++    if normalized in ('y', 'yes', 't', 'true', 'on', '1'):
++        return True
++    if normalized in ('n', 'no', 'f', 'false', 'off', '0'):
++        return False
++    raise ValueError('invalid truth value %r' % value)
++
++
+ class HomeView(TemplateView):
+     template_name = 'home.html'
+ 
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' wikilegis-django52/wikilegis/plugins/camara_deputados/import_file.py wikilegis-python312-20260520/wikilegis/plugins/camara_deputados/import_file.py
+--- wikilegis-django52/wikilegis/plugins/camara_deputados/import_file.py	2019-07-17 15:31:38.000000000 -0300
++++ wikilegis-python312-20260520/wikilegis/plugins/camara_deputados/import_file.py	2026-05-20 14:14:35.088798106 -0300
+@@ -87,42 +87,42 @@
+                 re.sub(b"^Subse\xc3\xa7\xc3\xa3o ", b'', line).decode('utf-8')
+             )
+             content = lines[order].decode('utf-8')
+-        elif (re.match(b"^Art. \d+ \W+", line) or
+-              re.match(b"^Art. \d+\.", line) and not is_quote):
++        elif (re.match(rb"^Art. \d+ \W+", line) or
++              re.match(rb"^Art. \d+\.", line) and not is_quote):
+             try:
+-                label = re.match(b"^Art. \d+ \W{2}\s", line).group(0)
++                label = re.match(rb"^Art. \d+ \W{2}\s", line).group(0)
+             except:
+-                label = re.match(b"^Art. \d+\.", line).group(0)
++                label = re.match(rb"^Art. \d+\.", line).group(0)
+             type_id = SegmentType.objects.get(name="artigo").id
+-            number = re.search(b'\d+', label).group(0)
++            number = re.search(rb'\d+', label).group(0)
+             content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif re.match(b"^\W+ \d+\W+", line) and not is_quote:
+-            label = re.match(b"^\W+ \d+\W+", line).group(0)
++        elif re.match(rb"^\W+ \d+\W+", line) and not is_quote:
++            label = re.match(rb"^\W+ \d+\W+", line).group(0)
+             type_id = SegmentType.objects.get(name="paragrafo").id
+-            number = re.search(b'\d+', label).group(0)
++            number = re.search(rb'\d+', label).group(0)
+             content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+         elif slugify(line).startswith('paragrafo-unico') and not is_quote:
+             segment_type_id = SegmentType.objects.get(name="paragrafo").id
+             type_id = segment_type_id
+             number = 1
+             content = line.decode('utf-8').replace('Parágrafo único. ', '')
+-        elif re.match(b"^[A-Z\d]+ \W+ ", line) and not is_quote:
+-            label = re.match(b"^[A-Z\d]+ \W+ ", line).group(0)
++        elif re.match(rb"^[A-Z\d]+ \W+ ", line) and not is_quote:
++            label = re.match(rb"^[A-Z\d]+ \W+ ", line).group(0)
+             type_id = SegmentType.objects.get(name="inciso").id
+             number = roman.fromRoman(
+-                re.search(b"^[A-Z\d]+", line).group(0).decode('utf-8')
++                re.search(rb"^[A-Z\d]+", line).group(0).decode('utf-8')
+             )
+             content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif re.match(b"^[a-z]\W ", line) and not is_quote:
+-            label = re.match(b"^[a-z]\W ", line).group(0)
++        elif re.match(rb"^[a-z]\W ", line) and not is_quote:
++            label = re.match(rb"^[a-z]\W ", line).group(0)
+             type_id = SegmentType.objects.get(name="alinea").id
+             number = string.ascii_lowercase.index(
+                 re.search(b"^[a-z]", line).group(0).decode('utf-8')) + 1
+             content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+-        elif re.match(b"^\d+\. ", line) and not is_quote:
+-            label = re.match(b"^\d+\. ", line).group(0)
++        elif re.match(rb"^\d+\. ", line) and not is_quote:
++            label = re.match(rb"^\d+\. ", line).group(0)
+             type_id = SegmentType.objects.get(name="item").id
+-            number = re.search(b"^\d+", line).group(0)
++            number = re.search(rb"^\d+", line).group(0)
+             content = line.decode('utf-8').replace(label.decode('utf-8'), '')
+         elif line.decode('utf-8').startswith('Pena') and not is_quote:
+             type_id = SegmentType.objects.get(name="citacao").id

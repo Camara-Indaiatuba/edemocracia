@@ -1,0 +1,237 @@
+diff --git a/core/apps.py b/core/apps.py
+--- a/core/apps.py
++++ b/core/apps.py
+@@ -13,6 +13,8 @@ class CoreConfig(AppConfig):
+                             sender=models.UpDownVote)
+         post_save.connect(signals.update_comments_count,
+                           sender=models.Comment)
++        post_delete.connect(signals.update_deleted_comments_count,
++                            sender=models.Comment)
+         post_save.connect(signals.update_additive_amendment_count,
+                           sender=models.AdditiveAmendment,
+                           dispatch_uid="core.additive_amendment_count.save")
+diff --git a/core/signals.py b/core/signals.py
+--- a/core/signals.py
++++ b/core/signals.py
+@@ -1,64 +1,102 @@
++from django.contrib.contenttypes.models import ContentType
++
+ from core import model_mixins as mixins
+ 
+ 
+-def update_new_votes_count(sender, instance, created, **kwargs):
+-    voted_class = instance.content_object.__class__
+-    if issubclass(voted_class, mixins.VoteCountMixin):
+-        if created:
+-            if instance.vote:
+-                instance.content_object.upvote_count += 1
+-            else:
+-                instance.content_object.downvote_count += 1
+-        else:
+-            if instance.vote:
+-                instance.content_object.upvote_count += 1
+-                instance.content_object.downvote_count -= 1
+-            else:
+-                instance.content_object.upvote_count -= 1
+-                instance.content_object.downvote_count += 1
+-
+-        instance.content_object.save()
+-
+-    if issubclass(voted_class, mixins.ParticipationCountMixin):
+-        if created:
+-            instance.content_object.participation_count += 1
+-            instance.content_object.save()
++def _save_count_fields(instance, **counts):
++    changed_fields = []
++    for field, value in counts.items():
++        if hasattr(instance, field) and getattr(instance, field) != value:
++            setattr(instance, field, value)
++            changed_fields.append(field)
+ 
++    if changed_fields:
++        instance.save(update_fields=changed_fields)
+ 
+-def update_deleted_votes_count(sender, instance, **kwargs):
+-    voted_class = instance.content_object.__class__
+-    if issubclass(voted_class, mixins.VoteCountMixin):
+-        if instance.vote:
+-            instance.content_object.upvote_count -= 1
+-        else:
+-            instance.content_object.downvote_count -= 1
+-        instance.content_object.save()
+-
+-    if issubclass(voted_class, mixins.ParticipationCountMixin):
+-        instance.content_object.participation_count -= 1
+-        instance.content_object.save()
+ 
++def _actual_vote_counts(instance):
++    from core import models
+ 
+-def update_comments_count(sender, instance, created, **kwargs):
+-    commented_class = instance.content_object.__class__
+-    if created and issubclass(commented_class, mixins.CommentCountMixin):
+-        instance.content_object.comments_count += 1
++    ctype = ContentType.objects.get_for_model(instance)
++    votes = models.UpDownVote.objects.filter(
++        content_type=ctype,
++        object_id=instance.id,
++    )
++    upvote_count = votes.filter(vote=True).count()
++    downvote_count = votes.filter(vote=False).count()
++    return upvote_count, downvote_count
+ 
+-    if created and issubclass(commented_class, mixins.ParticipationCountMixin):
+-        instance.content_object.participation_count += 1
+ 
+-    instance.content_object.save()
++def _actual_comments_count(instance):
++    from core import models
+ 
++    ctype = ContentType.objects.get_for_model(instance)
++    return models.Comment.objects.filter(
++        content_type=ctype,
++        object_id=instance.id,
++    ).count()
+ 
+-def _save_count_fields(instance, **counts):
+-    changed_fields = []
+-    for field, value in counts.items():
+-        if getattr(instance, field) != value:
+-            setattr(instance, field, value)
+-            changed_fields.append(field)
+ 
+-    if changed_fields:
+-        instance.save(update_fields=changed_fields)
++def _actual_segment_amendment_counts(segment):
++    additive_count = segment.additive_amendments.count()
++    modifier_count = segment.modifier_amendments.count()
++    supress_count = segment.supress_amendments.count()
++    total = additive_count + modifier_count + supress_count
++    return additive_count, modifier_count, supress_count, total
++
++
++def _recalculate_interaction_counts(instance):
++    instance_class = instance.__class__
++    counts = {}
++    participation_count = 0
++
++    if issubclass(instance_class, mixins.VoteCountMixin):
++        upvote_count, downvote_count = _actual_vote_counts(instance)
++        counts.update(
++            upvote_count=upvote_count,
++            downvote_count=downvote_count,
++            votes_count=upvote_count + downvote_count,
++        )
++        participation_count += counts['votes_count']
++
++    if issubclass(instance_class, mixins.CommentCountMixin):
++        counts['comments_count'] = _actual_comments_count(instance)
++        participation_count += counts['comments_count']
++
++    if issubclass(instance_class, mixins.AmendmentCountMixin):
++        from core import models
++
++        if isinstance(instance, models.BillSegment):
++            (additive_count, modifier_count, supress_count,
++             amendments_count) = _actual_segment_amendment_counts(instance)
++            counts.update(
++                additive_amendments_count=additive_count,
++                modifier_amendments_count=modifier_count,
++                supress_amendments_count=supress_count,
++                amendments_count=amendments_count,
++            )
++            participation_count += amendments_count
++
++    if issubclass(instance_class, mixins.ParticipationCountMixin):
++        counts['participation_count'] = participation_count
++
++    _save_count_fields(instance, **counts)
++
++
++def update_new_votes_count(sender, instance, created, **kwargs):
++    _recalculate_interaction_counts(instance.content_object)
++
++
++def update_deleted_votes_count(sender, instance, **kwargs):
++    _recalculate_interaction_counts(instance.content_object)
++
++
++def update_comments_count(sender, instance, created, **kwargs):
++    _recalculate_interaction_counts(instance.content_object)
++
++
++def update_deleted_comments_count(sender, instance, **kwargs):
++    _recalculate_interaction_counts(instance.content_object)
+ 
+ 
+ def _recalculate_bill_amendments_count(bill):
+@@ -72,18 +110,7 @@ def _recalculate_bill_amendments_count(bill):
+ 
+ 
+ def _recalculate_segment_amendments_count(segment):
+-    additive_count = segment.additive_amendments.count()
+-    modifier_count = segment.modifier_amendments.count()
+-    supress_count = segment.supress_amendments.count()
+-    total = additive_count + modifier_count + supress_count
+-
+-    _save_count_fields(
+-        segment,
+-        amendments_count=total,
+-        additive_amendments_count=additive_count,
+-        modifier_amendments_count=modifier_count,
+-        supress_amendments_count=supress_count,
+-    )
++    _recalculate_interaction_counts(segment)
+     _recalculate_bill_amendments_count(segment.bill)
+ 
+ 
+diff --git a/public/javascript/content/modules/load.js b/public/javascript/content/modules/load.js
+--- a/public/javascript/content/modules/load.js
++++ b/public/javascript/content/modules/load.js
+@@ -51,15 +51,19 @@
+     });
+   }
+ 
+-  function getCSRF() {
++  function getCookie(name) {
+     const value = `; ${document.cookie}`;
+-    const parts = value.split('; csrftoken=');
++    const parts = value.split(`; ${name}=`);
+     if (parts.length === 2) {
+       return parts.pop().split(';').shift();
+     }
+     return null;
+   }
+ 
++  function getCSRF() {
++    return getCookie('wikilegis_csrftoken') || getCookie('csrftoken');
++  }
++
+   function sendRequest(method, request, data, htmlInsertion = 'insert') {
+     const path = request.path;
+     let url = `${prefixURL}/${path}/`;
+diff --git a/static/javascript/content/modules/load.js b/static/javascript/content/modules/load.js
+--- a/static/javascript/content/modules/load.js
++++ b/static/javascript/content/modules/load.js
+@@ -51,15 +51,19 @@
+     });
+   }
+ 
+-  function getCSRF() {
++  function getCookie(name) {
+     const value = `; ${document.cookie}`;
+-    const parts = value.split('; csrftoken=');
++    const parts = value.split(`; ${name}=`);
+     if (parts.length === 2) {
+       return parts.pop().split(';').shift();
+     }
+     return null;
+   }
+ 
++  function getCSRF() {
++    return getCookie('wikilegis_csrftoken') || getCookie('csrftoken');
++  }
++
+   function sendRequest(method, request, data, htmlInsertion = 'insert') {
+     const path = request.path;
+     let url = `${prefixURL}/${path}/`;

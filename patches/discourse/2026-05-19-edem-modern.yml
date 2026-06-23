@@ -1,0 +1,50 @@
+# Copiar para `containers/edem-modern.yml` dentro do repositório oficial
+# `discourse_docker` para construir a imagem ativa moderna usada pelo Compose.
+#
+# Este arquivo usa valores locais de desenvolvimento. Para producao, trocar
+# hostname, porta, SMTP, senhas e segredo SSO.
+
+templates:
+  - "templates/web.template.yml"
+  - "templates/web.ratelimited.template.yml"
+
+docker_args: "--network edemocracia_default"
+
+params:
+  version: stable
+
+env:
+  LC_ALL: en_US.UTF-8
+  LANG: en_US.UTF-8
+  LANGUAGE: en_US.UTF-8
+  UNICORN_WORKERS: 1
+  DISCOURSE_HOSTNAME: 192.168.193.110
+  DISCOURSE_DEVELOPER_EMAILS: email@admin.com
+  DISCOURSE_SKIP_EMAIL_SETUP: "1"
+  DISCOURSE_SMTP_ADDRESS: localhost
+  DISCOURSE_SMTP_PORT: 25
+  DISCOURSE_DB_SOCKET: ""
+  DISCOURSE_DB_HOST: discourse_modern_db
+  DISCOURSE_DB_PORT: 5432
+  DISCOURSE_DB_NAME: discourse
+  DISCOURSE_DB_USERNAME: root
+  DISCOURSE_DB_PASSWORD: root
+  DISCOURSE_REDIS_HOST: redis
+  DISCOURSE_REDIS_PORT: 6379
+  DISCOURSE_RELATIVE_URL_ROOT: /expressao
+  DISCOURSE_DISABLE_EMAILS: "yes"
+  DISCOURSE_SSO_SECRET: sso_secret
+
+volumes:
+  - volume:
+      host: /tmp/discourse-modern-active-shared
+      guest: /shared
+  - volume:
+      host: /tmp/discourse-modern-active-shared/log/var-log
+      guest: /var/log
+
+run:
+  - exec:
+      cd: /var/www/discourse
+      cmd:
+        - su discourse -c 'bundle exec rails runner "SiteSetting.port = 8000; SiteSetting.force_https = false; SiteSetting.default_locale = \"pt_BR\"; SiteSetting.discourse_connect_url = \"http://192.168.193.110:8000\"; SiteSetting.discourse_connect_secret = \"sso_secret\"; SiteSetting.enable_discourse_connect = true; SiteSetting.enable_local_logins = true; SiteSetting.verbose_discourse_connect_logging = true; SiteSetting.fast_typing_threshold = \"disabled\"; SiteSetting.auto_silence_fast_typers_on_first_post = false; SiteSetting.max_topics_in_first_day = 50; SiteSetting.max_replies_in_first_day = 100; SiteSetting.newuser_max_replies_per_topic = 50; SiteSetting.newuser_spam_host_threshold = 0; SiteSetting.rate_limit_create_topic = 1; SiteSetting.rate_limit_create_post = 1; SiteSetting.rate_limit_new_user_create_post = 1; SiteSetting.max_consecutive_replies = 50; puts \"Configured e-Democracia DiscourseConnect and local participation defaults\";"'

@@ -1,0 +1,24 @@
+diff --git a/public/javascript/content/events.js b/public/javascript/content/events.js
+--- a/public/javascript/content/events.js
++++ b/public/javascript/content/events.js
+@@ -23,7 +23,7 @@ const diff = amendmentDiffModule();
+ function clickEvent(event) {
+   const dataset = event.target.dataset;
+   const parent = event.target.closest('[data-drawer-open], [data-vote-action]');
+-  const tabTarget = event.target.closest('[data-tab]');
++  const tabTarget = event.target.closest('a[data-tab]');
+   let parentDataset = null;
+   if (parent) {
+     parentDataset = parent.dataset;
+diff --git a/static/javascript/content/events.js b/static/javascript/content/events.js
+--- a/static/javascript/content/events.js
++++ b/static/javascript/content/events.js
+@@ -23,7 +23,7 @@ const diff = amendmentDiffModule();
+ function clickEvent(event) {
+   const dataset = event.target.dataset;
+   const parent = event.target.closest('[data-drawer-open], [data-vote-action]');
+-  const tabTarget = event.target.closest('[data-tab]');
++  const tabTarget = event.target.closest('a[data-tab]');
+   let parentDataset = null;
+   if (parent) {
+     parentDataset = parent.dataset;

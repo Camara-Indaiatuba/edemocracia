@@ -1,4 +1,4 @@
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 import requests
 
@@ -25,5 +25,9 @@ def verify(captcha_response, remote_ip=None):
     if remote_ip:
         params['remoteip'] = remote_ip
 
-    verify_response = requests.get(url, params=params, verify=False)
-    return verify_response.json()
+    try:
+        verify_response = requests.post(url, data=params, timeout=10)
+        verify_response.raise_for_status()
+        return verify_response.json()
+    except (requests.RequestException, ValueError):
+        return {'success': False, 'error-codes': ['bad-request']}

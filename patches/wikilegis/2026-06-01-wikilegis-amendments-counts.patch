@@ -1,0 +1,112 @@
+diff --git a/core/apps.py b/core/apps.py
+--- a/core/apps.py
++++ b/core/apps.py
+@@ -14,8 +14,20 @@ class CoreConfig(AppConfig):
+         post_save.connect(signals.update_comments_count,
+                           sender=models.Comment)
+         post_save.connect(signals.update_additive_amendment_count,
+-                          sender=models.AdditiveAmendment)
++                          sender=models.AdditiveAmendment,
++                          dispatch_uid="core.additive_amendment_count.save")
++        post_delete.connect(signals.update_additive_amendment_count,
++                            sender=models.AdditiveAmendment,
++                            dispatch_uid="core.additive_amendment_count.delete")
+         post_save.connect(signals.update_modifier_amendment_count,
+-                          sender=models.ModifierAmendment)
++                          sender=models.ModifierAmendment,
++                          dispatch_uid="core.modifier_amendment_count.save")
++        post_delete.connect(signals.update_modifier_amendment_count,
++                            sender=models.ModifierAmendment,
++                            dispatch_uid="core.modifier_amendment_count.delete")
+         post_save.connect(signals.update_supress_amendment_count,
+-                          sender=models.SupressAmendment)
++                          sender=models.SupressAmendment,
++                          dispatch_uid="core.supress_amendment_count.save")
++        post_delete.connect(signals.update_supress_amendment_count,
++                            sender=models.SupressAmendment,
++                            dispatch_uid="core.supress_amendment_count.delete")
+diff --git a/core/signals.py b/core/signals.py
+--- a/core/signals.py
++++ b/core/signals.py
+@@ -50,34 +50,50 @@ def update_comments_count(sender, instance, created, **kwargs):
+     instance.content_object.save()
+ 
+ 
+-def update_additive_amendment_count(sender, instance, created, **kwargs):
+-    if created:
+-        instance.reference.amendments_count += 1
+-        instance.reference.participation_count += 1
+-        instance.reference.additive_amendments_count += 1
+-        instance.reference.save()
+-
+-        instance.reference.bill.amendments_count += 1
+-        instance.reference.bill.save()
+-
+-
+-def update_modifier_amendment_count(sender, instance, created, **kwargs):
+-    if created:
+-        instance.replaced.amendments_count += 1
+-        instance.replaced.participation_count += 1
+-        instance.replaced.modifier_amendments_count += 1
+-        instance.replaced.save()
+-
+-        instance.replaced.bill.amendments_count += 1
+-        instance.replaced.bill.save()
+-
+-
+-def update_supress_amendment_count(sender, instance, created, **kwargs):
+-    if created:
+-        instance.supressed.amendments_count += 1
+-        instance.supressed.participation_count += 1
+-        instance.supressed.supress_amendments_count += 1
+-        instance.supressed.save()
+-
+-        instance.supressed.bill.amendments_count += 1
+-        instance.supressed.bill.save()
++def _save_count_fields(instance, **counts):
++    changed_fields = []
++    for field, value in counts.items():
++        if getattr(instance, field) != value:
++            setattr(instance, field, value)
++            changed_fields.append(field)
++
++    if changed_fields:
++        instance.save(update_fields=changed_fields)
++
++
++def _recalculate_bill_amendments_count(bill):
++    total = 0
++    for segment in bill.segments.all():
++        total += segment.additive_amendments.count()
++        total += segment.modifier_amendments.count()
++        total += segment.supress_amendments.count()
++
++    _save_count_fields(bill, amendments_count=total)
++
++
++def _recalculate_segment_amendments_count(segment):
++    additive_count = segment.additive_amendments.count()
++    modifier_count = segment.modifier_amendments.count()
++    supress_count = segment.supress_amendments.count()
++    total = additive_count + modifier_count + supress_count
++
++    _save_count_fields(
++        segment,
++        amendments_count=total,
++        additive_amendments_count=additive_count,
++        modifier_amendments_count=modifier_count,
++        supress_amendments_count=supress_count,
++    )
++    _recalculate_bill_amendments_count(segment.bill)
++
++
++def update_additive_amendment_count(sender, instance, **kwargs):
++    _recalculate_segment_amendments_count(instance.reference)
++
++
++def update_modifier_amendment_count(sender, instance, **kwargs):
++    _recalculate_segment_amendments_count(instance.replaced)
++
++
++def update_supress_amendment_count(sender, instance, **kwargs):
++    _recalculate_segment_amendments_count(instance.supressed)

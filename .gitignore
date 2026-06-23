@@ -84,6 +84,9 @@ celerybeat-schedule
 
 # dotenv
 .env
+.env.*
+!.env.example
+!.env.*.example
 
 # virtualenv
 .venv
@@ -109,3 +112,6 @@ node_modules/
 
 # Redis
 dump.rdb
+
+# Local operational backups
+backups/

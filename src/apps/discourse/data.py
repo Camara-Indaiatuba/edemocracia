@@ -2,14 +2,23 @@ from django.conf import settings
 import requests
 
 
+def get_discourse_json(url):
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except (requests.RequestException, ValueError):
+        return {}
+
+
 def get_discourse_index_data():
     categories_url = settings.DISCOURSE_UPSTREAM + '/categories.json'
-    categories = requests.get(categories_url).json()
-    categories = categories['category_list']['categories']
+    categories_data = get_discourse_json(categories_url)
+    categories = categories_data.get('category_list', {}).get('categories', [])
 
     latest_url = settings.DISCOURSE_UPSTREAM + '/latest.json'
-    latest = requests.get(latest_url).json()
-    latest = latest['topic_list']['topics']
+    latest_data = get_discourse_json(latest_url)
+    latest = latest_data.get('topic_list', {}).get('topics', [])
 
     topics = []
     for topic in latest[:10]:
@@ -21,6 +30,9 @@ def get_discourse_index_data():
                 topic_category = category
             elif topic['category_id'] in subcategories:
                 topic_category = category
+
+        if not topic_category:
+            continue
 
         topic['category_name'] = topic_category['name']
         topic['category_slug'] = topic_category['slug']

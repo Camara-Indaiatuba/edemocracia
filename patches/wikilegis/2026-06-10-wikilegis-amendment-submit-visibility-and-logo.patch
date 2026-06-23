@@ -1,0 +1,67 @@
+diff --git a/core/templates/bill/_content.html b/core/templates/bill/_content.html
+--- a/core/templates/bill/_content.html
++++ b/core/templates/bill/_content.html
+@@ -4,8 +4,8 @@
+ <section id="segment-list-search" class="bill__content" data-content="bill" data-bill="{{bill.id}}" data-remove-content>
+   <div class="content__header">
+     <div class="header__section-top">
+       {% get_media_prefix as MEDIA_URL %}
+-      <img class="header__logo" src="{{ MEDIA_URL }}{{ config.COAT_OF_ARMS_IMAGE }}" alt="{% trans 'Coat of arms of the republic' %}" />
++      <img class="header__logo" src="/static/img/brasao-camara.svg" alt="{% trans 'Coat of arms of the city council' %}" />
+ 
+       <div class="header__title">
+         <h1 class="title__name">{{bill.title}}</h1>
+diff --git a/public/javascript/content/modules/forms.js b/public/javascript/content/modules/forms.js
+--- a/public/javascript/content/modules/forms.js
++++ b/public/javascript/content/modules/forms.js
+@@ -67,6 +67,7 @@ function formsModule() {
+       load.sendRequest('post', requests.newModifierAmendment, data);
+ 
+       requests.newModifierAmendment.xhr.done(() => {
++        const newAmendmentEl = wrapperEl.lastElementChild;
+         formEl.reset();
+ 
+         if (segmentType === 'additive') {
+@@ -82,6 +83,15 @@ function formsModule() {
+           segmentDiffWrapper.innerHTML = segmentContent;
+           amendmentDiff.loadDiff(segmentContainer);
+         }
++
++        toggle(false);
++        if (newAmendmentEl) {
++          newAmendmentEl.scrollIntoView({
++            block: 'center',
++            inline: 'nearest',
++            behavior: 'smooth',
++          });
++        }
+       });
+     } else {
+       showAlert(strings.sameAsSegmentTitle, strings.sameAsSegmentText, 'error');
+diff --git a/static/javascript/content/modules/forms.js b/static/javascript/content/modules/forms.js
+--- a/static/javascript/content/modules/forms.js
++++ b/static/javascript/content/modules/forms.js
+@@ -67,6 +67,7 @@ function formsModule() {
+       load.sendRequest('post', requests.newModifierAmendment, data);
+ 
+       requests.newModifierAmendment.xhr.done(() => {
++        const newAmendmentEl = wrapperEl.lastElementChild;
+         formEl.reset();
+ 
+         if (segmentType === 'additive') {
+@@ -82,6 +83,15 @@ function formsModule() {
+           segmentDiffWrapper.innerHTML = segmentContent;
+           amendmentDiff.loadDiff(segmentContainer);
+         }
++
++        toggle(false);
++        if (newAmendmentEl) {
++          newAmendmentEl.scrollIntoView({
++            block: 'center',
++            inline: 'nearest',
++            behavior: 'smooth',
++          });
++        }
+       });
+     } else {
+       showAlert(strings.sameAsSegmentTitle, strings.sameAsSegmentText, 'error');

@@ -1,0 +1,36 @@
+diff --git a/core/templates/bill/_info.html b/core/templates/bill/_info.html
+index b5262b5..ea12092 100644
+--- a/core/templates/bill/_info.html
++++ b/core/templates/bill/_info.html
+@@ -80,7 +80,18 @@
+     {% for item in bill.videos.all %}
+       {% video item.url as video_obj %}
+         {% if video_obj.backend == 'YoutubeBackend' %}
+-          <iframe width="100%" height="100%" src="https://www.youtube.com/embed/{{ video_obj.code }}" frameborder="0" allowfullscreen=""></iframe>
++          {% with youtube_origin=request.scheme|add:"://"|add:request.get_host %}
++          <iframe
++            width="100%"
++            height="100%"
++            src="https://www.youtube.com/embed/{{ video_obj.code }}?rel=0&amp;origin={{ youtube_origin|urlencode }}"
++            title="YouTube video player"
++            frameborder="0"
++            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
++            referrerpolicy="strict-origin-when-cross-origin"
++            allowfullscreen
++          ></iframe>
++          {% endwith %}
+         {% endif %}
+       {% endvideo %}
+     {% endfor %}
+diff --git a/wikilegis/settings/application.py b/wikilegis/settings/application.py
+index 02fc908..2e7a336 100644
+--- a/wikilegis/settings/application.py
++++ b/wikilegis/settings/application.py
+@@ -10,6 +10,7 @@ SITE_ID = 1
+ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+ 
+ DEBUG = config('DEBUG', cast=bool, default=True)
++SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+ ALLOWED_HOSTS = config('ALLOWED_HOSTS',
+                        cast=Csv(lambda x: x.strip().strip(',').strip()),
+                        default='*')

@@ -1,0 +1,58 @@
+diff --git a/public/styles/templates/amendments/_content.scss b/public/styles/templates/amendments/_content.scss
+--- a/public/styles/templates/amendments/_content.scss
++++ b/public/styles/templates/amendments/_content.scss
+@@ -2,12 +2,14 @@
+   display: flex;
+   flex-direction: column;
+   flex: 1;
++  min-height: 0;
+   padding: 0;
+   position: relative;
+ 
+   .content__amendments {
+     flex: 1 1 auto;
++    min-height: 0;
+     overflow-y: auto;
+     overflow-y: overlay; // Favor 'overlay' in the cascade for supported browsers
+     overflow-x: hidden;
+     padding: 2em 4em 8em;
+diff --git a/public/styles/templates/amendments/_index.scss b/public/styles/templates/amendments/_index.scss
+--- a/public/styles/templates/amendments/_index.scss
++++ b/public/styles/templates/amendments/_index.scss
+@@ -150,6 +150,7 @@
+ .bill__amendments {
+   display: flex;
+   flex: 1;
++  min-height: 0;
+   transition: transform .3s $swift-out;
+   width: 300%;
+ 
+diff --git a/static/styles/templates/amendments/_content.scss b/static/styles/templates/amendments/_content.scss
+--- a/static/styles/templates/amendments/_content.scss
++++ b/static/styles/templates/amendments/_content.scss
+@@ -2,12 +2,14 @@
+   display: flex;
+   flex-direction: column;
+   flex: 1;
++  min-height: 0;
+   padding: 0;
+   position: relative;
+ 
+   .content__amendments {
+     flex: 1 1 auto;
++    min-height: 0;
+     overflow-y: auto;
+     overflow-y: overlay; // Favor 'overlay' in the cascade for supported browsers
+     overflow-x: hidden;
+     padding: 2em 4em 8em;
+diff --git a/static/styles/templates/amendments/_index.scss b/static/styles/templates/amendments/_index.scss
+--- a/static/styles/templates/amendments/_index.scss
++++ b/static/styles/templates/amendments/_index.scss
+@@ -150,6 +150,7 @@
+ .bill__amendments {
+   display: flex;
+   flex: 1;
++  min-height: 0;
+   transition: transform .3s $swift-out;
+   width: 300%;
+ 

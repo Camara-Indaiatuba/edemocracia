@@ -6,12 +6,24 @@ class WikilegisProxyView(EdemProxyView):
     upstream = settings.WIKILEGIS_UPSTREAM
     diazo_theme_template = 'diazo-wikilegis.html'
     rewrite = (
-        (r'/wikilegis/admin/login/?$', '/admin/login'),
+        (r'/wikilegis/admin/login/?$', '/admin/login/'),
         (r'/wikilegis/admin/login/\?([^=\n]+)\=([^&\n]+)$',
          r'/admin/login/?next=\2'),
-        (r'/wikilegis/admin/logout/?$', '/admin/logout'),
-        (r'/wikilegis/login/?$', '/accounts/login'),
+        (r'/wikilegis/admin/logout/?$', '/admin/logout/'),
+        (r'/wikilegis/login/?$', '/accounts/login/'),
         (r'/wikilegis/login/\?([^=\n]+)\=([^&\n]+)$',
          r'/accounts/login/?next=\2'),
-        (r'/wikilegis/logout/?$', '/accounts/logout'),
+        (r'/wikilegis/logout/?$', '/accounts/logout/'),
     )
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        location = response.get('Location')
+
+        if location and (
+            location.startswith('/admin/') or
+            location.startswith('/accounts/')
+        ):
+            response['Location'] = '/wikilegis{}'.format(location)
+
+        return response

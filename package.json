@@ -12,12 +12,18 @@
   },
   "homepage": "https://github.com/eDemocracia/edemocracia#readme",
   "dependencies": {
-    "autoprefixer": "^7.2.5",
+    "autoprefixer": "^10.4.21",
     "fontastic-labhacker": "git+https://github.com/labhackercd/fontastic-labhacker.git",
-    "foundation-sites": "^6.4.4-rc1",
-    "jquery": "^3.2.1",
-    "node-sass": "^4.7.2",
-    "postcss": "^6.0.16",
-    "postcss-cli": "^4.1.1"
-  }
+    "foundation-sites": "^6.9.0",
+    "jquery": "^4.0.0",
+    "postcss": "^8.5.15",
+    "postcss-cli": "^11.0.1",
+    "sass": "^1.100.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "Firefox ESR",
+    "not dead"
+  ]
 }

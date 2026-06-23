@@ -132,7 +132,7 @@ $('#id_form_login').submit(function(event) {
   event.preventDefault();
   $.ajax({
     type:"POST",
-    url: '/ajax/login/',
+    url: '/accounts/ajax/login/',
     data: $(event.target).serialize(),
     success: function(response){
       location.reload();
@@ -224,7 +224,7 @@ $('#id_form_signup').submit(function(event) {
   } else {
     $.ajax({
       type:"POST",
-      url: '/ajax/signup/',
+      url: '/accounts/ajax/signup/',
       data: user_data,
       success: function(response){
         console.log(response["data"]);
@@ -249,4 +249,3 @@ $('#id_form_signup').submit(function(event) {
     });
   }
 });
-

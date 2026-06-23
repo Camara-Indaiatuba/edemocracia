@@ -1,0 +1,15 @@
+--- a/vendor/bundle/ruby/2.4.0/gems/seed-fu-2.3.6/lib/seed-fu/seeder.rb
++++ b/vendor/bundle/ruby/2.4.0/gems/seed-fu-2.3.6/lib/seed-fu/seeder.rb
+@@
+           sequence = @model_class.sequence_name
+ 
+           @model_class.connection.execute <<-EOS
+-            SELECT setval('#{sequence}', (SELECT GREATEST(MAX(#{quoted_id})+(SELECT increment_by FROM #{sequence}), (SELECT min_value FROM #{sequence})) FROM #{@model_class.quoted_table_name}), false)
++            SELECT setval(
++              '#{sequence}',
++              COALESCE((SELECT MAX(#{quoted_id}) FROM #{@model_class.quoted_table_name}), 1),
++              (SELECT MAX(#{quoted_id}) IS NOT NULL FROM #{@model_class.quoted_table_name})
++            )
+           EOS
+         end
+       end

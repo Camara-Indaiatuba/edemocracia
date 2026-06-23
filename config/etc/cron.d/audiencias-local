@@ -1,0 +1,5 @@
+# Local development cron for audiencias.
+# The Câmara webservice sync is intentionally disabled here because it can
+# overwrite manually created test rooms that reuse external cod_reunion values.
+* * * * * python3 /var/labhacker/audiencias/manage.py prune_rooms
+* * * * * python3 /var/labhacker/audiencias/manage.py prune_presences

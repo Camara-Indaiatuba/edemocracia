@@ -12,6 +12,20 @@ from apps.audiencias.data import get_audiencias_index_data
 class EdemProxyView(DiazoProxyView):
     html5 = True
 
+    def get_request_headers(self):
+        request_headers = super().get_request_headers()
+        public_host = self.request.META.get('HTTP_X_FORWARDED_HOST') or self.request.get_host()
+        public_proto = self.request.META.get(
+            'HTTP_X_FORWARDED_PROTO',
+            'https' if self.request.is_secure() else 'http'
+        )
+
+        request_headers['Host'] = public_host
+        request_headers['X-Forwarded-Host'] = public_host
+        request_headers['X-Forwarded-Proto'] = public_proto
+
+        return request_headers
+
     def dispatch(self, request, *args, **kwargs):
         self.request = request
 

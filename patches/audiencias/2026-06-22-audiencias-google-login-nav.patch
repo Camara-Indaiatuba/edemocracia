@@ -1,0 +1,54 @@
+diff --git a/audiencias_publicas/settings.py b/audiencias_publicas/settings.py
+--- a/audiencias_publicas/settings.py
++++ b/audiencias_publicas/settings.py
+@@
+ RECAPTCHA_SITE_KEY = config('RECAPTCHA_SITE_KEY', default='')
++GOOGLE_LOGIN_ENABLED = config('GOOGLE_LOGIN_ENABLED', default=False,
++                              cast=bool)
+ RECAPTCHA_PRIVATE_KEY = config('RECAPTCHA_PRIVATE_KEY', default='')
+diff --git a/apps/core/processors.py b/apps/core/processors.py
+--- a/apps/core/processors.py
++++ b/apps/core/processors.py
+@@
+ def analytics(request):
+     analytics_id = settings.GOOGLE_ANALYTICS_ID
+     olark_id = settings.OLARK_ID
+     recaptcha_site_key = settings.RECAPTCHA_SITE_KEY
++    google_login_enabled = settings.GOOGLE_LOGIN_ENABLED
+     return {'recaptcha_site_key': recaptcha_site_key,
+-            'analytics_id': analytics_id, 'olark_id': olark_id}
++            'analytics_id': analytics_id, 'olark_id': olark_id,
++            'GOOGLE_LOGIN_ENABLED': google_login_enabled}
+diff --git a/templates/components/edem-navigation/edem-navigation.html b/templates/components/edem-navigation/edem-navigation.html
+--- a/templates/components/edem-navigation/edem-navigation.html
++++ b/templates/components/edem-navigation/edem-navigation.html
+@@
+       <div class="content JS-sidebarContent JS-signinContent">
+         <h1 class="header">Entrar</h1>
+ 
++        {% if GOOGLE_LOGIN_ENABLED %}
++        <div class="social">
++          <a class="edem-button -social -google" href="{% use_macro google_url %}">
++            Continuar com Google
++          </a>
++        </div>
++        {% endif %}
++
+         <form class="access JS-loginForm">
+@@
+-        <a class="link" href="/account/password-reset">Esqueceu sua senha?</a>
++        <a class="link" href="/accounts/password/reset/">Esqueceu sua senha?</a>
+@@
+         <p class="info">
+           Ao se cadastrar no e-Democracia você concorda com nossos <a class="link" href="{% use_macro tos_url %}">Termos de Serviço</a>
+         </p>
+ 
++        {% if GOOGLE_LOGIN_ENABLED %}
++        <div class="social">
++          <a class="edem-button -social -google" href="{% use_macro google_url %}">
++            Continuar com Google
++          </a>
++        </div>
++        {% endif %}
++
+         <form class="access JS-signUpForm">

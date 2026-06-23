@@ -1,0 +1,285 @@
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/Dockerfile /tmp/audiencias-5.2/Dockerfile
+--- /tmp/audiencias-before-frontend-step/Dockerfile	2026-05-26 14:29:56.088896961 -0300
++++ /tmp/audiencias-5.2/Dockerfile	2026-05-26 14:20:09.473282297 -0300
+@@ -52,6 +52,7 @@
+ ADD . /var/labhacker/audiencias
+ 
+ RUN npx bower install --allow-root --config.interactive=false && \
++    npm run build:vendor && \
+     python manage.py compress --force && \
+     python manage.py collectstatic --no-input && \
+     python manage.py compilemessages
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/audiencias_publicas/settings.py /tmp/audiencias-5.2/audiencias_publicas/settings.py
+--- /tmp/audiencias-before-frontend-step/audiencias_publicas/settings.py	2026-05-26 14:29:56.088896961 -0300
++++ /tmp/audiencias-5.2/audiencias_publicas/settings.py	2026-05-26 14:20:09.486282336 -0300
+@@ -186,10 +186,8 @@
+ BOWER_INSTALLED_APPS = [
+     'jquery#4.0.0',
+     'foundation-sites#6.9.0',
+-    'mixitup#~2.1.11',
+     'https://github.com/labhackercd/fontastic-labhacker.git',
+     'https://github.com/joewalnes/reconnecting-websocket.git',
+-    'jquery-ui#~1.12.1',
+ ]
+ 
+ BOWER_PATH = os.path.join(BASE_DIR, 'node_modules/.bin/bower')
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/bower.json /tmp/audiencias-5.2/bower.json
+--- /tmp/audiencias-before-frontend-step/bower.json	2026-05-26 14:29:56.087896744 -0300
++++ /tmp/audiencias-5.2/bower.json	2026-05-26 14:20:09.476282306 -0300
+@@ -4,9 +4,7 @@
+   "dependencies": {
+     "jquery": "4.0.0",
+     "foundation-sites": "6.9.0",
+-    "mixitup": "~2.1.11",
+     "fontastic-labhacker": "https://github.com/labhackercd/fontastic-labhacker.git",
+-    "reconnecting-websocket": "https://github.com/joewalnes/reconnecting-websocket.git",
+-    "jquery-ui": "~1.12.1"
++    "reconnecting-websocket": "https://github.com/joewalnes/reconnecting-websocket.git"
+   }
+ }
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/package-lock.json /tmp/audiencias-5.2/package-lock.json
+--- /tmp/audiencias-before-frontend-step/package-lock.json	2026-05-26 14:30:02.674309979 -0300
++++ /tmp/audiencias-5.2/package-lock.json	2026-05-26 14:20:09.481282321 -0300
+@@ -9,6 +9,8 @@
+       "version": "1.0.0",
+       "license": "ISC",
+       "dependencies": {
++        "jquery-ui": "^1.14.2",
++        "mixitup": "^3.3.2",
+         "reconnectingwebsocket": "^1.0.0"
+       },
+       "devDependencies": {
+@@ -3628,6 +3630,21 @@
+       "integrity": "sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==",
+       "dev": true
+     },
++    "node_modules/jquery": {
++      "version": "4.0.0",
++      "resolved": "https://registry.npmjs.org/jquery/-/jquery-4.0.0.tgz",
++      "integrity": "sha512-TXCHVR3Lb6TZdtw1l3RTLf8RBWVGexdxL6AC8/e0xZKEpBflBsjh9/8LXw+dkNFuOyW9B7iB3O1sP7hS0Kiacg==",
++      "license": "MIT"
++    },
++    "node_modules/jquery-ui": {
++      "version": "1.14.2",
++      "resolved": "https://registry.npmjs.org/jquery-ui/-/jquery-ui-1.14.2.tgz",
++      "integrity": "sha512-1gSl7PUjyipa2adSr780Ujk16faicrV7PjPPzPtvWk7tTqBnsqp67NNV9jZK2+BIxUPXWSnIUU/LBCgwgGZE+Q==",
++      "license": "MIT",
++      "dependencies": {
++        "jquery": ">=1.12.0 <5.0.0"
++      }
++    },
+     "node_modules/js-tokens": {
+       "version": "4.0.0",
+       "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz",
+@@ -3812,6 +3829,12 @@
+         "url": "https://github.com/sponsors/ljharb"
+       }
+     },
++    "node_modules/mixitup": {
++      "version": "3.3.2",
++      "resolved": "https://registry.npmjs.org/mixitup/-/mixitup-3.3.2.tgz",
++      "integrity": "sha512-1sW08ijbfWPsn0ORtVpznbNmP7BKnODQtPeWCsrpXXPHR/7Fe7ksDAZzeiU5tDxpUKUe8IGHChE5qClmRlNICQ==",
++      "license": "Apache-2.0"
++    },
+     "node_modules/mkdirp-classic": {
+       "version": "0.5.3",
+       "resolved": "https://registry.npmjs.org/mkdirp-classic/-/mkdirp-classic-0.5.3.tgz",
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/package.json /tmp/audiencias-5.2/package.json
+--- /tmp/audiencias-before-frontend-step/package.json	2026-05-26 14:29:41.409646530 -0300
++++ /tmp/audiencias-5.2/package.json	2026-05-26 14:20:09.478282312 -0300
+@@ -3,6 +3,7 @@
+   "version": "1.0.0",
+   "description": "",
+   "scripts": {
++    "build:vendor": "node scripts/vendor-assets.js",
+     "test": "echo \"Error: no test specified\" && exit 1"
+   },
+   "repository": {
+@@ -27,6 +28,8 @@
+     "sass": "^1.100.0"
+   },
+   "dependencies": {
++    "jquery-ui": "^1.14.2",
++    "mixitup": "^3.3.2",
+     "reconnectingwebsocket": "^1.0.0"
+   },
+   "browserslist": [
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/scripts/vendor-assets.js /tmp/audiencias-5.2/scripts/vendor-assets.js
+--- /tmp/audiencias-before-frontend-step/scripts/vendor-assets.js	1969-12-31 21:00:00.000000000 -0300
++++ /tmp/audiencias-5.2/scripts/vendor-assets.js	2026-05-26 14:26:10.974966115 -0300
+@@ -0,0 +1,55 @@
++const fs = require('fs');
++const path = require('path');
++
++const root = path.resolve(__dirname, '..');
++
++function copyRecursive(source, target) {
++  const stat = fs.statSync(source);
++
++  if (stat.isDirectory()) {
++    fs.mkdirSync(target, { recursive: true });
++
++    for (const entry of fs.readdirSync(source)) {
++      copyRecursive(path.join(source, entry), path.join(target, entry));
++    }
++
++    return;
++  }
++
++  fs.mkdirSync(path.dirname(target), { recursive: true });
++  fs.copyFileSync(source, target);
++}
++
++function fromRoot(...parts) {
++  return path.join(root, ...parts);
++}
++
++const targets = [
++  'static/vendor/jquery-ui',
++  'static/vendor/mixitup',
++  'static/bower_components/jquery-ui',
++  'static/bower_components/mixitup',
++  'public/jquery-ui',
++  'public/mixitup',
++  'public/bower_components/jquery-ui',
++  'public/bower_components/mixitup',
++];
++
++for (const target of targets) {
++  fs.rmSync(fromRoot(target), { recursive: true, force: true });
++}
++
++copyRecursive(
++  fromRoot('node_modules/jquery-ui/dist/jquery-ui.min.js'),
++  fromRoot('static/vendor/jquery-ui/jquery-ui.min.js'),
++);
++
++copyRecursive(
++  fromRoot('node_modules/jquery-ui/dist/themes/flick'),
++  fromRoot('static/vendor/jquery-ui/themes/flick'),
++);
++
++copyRecursive(
++  fromRoot('node_modules/mixitup/dist/mixitup.min.js'),
++  fromRoot('static/vendor/mixitup/mixitup.min.js'),
++);
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/start-web.sh /tmp/audiencias-5.2/start-web.sh
+--- /tmp/audiencias-before-frontend-step/start-web.sh	2026-05-26 14:29:56.089897177 -0300
++++ /tmp/audiencias-5.2/start-web.sh	2026-05-26 14:20:09.483282327 -0300
+@@ -31,6 +31,7 @@
+ 
+ python3 manage.py migrate
+ python3 create_admin.py
++npm run build:vendor
+ python3 manage.py compress --force
+ python3 manage.py collectstatic --no-input
+ 
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/static/js/vendor/jquery.mixitup-v2-adapter.js /tmp/audiencias-5.2/static/js/vendor/jquery.mixitup-v2-adapter.js
+--- /tmp/audiencias-before-frontend-step/static/js/vendor/jquery.mixitup-v2-adapter.js	1969-12-31 21:00:00.000000000 -0300
++++ /tmp/audiencias-5.2/static/js/vendor/jquery.mixitup-v2-adapter.js	2026-05-26 14:20:09.501282382 -0300
+@@ -0,0 +1,45 @@
++(function(window, $) {
++  'use strict';
++
++  var DATA_KEY = 'audiencias.mixitup3';
++
++  function getMixer(element, options) {
++    var mixer = $.data(element, DATA_KEY);
++
++    if (mixer) {
++      return mixer;
++    }
++
++    if (typeof window.mixitup !== 'function') {
++      throw new Error('MixItUp 3 is required before loading jquery.mixitup-v2-adapter.js');
++    }
++
++    mixer = window.mixitup(element, {
++      selectors: (options && options.selectors) || { target: '.mix' },
++    });
++
++    $.data(element, DATA_KEY, mixer);
++
++    return mixer;
++  }
++
++  $.fn.mixItUp = function(action, value) {
++    if (typeof action === 'string') {
++      return this.each(function() {
++        var mixer = getMixer(this);
++
++        if (action === 'sort') {
++          mixer.forceRefresh();
++          mixer.sort(value || 'default:asc');
++        } else if (action === 'destroy') {
++          mixer.destroy();
++          $.removeData(this, DATA_KEY);
++        }
++      });
++    }
++
++    return this.each(function() {
++      getMixer(this, action || {});
++    });
++  };
++})(window, window.jQuery);
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/templates/room.html /tmp/audiencias-5.2/templates/room.html
+--- /tmp/audiencias-before-frontend-step/templates/room.html	2026-05-26 14:29:56.090897394 -0300
++++ /tmp/audiencias-5.2/templates/room.html	2026-05-26 14:20:09.490282348 -0300
+@@ -301,7 +301,8 @@
+ {% endblock %}
+ 
+ {% block extra_js %}
+-  <script type="text/javascript" src="{% static 'mixitup/build/jquery.mixitup.min.js' %}"></script>
++  <script type="text/javascript" src="{% static 'vendor/mixitup/mixitup.min.js' %}"></script>
++  <script type="text/javascript" src="{% static 'js/vendor/jquery.mixitup-v2-adapter.js' %}"></script>
+   <script type="text/javascript" src="{% static 'js/components/read-more-less.js' %}"></script>
+   <script type="text/javascript" src="{% static 'js/components/share-buttons.js' %}"></script>
+   <script src='https://www.youtube.com/iframe_api' async></script>
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/templates/room_questions_list.html /tmp/audiencias-5.2/templates/room_questions_list.html
+--- /tmp/audiencias-before-frontend-step/templates/room_questions_list.html	2026-05-26 14:29:56.091897610 -0300
++++ /tmp/audiencias-5.2/templates/room_questions_list.html	2026-05-26 14:20:09.494282360 -0300
+@@ -53,7 +53,8 @@
+ {% endblock %}
+ 
+ {% block extra_js %}
+-  <script type="text/javascript" src="{% static 'mixitup/build/jquery.mixitup.min.js' %}"></script>
++  <script type="text/javascript" src="{% static 'vendor/mixitup/mixitup.min.js' %}"></script>
++  <script type="text/javascript" src="{% static 'js/vendor/jquery.mixitup-v2-adapter.js' %}"></script>
+   <script>
+     function printQuestions(){
+       window.print();
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/templates/video-list.html /tmp/audiencias-5.2/templates/video-list.html
+--- /tmp/audiencias-before-frontend-step/templates/video-list.html	2026-05-26 14:29:56.089897177 -0300
++++ /tmp/audiencias-5.2/templates/video-list.html	2026-05-26 14:20:09.497282370 -0300
+@@ -4,7 +4,7 @@
+ {% block title %}Audiências Passadas{% endblock %}
+ 
+ {% block extra_css %}
+-  <link rel="stylesheet" href="{% static 'jquery-ui/themes/flick/jquery-ui.css' %}" />
++  <link rel="stylesheet" href="{% static 'vendor/jquery-ui/themes/flick/jquery-ui.css' %}" />
+ {% endblock extra_css %}
+ 
+ {% block main %}
+@@ -36,7 +36,7 @@
+   </main>
+ {% endblock main %}
+ {% block extra_js %}
+-  <script src="{% static 'jquery-ui/jquery-ui.min.js'%}"></script>
++  <script src="{% static 'vendor/jquery-ui/jquery-ui.min.js'%}"></script>
+   <script>
+   $( function() {
+     var dateFormat = "dd/mm/yy",
+diff -ruN '--exclude=.git' '--exclude=.pytest_cache' '--exclude=__pycache__' '--exclude=*.pyc' /tmp/audiencias-before-frontend-step/templates/widget.html /tmp/audiencias-5.2/templates/widget.html
+--- /tmp/audiencias-before-frontend-step/templates/widget.html	2026-05-26 14:29:56.090897394 -0300
++++ /tmp/audiencias-5.2/templates/widget.html	2026-05-26 14:20:09.492282354 -0300
+@@ -207,7 +207,8 @@
+ {% endblock %}
+ 
+ {% block extra_js %}
+-  <script type="text/javascript" src="{% static 'mixitup/build/jquery.mixitup.min.js' %}"></script>
++  <script type="text/javascript" src="{% static 'vendor/mixitup/mixitup.min.js' %}"></script>
++  <script type="text/javascript" src="{% static 'js/vendor/jquery.mixitup-v2-adapter.js' %}"></script>
+   <script type="text/javascript">
+     // This code loads the IFrame Player API code asynchronously.
+     var tag = document.createElement('script');

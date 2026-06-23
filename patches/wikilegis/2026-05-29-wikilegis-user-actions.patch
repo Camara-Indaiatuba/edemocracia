@@ -1,0 +1,97 @@
+--- a/static/javascript/content/modules/load.js
++++ b/static/javascript/content/modules/load.js
+@@ -65,8 +65,11 @@
+   function sendRequest(method, request, data, htmlInsertion = 'insert') {
+     const path = request.path;
+     let url = `${prefixURL}/${path}/`;
+-    if (path[0] === '/') url = path;
+-    if (path[path.length - 1] === '/') url = url.slice(0, url.length - 1);
++    if (path[0] === '/') {
++      url = path;
++    } else if (path[path.length - 1] === '/') {
++      url = url.slice(0, url.length - 1);
++    }
+ 
+     $.ajax({
+       url,
+--- a/public/javascript/content/modules/load.js
++++ b/public/javascript/content/modules/load.js
+@@ -65,8 +65,11 @@
+   function sendRequest(method, request, data, htmlInsertion = 'insert') {
+     const path = request.path;
+     let url = `${prefixURL}/${path}/`;
+-    if (path[0] === '/') url = path;
+-    if (path[path.length - 1] === '/') url = url.slice(0, url.length - 1);
++    if (path[0] === '/') {
++      url = path;
++    } else if (path[path.length - 1] === '/') {
++      url = url.slice(0, url.length - 1);
++    }
+ 
+     $.ajax({
+       url,
+--- a/notification/views.py
++++ b/notification/views.py
+@@ -4,20 +4,21 @@
+ from notification.models import Newsletter
+ 
+ 
+ def render_newsletter_info(request, bill_id=None):
++    periodicity = request.POST.get('periodicity') or 'daily'
+     newsletter, created = Newsletter.objects.get_or_create(user=request.user,
+                                                            bill_id=bill_id)
+     if created:
+-        newsletter.periodicity = request.POST.get('periodicity')
++        newsletter.periodicity = periodicity
+         newsletter.save()
+     else:
+         if newsletter.is_active:
+             newsletter.is_active = False
+         else:
+             newsletter.is_active = True
+-            newsletter.periodicity = request.POST.get('periodicity')
++            newsletter.periodicity = periodicity
+         newsletter.save()
+ 
+     html = render_to_string('bill/_newsletter.html', {'request': request,
+                                                       'bill_id': bill_id})
+     return JsonResponse({'html': html})
+--- a/core/templates/bill/_newsletter.html
++++ b/core/templates/bill/_newsletter.html
+@@ -9,7 +9,7 @@
+     </div>
+ 
+     <div>
+-      <input class="with-gap" value="daily" name="periodicity" type="radio" id="periodicity_daily">
++      <input class="with-gap" value="daily" name="periodicity" type="radio" id="periodicity_daily" checked>
+      <label for="periodicity_daily">{% trans 'Daily' %}</label>
+     </div>
+     <div>
+--- a/static/javascript/content/modules/forms.js
++++ b/static/javascript/content/modules/forms.js
+@@ -66,7 +66,10 @@
+         formEl.reset();
+ 
+         if (segmentType === 'additive') {
+-          wrapperEl.previousElementSibling.innerText = '';
++          const previousEl = wrapperEl.previousElementSibling;
++          if (previousEl) {
++            previousEl.innerText = '';
++          }
+         }
+ 
+         if (segmentType === 'modifier') {
+--- a/public/javascript/content/modules/forms.js
++++ b/public/javascript/content/modules/forms.js
+@@ -66,7 +66,10 @@
+         formEl.reset();
+ 
+         if (segmentType === 'additive') {
+-          wrapperEl.previousElementSibling.innerText = '';
++          const previousEl = wrapperEl.previousElementSibling;
++          if (previousEl) {
++            previousEl.innerText = '';
++          }
+         }
+ 
+         if (segmentType === 'modifier') {

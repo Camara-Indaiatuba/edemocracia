@@ -1,0 +1,510 @@
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/.bowerrc audiencias-5.2/.bowerrc
+--- audiencias-4.0.3/.bowerrc	1969-12-31 21:00:00.000000000 -0300
++++ audiencias-5.2/.bowerrc	2026-05-20 09:27:50.615574265 -0300
+@@ -0,0 +1,3 @@
++{
++  "directory": "static/bower_components"
++}
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/Dockerfile audiencias-5.2/Dockerfile
+--- audiencias-4.0.3/Dockerfile	2026-05-18 08:53:55.568585785 -0300
++++ audiencias-5.2/Dockerfile	2026-05-20 09:27:56.691419860 -0300
+@@ -1,6 +1,6 @@
+ FROM node:22-bookworm-slim AS node
+ 
+-FROM python:3.10-slim-bookworm
++FROM python:3.12-slim-bookworm
+ 
+ ENV PYTHONDONTWRITEBYTECODE=1
+ ENV PYTHONUNBUFFERED=1
+@@ -28,13 +28,29 @@
+ 
+ COPY requirements.txt package.json package-lock.json ./
+ 
+-RUN pip install --no-cache-dir -r requirements.txt gunicorn
++RUN pip install --no-cache-dir -r requirements.txt
++
++RUN python - <<'PY'
++from pathlib import Path
++import channels_presence
++
++base = Path(channels_presence.__file__).resolve().parent
++(base / 'apps.py').write_text(
++    "from django.apps import AppConfig\n\n\n"
++    "class RoomsConfig(AppConfig):\n"
++    "    name = 'channels_presence'\n"
++)
++(base / 'signals.py').write_text(
++    "from django import dispatch\n\n"
++    "presence_changed = dispatch.Signal()\n"
++)
++PY
+ 
+ RUN npm install --no-audit --no-fund
+ 
+ ADD . /var/labhacker/audiencias
+ 
+-RUN python manage.py bower_install --allow-root && \
++RUN npx bower install --allow-root --config.interactive=false && \
+     python manage.py compress --force && \
+     python manage.py collectstatic --no-input && \
+     python manage.py compilemessages
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/accounts/apps.py audiencias-5.2/apps/accounts/apps.py
+--- audiencias-4.0.3/apps/accounts/apps.py	2026-05-15 16:14:49.553977674 -0300
++++ audiencias-5.2/apps/accounts/apps.py	2026-05-20 09:20:51.534915606 -0300
+@@ -1,5 +1,5 @@
+ from django.apps import AppConfig
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ 
+ 
+ class AccountsConfig(AppConfig):
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/accounts/models.py audiencias-5.2/apps/accounts/models.py
+--- audiencias-4.0.3/apps/accounts/models.py	2026-05-15 16:14:49.553977674 -0300
++++ audiencias-5.2/apps/accounts/models.py	2026-05-20 09:20:51.534915606 -0300
+@@ -1,7 +1,7 @@
+ from django.db import models
+ from django.conf import settings
+ from django.contrib.auth.models import AbstractUser
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ 
+ 
+ class User(AbstractUser):
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/core/api.py audiencias-5.2/apps/core/api.py
+--- audiencias-4.0.3/apps/core/api.py	2026-05-15 16:14:49.554977678 -0300
++++ audiencias-5.2/apps/core/api.py	2026-05-20 09:20:57.779428609 -0300
+@@ -31,7 +31,7 @@
+     lookup_field = 'username'
+     queryset = get_user_model().objects.all()
+     serializer_class = UserSerializer
+-    filter_class = UserFilter
++    filterset_class = UserFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.SearchFilter,
+@@ -51,7 +51,7 @@
+         django_filters.DjangoFilterBackend,
+         filters.SearchFilter,
+         filters.OrderingFilter)
+-    filter_fields = ('user', 'vote', 'user__username')
++    filterset_fields = ('user', 'vote', 'user__username')
+     search_fields = ('user', 'vote', 'object_pk')
+     ordering_fields = ('user', 'vote')
+ 
+@@ -83,7 +83,7 @@
+     allowed_methods = ['get']
+     queryset = Message.objects.all()
+     serializer_class = MessageSerializer
+-    filter_class = MessageFilter
++    filterset_class = MessageFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.SearchFilter,
+@@ -119,7 +119,7 @@
+     allowed_methods = ['get']
+     queryset = Question.objects.all()
+     serializer_class = QuestionSerializer
+-    filter_class = QuestionFilter
++    filterset_class = QuestionFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.SearchFilter,
+@@ -148,7 +148,7 @@
+     allowed_methods = ['get']
+     queryset = Room.objects.filter(is_active=True)
+     serializer_class = RoomSerializer
+-    filter_class = RoomFilter
++    filterset_class = RoomFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.SearchFilter,
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/core/models.py audiencias-5.2/apps/core/models.py
+--- audiencias-4.0.3/apps/core/models.py	2026-05-15 16:14:50.631982417 -0300
++++ audiencias-5.2/apps/core/models.py	2026-05-20 09:20:51.535915528 -0300
+@@ -1,5 +1,5 @@
+ from django.db import models
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ from django.conf import settings
+ from django.template.loader import render_to_string
+ from django.utils import timezone
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/core/views.py audiencias-5.2/apps/core/views.py
+--- audiencias-4.0.3/apps/core/views.py	2026-05-18 08:54:06.342568776 -0300
++++ audiencias-5.2/apps/core/views.py	2026-05-20 09:20:51.536915449 -0300
+@@ -1,7 +1,7 @@
+ from django.conf import settings
+ from django.http import (Http404, HttpResponseForbidden, HttpResponseRedirect,
+                          HttpResponseBadRequest, HttpResponse, JsonResponse)
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ from django.contrib.sites.models import Site
+ from apps.core.models import Question, Room, RoomAttachment, Video
+ from apps.core.utils import encrypt
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/notification/apps.py audiencias-5.2/apps/notification/apps.py
+--- audiencias-4.0.3/apps/notification/apps.py	2026-05-15 16:14:49.557977691 -0300
++++ audiencias-5.2/apps/notification/apps.py	2026-05-20 09:20:51.536915449 -0300
+@@ -1,5 +1,5 @@
+ from django.apps import AppConfig
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ 
+ 
+ class NotificationConfig(AppConfig):
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/notification/models.py audiencias-5.2/apps/notification/models.py
+--- audiencias-4.0.3/apps/notification/models.py	2026-05-15 16:14:49.557977691 -0300
++++ audiencias-5.2/apps/notification/models.py	2026-05-20 09:20:51.536915449 -0300
+@@ -1,5 +1,5 @@
+ from django.db import models
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ from apps.core.models import TimestampedMixin, Room
+ 
+ 
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/reports/api.py audiencias-5.2/apps/reports/api.py
+--- audiencias-4.0.3/apps/reports/api.py	2026-05-15 16:14:49.557977691 -0300
++++ audiencias-5.2/apps/reports/api.py	2026-05-20 09:20:57.780428531 -0300
+@@ -36,7 +36,7 @@
+     allowed_methods = ['get']
+     queryset = NewUsers.objects.all()
+     serializer_class = NewUsersSerializer
+-    filter_class = NewUsersFilter
++    filterset_class = NewUsersFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.OrderingFilter
+@@ -65,7 +65,7 @@
+     allowed_methods = ['get']
+     queryset = VotesReport.objects.all()
+     serializer_class = VotesReportSerializer
+-    filter_class = VotesReportFilter
++    filterset_class = VotesReportFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.OrderingFilter
+@@ -94,7 +94,7 @@
+     allowed_methods = ['get']
+     queryset = RoomsReport.objects.all()
+     serializer_class = RoomsReportSerializer
+-    filter_class = RoomsReportFilter
++    filterset_class = RoomsReportFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.OrderingFilter
+@@ -127,7 +127,7 @@
+     allowed_methods = ['get']
+     queryset = QuestionsReport.objects.all()
+     serializer_class = QuestionsReportSerializer
+-    filter_class = QuestionsReportFilter
++    filterset_class = QuestionsReportFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.OrderingFilter
+@@ -156,7 +156,7 @@
+     allowed_methods = ['get']
+     queryset = MessagesReport.objects.all()
+     serializer_class = MessagesReportSerializer
+-    filter_class = MessagesReportFilter
++    filterset_class = MessagesReportFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.OrderingFilter
+@@ -185,7 +185,7 @@
+     allowed_methods = ['get']
+     queryset = ParticipantsReport.objects.all()
+     serializer_class = ParticipantsReportSerializer
+-    filter_class = ParticipantsReportFilter
++    filterset_class = ParticipantsReportFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.OrderingFilter
+@@ -215,7 +215,7 @@
+     allowed_methods = ['get']
+     serializer_class = RoomRankingSerializer
+     pagination_class = LimitOffsetPagination
+-    filter_class = RoomRankingFilter
++    filterset_class = RoomRankingFilter
+     filter_backends = (
+         django_filters.DjangoFilterBackend,
+         filters.OrderingFilter,
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/reports/apps.py audiencias-5.2/apps/reports/apps.py
+--- audiencias-4.0.3/apps/reports/apps.py	2026-05-15 16:14:49.557977691 -0300
++++ audiencias-5.2/apps/reports/apps.py	2026-05-20 09:20:51.537915371 -0300
+@@ -1,5 +1,5 @@
+ from django.apps import AppConfig
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ 
+ 
+ class ReportsConfig(AppConfig):
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/apps/reports/models.py audiencias-5.2/apps/reports/models.py
+--- audiencias-4.0.3/apps/reports/models.py	2026-05-15 16:14:49.557977691 -0300
++++ audiencias-5.2/apps/reports/models.py	2026-05-20 09:20:51.537915371 -0300
+@@ -1,5 +1,5 @@
+ from django.db import models
+-from django.utils.translation import ugettext_lazy as _
++from django.utils.translation import gettext_lazy as _
+ from apps.core.models import TimestampedMixin
+ 
+ 
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/audiencias_publicas/app_configs.py audiencias-5.2/audiencias_publicas/app_configs.py
+--- audiencias-4.0.3/audiencias_publicas/app_configs.py	1969-12-31 21:00:00.000000000 -0300
++++ audiencias-5.2/audiencias_publicas/app_configs.py	2026-05-20 09:25:52.849207225 -0300
+@@ -0,0 +1,6 @@
++from django.apps import AppConfig
++
++
++class ChannelsPresenceConfig(AppConfig):
++    name = 'channels_presence'
++    label = 'channels_presence'
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/audiencias_publicas/settings.py audiencias-5.2/audiencias_publicas/settings.py
+--- audiencias-4.0.3/audiencias_publicas/settings.py	2026-05-18 08:54:02.229575187 -0300
++++ audiencias-5.2/audiencias_publicas/settings.py	2026-05-20 09:36:24.584295710 -0300
+@@ -37,6 +37,7 @@
+     'rest_framework.authtoken',
+     'django_filters',
+     'crispy_forms',
++    'crispy_bootstrap4',
+     'corsheaders',
+     'macros',
+     'drf_yasg',
+@@ -48,14 +49,14 @@
+     'compressor_toolkit',
+     'channels',
+     'django_js_reverse',
+-    'channels_presence',
++    'audiencias_publicas.app_configs.ChannelsPresenceConfig',
+ )
+ 
+ AUTH_USER_MODEL = 'accounts.User'
+ 
+ SITE_ID = 1
+ 
+-CORS_ORIGIN_ALLOW_ALL = True
++CORS_ALLOW_ALL_ORIGINS = True
+ 
+ CORS_ALLOW_METHODS = (
+     'GET',
+@@ -63,8 +64,8 @@
+ )
+ 
+ # Default primary key field type
+-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+-DEFAULT_AUTO_FIELD='django.db.models.AutoField' 
++# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
++DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+ 
+ REST_FRAMEWORK = {
+     # Use Django's standard `django.contrib.auth` permissions,
+@@ -79,6 +80,9 @@
+     'PAGE_SIZE': 100
+ }
+ 
++CRISPY_ALLOWED_TEMPLATE_PACKS = ('bootstrap4',)
++CRISPY_TEMPLATE_PACK = 'bootstrap4'
++
+ CAMARA_LOGIN = config('CAMARA_LOGIN', default=False, cast=bool)
+ QUESTION_MIN_UPVOTES = config('QUESTION_MIN_UPVOTES', default=3, cast=int)
+ GOOGLE_ANALYTICS_ID = config('GOOGLE_ANALYTICS_ID', default='')
+@@ -157,8 +161,6 @@
+ 
+ USE_I18N = True
+ 
+-USE_L10N = True
+-
+ USE_TZ = True
+ 
+ 
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/bower.json audiencias-5.2/bower.json
+--- audiencias-4.0.3/bower.json	1969-12-31 21:00:00.000000000 -0300
++++ audiencias-5.2/bower.json	2026-05-20 09:27:50.616574239 -0300
+@@ -0,0 +1,12 @@
++{
++  "name": "audiencias-publicas",
++  "private": true,
++  "dependencies": {
++    "jquery": "~2.2.0",
++    "foundation-sites": "~6.2.4",
++    "mixitup": "~2.1.11",
++    "fontastic-labhacker": "https://github.com/labhackercd/fontastic-labhacker.git",
++    "reconnecting-websocket": "https://github.com/joewalnes/reconnecting-websocket.git",
++    "jquery-ui": "~1.12.1"
++  }
++}
+diff -ruN '--exclude=.git' '--exclude=*.pyc' '--exclude=__pycache__' audiencias-4.0.3/requirements.txt audiencias-5.2/requirements.txt
+--- audiencias-4.0.3/requirements.txt	2026-05-15 16:21:55.109234250 -0300
++++ audiencias-5.2/requirements.txt	2026-05-20 09:36:24.589295714 -0300
+@@ -1,122 +1,54 @@
+-aioredis==1.3.1
+-amqp==5.0.6
+-asgiref==3.5.1
+-asn1crypto==0.24.0
+-async-timeout==4.0.0
+-attrs==21.2.0
+-autobahn==19.8.1
+-Automat==0.7.0
+-backcall==0.2.0
+-billiard==3.6.4.0
+-celery==5.2.0
+-certifi==2019.6.16
+-cffi==1.17.1
+-channels==3.0.4
+-channels-redis==3.3.1
+-chardet==3.0.4
+-click==8.0.3
+-click-didyoumean==0.3.0
+-click-plugins==1.1.1
+-click-repl==0.2.0
+-constantly==15.1.0
+-coreapi==2.3.3
+-coreschema==0.0.4
+-coverage==6.1.2
+-cryptography==36.0.0
+-daphne==3.0.2
+-decorator==5.1.0
+-defusedxml==0.6.0
+-Deprecated==1.2.13
+-dj-database-url==0.5.0
+-Django==3.2.25
+-django-appconf==1.0.3
+-django-bower==5.2.0
+-django-celery-beat==2.2.1
+-django-celery-results==2.2.0
+-django-compressor==2.4.1
++Django==5.2.14
++asgiref==3.11.1
++sqlparse==0.5.5
++
++psycopg2-binary==2.9.12
++dj-database-url==3.1.2
++python-decouple==3.8
++requests==2.34.2
++pycryptodome==3.23.0
++cryptography==48.0.0
++
++djangorestframework==3.17.1
++django-filter==25.2
++django-cors-headers==4.9.0
++django-constance==4.3.5
++django-crispy-forms==2.6
++crispy-bootstrap4==2026.2
++django-compressor==4.6.0
+ django-compressor-toolkit==0.6.0
+-django-constance==2.8.0
+-django-cors-headers==3.10.0
+-django-crispy-forms==1.13.0
+-django-debug-toolbar==2.0
+-django-filter==2.4.0
+-django-js-reverse==0.9.1
++django-bower==5.2.0
++django-js-reverse==0.10.2
+ django-macros==0.4.0
+-django-picklefield==2.0
+-django-timezone-field==4.2.1
+-djangorestframework==3.12.4
+-drf-yasg==1.20.0
+-Faker==9.8.3
+-hiredis==2.0.0
+-hyperlink==19.0.0
+-idna==2.8
+-incremental==17.5.0
+-inflection==0.5.1
+-iniconfig==1.1.1
+-ipdb==0.13.9
+-ipython==7.29.0
+-itypes==1.2.0
+-jedi==0.18.1
+-Jinja2==3.0.1
+-kombu==5.2.1
+-MarkupSafe==2.0.1
+-matplotlib-inline==0.1.3
+-mixer==7.2.0
+-more-itertools==8.8.0
+-msgpack==1.0.2
+-msgpack-python==0.5.6
+-oauthlib==3.1.0
+-packaging==21.0
+-parso==0.8.2
+-pexpect==4.8.0
+-pickleshare==0.7.5
+-pluggy==0.13.1
+-prompt-toolkit==3.0.22
+-psycopg2-binary==2.9.2
+-ptyprocess==0.7.0
+-py==1.10.0
+-pyasn1==0.4.8
+-pyasn1-modules==0.2.8
+-pycparser==2.19
+-pycryptodome==3.23.0
+-Pygments==2.10.0
+-PyHamcrest==1.9.0
+-PyJWT==1.7.1
+-pyOpenSSL==21.0.0
+-pyparsing==2.4.7
+-pytest==6.2.5
+-pytest-asyncio==0.16.0
+-pytest-cov==3.0.0
+-pytest-django==4.4.0
+-python-crontab==2.5.1
+-python-dateutil==2.8.0
+-python-decouple==3.1
+-python3-openid==3.1.0
+-pytz==2020.1
+-rcssmin==1.0.6
+-redis==4.0.2
+-requests==2.27.1
+-requests-oauthlib==1.2.0
+-rjsmin==1.1.0
+-ruamel.yaml==0.17.13
+-ruamel.yaml.clib==0.2.6
+-rules==2.1
+-service-identity==21.1.0
+-six==1.12.0
+-social-auth-app-django==3.1.0
+-social-auth-core==3.2.0
+-sqlparse==0.3.0
+-text-unidecode==1.3
+-toml==0.10.2
+-traitlets==5.1.1
+-Twisted==19.7.0
+-txaio==18.8.1
+-typing-extensions==3.10.0.2
+-uritemplate==3.0.1
+-urllib3==1.26.8
+-vine==5.0.0
+-wcwidth==0.2.5
+-wrapt==1.13.3
+-zope.interface==5.5.2
+-git+https://github.com/jabguru/django-channels-presence.git@29e76e370c542ae5056fa5af3266721aca1136f9
+-responses==0.17.0
++django-picklefield==3.4.0
++rules==3.5
++drf-yasg==1.21.15
++
++channels==4.3.2
++channels-redis==4.3.0
++daphne==4.2.1
++django-channels-presence==1.0.0
++
++celery==5.6.3
++django-celery-beat==2.9.0
++django-celery-results==2.6.0
++django-timezone-field==7.2.1
++
++social-auth-app-django==5.9.0
++social-auth-core==4.9.1
++python3-openid==3.2.0
++oauthlib==3.3.1
++requests-oauthlib==2.0.0
++
++gunicorn==26.0.0
++
++pytest==8.4.2
++pytest-django==4.12.0
++pytest-asyncio==1.3.0
++pytest-cov==7.1.0
++coverage==7.13.0
++Faker==12.0.1
++mixer==7.2.2
++responses==0.26.0
++ipython==9.9.0
++ipdb==0.13.13

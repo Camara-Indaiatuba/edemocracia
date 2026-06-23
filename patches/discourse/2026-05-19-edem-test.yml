@@ -1,0 +1,50 @@
+# Copiar para `containers/edem-test.yml` dentro do repositório oficial
+# `discourse_docker` para repetir o ensaio de modernização do Discourse.
+#
+# Este arquivo usa banco e credenciais locais de desenvolvimento. Para
+# producao, trocar host, senha, e-mails, SMTP e `DISCOURSE_HOSTNAME`.
+
+templates:
+  - "templates/web.template.yml"
+  - "templates/web.ratelimited.template.yml"
+
+expose:
+  - "127.0.0.1:8090:80"
+
+docker_args: "--network edemocracia_default"
+
+params:
+  version: stable
+
+env:
+  LC_ALL: en_US.UTF-8
+  LANG: en_US.UTF-8
+  LANGUAGE: en_US.UTF-8
+  UNICORN_WORKERS: 1
+  DISCOURSE_HOSTNAME: discourse.localhost
+  DISCOURSE_DEVELOPER_EMAILS: email@admin.com
+  DISCOURSE_SKIP_EMAIL_SETUP: "1"
+  DISCOURSE_SMTP_ADDRESS: localhost
+  DISCOURSE_SMTP_PORT: 25
+  DISCOURSE_DB_SOCKET: ""
+  DISCOURSE_DB_HOST: discourse-pgvector-test
+  DISCOURSE_DB_PORT: 5432
+  DISCOURSE_DB_NAME: discourse_modern_test
+  DISCOURSE_DB_USERNAME: root
+  DISCOURSE_DB_PASSWORD: root
+  DISCOURSE_REDIS_HOST: redis
+  DISCOURSE_REDIS_PORT: 6379
+  DISCOURSE_RELATIVE_URL_ROOT: /expressao
+  DISCOURSE_DISABLE_EMAILS: "yes"
+  DISCOURSE_SSO_SECRET: sso_secret
+
+volumes:
+  - volume:
+      host: /tmp/discourse-modern-shared
+      guest: /shared
+  - volume:
+      host: /tmp/discourse-modern-shared/log/var-log
+      guest: /var/log
+
+run:
+  - exec: echo "e-Democracia Discourse modern rehearsal"

@@ -1,0 +1,188 @@
+diff --git a/core/templates/amendments/_content.html b/core/templates/amendments/_content.html
+--- a/core/templates/amendments/_content.html
++++ b/core/templates/amendments/_content.html
+@@ -43,7 +43,9 @@
+         {% if amendment_type == 'additive' %}
+           {% get_segment_types as segment_types %}
+           <select name="segment_type" id="segment_type" required data-{{amendment_type}}-amendment-select="true">
+-            <option value="{{segment.segment_type.id}}">{{segment.segment_type.presentation_name}}</option>
++            {% if segment.segment_type %}
++              <option value="{{segment.segment_type.id}}">{{segment.segment_type.presentation_name}}</option>
++            {% endif %}
+             {% for segment_type in segment_types %}
+               <option value="{{segment_type.id}}">{{segment_type.presentation_name}}</option>
+             {% endfor %}
+diff --git a/core/templates/segment/_actions_secondary.html b/core/templates/segment/_actions_secondary.html
+--- a/core/templates/segment/_actions_secondary.html
++++ b/core/templates/segment/_actions_secondary.html
+@@ -8,6 +8,7 @@
+     data-amendments="{{segment.id}}"
+     data-tab="1"
+     data-tab-content="amendments"
++    data-tab-content-type="modifier"
+     role="button"
+     tabindex="0"
+   >
+@@ -22,6 +23,7 @@
+     data-amendments="{{segment.id}}"
+     data-tab="2"
+     data-tab-content="amendments"
++    data-tab-content-type="additive"
+     data-hover="segment-add"
+     role="button"
+     tabindex="0"
+@@ -37,6 +39,7 @@
+     data-amendments="{{segment.id}}"
+     data-tab="3"
+     data-tab-content="amendments"
++    data-tab-content-type="supress"
+     role="button"
+     tabindex="0"
+   >
+diff --git a/core/templatetags/wikilegis_utils.py b/core/templatetags/wikilegis_utils.py
+--- a/core/templatetags/wikilegis_utils.py
++++ b/core/templatetags/wikilegis_utils.py
+@@ -9,9 +9,10 @@ register = Library()
+ @register.simple_tag(takes_context=True)
+ def get_segment_types(context):
+     segment = context['segment']
+-    return models.SegmentType.objects.exclude(
+-        id=segment.segment_type.id
+-    ).exclude(editable=False)
++    segment_types = models.SegmentType.objects.exclude(editable=False)
++    if segment.segment_type_id:
++        segment_types = segment_types.exclude(id=segment.segment_type_id)
++    return segment_types
+ 
+ 
+ @register.filter
+diff --git a/core/views.py b/core/views.py
+--- a/core/views.py
++++ b/core/views.py
+@@ -275,24 +275,44 @@ def render_new_amendment(request, segment_id, amendment_type):
+         if amendment_type == 'modifier':
+             amendment = models.ModifierAmendment.objects.create(
+                 content=request.POST.get('content'),
++                segment_type=segment.segment_type,
++                order=segment.order,
++                number=segment.number,
+                 replaced=segment,
+                 author=request.user,
+             )
+ 
+         if amendment_type == 'supress':
+             amendment = models.SupressAmendment.objects.create(
+                 content=request.POST.get('content'),
++                segment_type=segment.segment_type,
++                order=segment.order,
++                number=segment.number,
+                 supressed=segment,
+                 author=request.user,
+             )
+ 
+         if amendment_type == 'additive':
+-            segment_type = models.SegmentType.objects.get(
++            segment_type = models.SegmentType.objects.filter(
+                 pk=request.POST.get('segment_type')
+-            )
++            ).first()
++            if segment_type is None:
++                segment_type = segment.segment_type
++            if segment_type is None:
++                segment_type = models.SegmentType.objects.exclude(
++                    editable=False
++                ).first()
++            if segment_type is None:
++                return JsonResponse(
++                    {'title': _('Oops'),
++                     'message': _('No editable segment type is available.')},
++                    status=400
++                )
+             amendment = models.AdditiveAmendment.objects.create(
+                 content=request.POST.get('content'),
+                 segment_type=segment_type,
++                order=segment.order,
++                number=segment.number,
+                 reference=segment,
+                 author=request.user,
+             )
+diff --git a/public/javascript/content/events.js b/public/javascript/content/events.js
+--- a/public/javascript/content/events.js
++++ b/public/javascript/content/events.js
+@@ -23,10 +23,12 @@ const diff = amendmentDiffModule();
+ function clickEvent(event) {
+   const dataset = event.target.dataset;
+   const parent = event.target.closest('[data-drawer-open], [data-vote-action]');
++  const tabTarget = event.target.closest('[data-tab]');
+   let parentDataset = null;
+   if (parent) {
+     parentDataset = parent.dataset;
+   }
++  const tabDataset = tabTarget ? tabTarget.dataset : null;
+ 
+   if (dataset.drawerOpen) {
+     drawer.open(event.target);
+@@ -47,15 +49,19 @@ function clickEvent(event) {
+     votes.sendVote(parent);
+   }
+ 
+-  if (dataset.tab) {
+-    if (dataset.drawerOpen) {
+-      updatePath(event.target.href);
++  if (tabDataset && tabDataset.tab) {
++    if (tabDataset.drawerOpen) {
++      updatePath(tabTarget.href);
+     } else {
+-      updateHash(event.target.href, event.target.hash);
++      updateHash(tabTarget.href, tabTarget.hash);
+       forms.toggle(false);
+     }
+     const navItemEl = document.querySelector(`.nav__item[data-tab][href="${window.location.hash}"]`);
+     tabs.setActive(navItemEl);
++    const formType = tabDataset.tabContentType || (navItemEl && navItemEl.dataset.tabContentType);
++    if (tabDataset.drawerOpen && formType) {
++      forms.toggle(formType);
++    }
+   }
+ 
+   if (dataset.collapsible) {
+diff --git a/static/javascript/content/events.js b/static/javascript/content/events.js
+--- a/static/javascript/content/events.js
++++ b/static/javascript/content/events.js
+@@ -23,10 +23,12 @@ const diff = amendmentDiffModule();
+ function clickEvent(event) {
+   const dataset = event.target.dataset;
+   const parent = event.target.closest('[data-drawer-open], [data-vote-action]');
++  const tabTarget = event.target.closest('[data-tab]');
+   let parentDataset = null;
+   if (parent) {
+     parentDataset = parent.dataset;
+   }
++  const tabDataset = tabTarget ? tabTarget.dataset : null;
+ 
+   if (dataset.drawerOpen) {
+     drawer.open(event.target);
+@@ -47,15 +49,19 @@ function clickEvent(event) {
+     votes.sendVote(parent);
+   }
+ 
+-  if (dataset.tab) {
+-    if (dataset.drawerOpen) {
+-      updatePath(event.target.href);
++  if (tabDataset && tabDataset.tab) {
++    if (tabDataset.drawerOpen) {
++      updatePath(tabTarget.href);
+     } else {
+-      updateHash(event.target.href, event.target.hash);
++      updateHash(tabTarget.href, tabTarget.hash);
+       forms.toggle(false);
+     }
+     const navItemEl = document.querySelector(`.nav__item[data-tab][href="${window.location.hash}"]`);
+     tabs.setActive(navItemEl);
++    const formType = tabDataset.tabContentType || (navItemEl && navItemEl.dataset.tabContentType);
++    if (tabDataset.drawerOpen && formType) {
++      forms.toggle(formType);
++    }
+   }
+ 
+   if (dataset.collapsible) {

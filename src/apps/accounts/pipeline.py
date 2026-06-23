@@ -1,27 +1,24 @@
 from datetime import datetime
-from requests import request, HTTPError
+from requests import request, RequestException
 from django.core.files.base import ContentFile
 
 
-def save_profile(backend, user, response, *args, **kwargs):
-    if backend.name == 'camara_deputados':
-        user.profile.uf = response.get('uf', '')
-        user.profile.gender = response.get('sexo', '')
-        user.profile.country = response.get('pais', '')
-        user.profile.birthdate = response.get('dataNascimento', '')
-        if user.profile.avatar:
-            user.profile.save()
-        else:
-            url = response.get('foto', '')
-            try:
-                response_image = request('GET', url, verify=False)
-                response_image.raise_for_status()
-            except HTTPError:
-                pass
-            else:
-                user.profile.avatar.save('{0}_cd.jpg'.format(user.username),
-                                         ContentFile(response_image.content))
+def save_avatar(user, url, suffix):
+    if not url or user.profile.avatar:
+        user.profile.save()
+        return
 
+    try:
+        response_image = request('GET', url, timeout=10)
+        response_image.raise_for_status()
+    except RequestException:
+        user.profile.save()
+    else:
+        user.profile.avatar.save('{0}_{1}.jpg'.format(user.username, suffix),
+                                 ContentFile(response_image.content))
+
+
+def save_profile(backend, user, response, *args, **kwargs):
     if backend.name == 'facebook':
         if 'email' in response.get('denied_scopes', '') and not user.email:
             user.email = response.get('id') + '@facebook.com'
@@ -33,30 +30,16 @@ def save_profile(backend, user, response, *args, **kwargs):
         location = response.get('location', '')
         if location:
             user.profile.country = location['name'].split(', ')[1]
-        if user.profile.avatar:
-            user.profile.save()
-        else:
-            url = "http://graph.facebook.com/%s/picture?type=large" % response['id']
-            try:
-                response_image = request('GET', url, verify=False)
-                response_image.raise_for_status()
-            except HTTPError:
-                pass
-            else:
-                user.profile.avatar.save('{0}_fb.jpg'.format(user.username),
-                                         ContentFile(response_image.content))
+        url = "https://graph.facebook.com/%s/picture?type=large" % response['id']
+        save_avatar(user, url, 'fb')
 
     if backend.name == 'google-oauth2':
         user.profile.gender = response.get('gender', '')
-        if response.get('image').get('isDefault') or user.profile.avatar:
+        image = response.get('image') or {}
+        url = image.get('url') or response.get('picture')
+
+        if image.get('isDefault') or not url:
             user.profile.save()
         else:
-            url = response.get('image').get('url').replace('?sz=50', '?sz=200')
-            try:
-                response_image = request('GET', url, verify=False)
-                response_image.raise_for_status()
-            except HTTPError:
-                pass
-            else:
-                user.profile.avatar.save('{0}_g.jpg'.format(user.username),
-                                         ContentFile(response_image.content))
+            url = url.replace('?sz=50', '?sz=200')
+            save_avatar(user, url, 'g')

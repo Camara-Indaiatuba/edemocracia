@@ -1,8 +1,38 @@
 $edem-navigation-height: 32px;
 
-.d-header {
-  position: fixed;
+.edem-topbar > .stick {
+  z-index: 2147483000 !important;
+  pointer-events: auto;
+}
+
+.edem-sidebar > .stick {
+  z-index: 2147482999 !important;
+  pointer-events: auto;
+}
+
+.edem-overlay {
+  z-index: 2147482998 !important;
+}
+
+body.-sidebaropen {
+  #main,
+  #ember-app,
+  .d-header {
+    pointer-events: none;
+  }
+
+  .edem-topbar,
+  .edem-sidebar,
+  .edem-overlay {
+    pointer-events: auto;
+  }
+}
+
+.d-header-wrap {
   top: $edem-navigation-height;
+}
+
+.d-header {
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 1px 4px rgba(0, 0, 0, 0.23);
 }
 

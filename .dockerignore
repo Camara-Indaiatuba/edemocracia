@@ -1,0 +1,12 @@
+.git
+.gitignore
+.pytest_cache
+.venv
+__pycache__
+*.py[cod]
+node_modules
+backups
+src/public
+.env
+.env.*
+docker-compose.prod.yml

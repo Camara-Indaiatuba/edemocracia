@@ -1,0 +1,30 @@
+diff --git a/public/javascript/content/events.js b/public/javascript/content/events.js
+index bf97397..44ef335 100644
+--- a/public/javascript/content/events.js
++++ b/public/javascript/content/events.js
+@@ -58,10 +58,6 @@ function clickEvent(event) {
+     }
+     const navItemEl = document.querySelector(`.nav__item[data-tab][href="${window.location.hash}"]`);
+     tabs.setActive(navItemEl);
+-    const formType = tabDataset.tabContentType || (navItemEl && navItemEl.dataset.tabContentType);
+-    if (tabDataset.drawerOpen && formType) {
+-      forms.toggle(formType);
+-    }
+   }
+ 
+   if (dataset.collapsible) {
+diff --git a/static/javascript/content/events.js b/static/javascript/content/events.js
+index bf97397..44ef335 100644
+--- a/static/javascript/content/events.js
++++ b/static/javascript/content/events.js
+@@ -58,10 +58,6 @@ function clickEvent(event) {
+     }
+     const navItemEl = document.querySelector(`.nav__item[data-tab][href="${window.location.hash}"]`);
+     tabs.setActive(navItemEl);
+-    const formType = tabDataset.tabContentType || (navItemEl && navItemEl.dataset.tabContentType);
+-    if (tabDataset.drawerOpen && formType) {
+-      forms.toggle(formType);
+-    }
+   }
+ 
+   if (dataset.collapsible) {

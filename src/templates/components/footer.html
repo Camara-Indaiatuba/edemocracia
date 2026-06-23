@@ -1,8 +1,12 @@
-{% load staticfiles %}
+{% load static %}
 
 <footer class="footer">
   <img class="logo" src="{% static "img/edem-logo-full.png" %}" alt="e-Democracia" >
   <div class="briefing">
- 	<p class="text">O Wikilegis é parte do e-Democracia, uma ferramenta desenvolvida pelo Laboratório Hacker da Câmara dos Deputados. Tem por objetivo ampliar a participação social no processo legislativo e aproximar cidadãos e seus representantes por meio da interação digital. Encontra-se disponível, em código aberto, para download no Github do <a class="owner" href="https://github.com/eDemocracia">e-Democracia</a>.</p>
+    <p class="text">Esse é o e-Democracia da <span class="owner">{{ site_name }}</span>. Este portal foi criado para ampliar a participação social no processo legislativo e aproximar cidadãos e vereadores por meio da interação digital.</p>
+  </div>
+  <div class="tos">
+    <a class="link" href="/sobre/tos/">Termos de Serviço</a>
+    <span class="description">Condições gerais aplicáveis à utilização do site e de suas ferramentas associadas.</span>
  </div>
 </footer>

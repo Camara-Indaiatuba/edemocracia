@@ -1,16 +1,23 @@
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from apps.accounts.models import UserProfile
+from apps.audiencias.apps import AudienciasConfig
 from registration.views import RegistrationView as BaseRegistrationView
 from registration.models import RegistrationProfile
 from registration.users import UserModel
 from registration import signals
-from django.contrib.auth import login
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import login, logout
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.forms import AuthenticationForm
-from django.utils.decorators import method_decorator
+from django.middleware.csrf import get_token
+from django.shortcuts import redirect
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from apps.core.tasks import default_login
+from apps.discourse.tasks import discourse_login
+from apps.wikilegis.apps import WikilegisConfig
 from apps.accounts import captcha
 from django.views.generic import UpdateView
 from django.contrib import messages
@@ -19,44 +26,56 @@ from django.urls import reverse
 import requests
 
 
+GLOBAL_SESSION_COOKIES = (
+    settings.SESSION_COOKIE_NAME,
+    'audiencias_session',
+    'wikilegis_session',
+    '_forum_session',
+    '_t',
+)
+
+
+def get_client_ip(request):
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
 class CustomRegistrationView(BaseRegistrationView):
     http_method_names = ['post']
-    SEND_ACTIVATION_EMAIL = False
     success_url = 'registration_complete'
     template_name = 'registration/custom_registration_form.html'
 
     registration_profile = RegistrationProfile
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
     def form_invalid(self, form):
-        response = super().form_invalid(form)
-        if self.request.is_ajax():
-            data = {
-                'data': form.errors,
-            }
-            return JsonResponse(data, status=400)
-        else:
-            return response
+        data = {
+            'data': form.errors,
+        }
+        return JsonResponse(data, status=400)
 
     def form_valid(self, form):
-        captcha_response = captcha.verify(form.data['g-recaptcha-response'])
-        if captcha_response['success']:
-            response = super().form_valid(form)
-            if self.request.is_ajax():
-                data = {
-                    'data': _("Please check your email to complete the"
-                              " registration process."),
-                }
-                return JsonResponse(data, status=200)
+        captcha_token = form.data.get('g-recaptcha-response')
+        if not captcha_token:
+            return JsonResponse({'data': captcha.ERRORS['missing-input-response']},
+                                status=401)
+
+        captcha_response = captcha.verify(
+            captcha_token, remote_ip=get_client_ip(self.request))
+        if captcha_response.get('success'):
+            super().form_valid(form)
+            if settings.REGISTRATION_AUTO_ACTIVATE:
+                message = _("Cadastro realizado. Você já pode entrar.")
             else:
-                return response
+                message = _("Please check your email to complete the"
+                            " registration process.")
+            data = {'data': message}
+            return JsonResponse(data, status=200)
         else:
             message = ' '.join(
-                map(lambda x: captcha.ERRORS[x],
-                    captcha_response['error-codes'])
+                map(lambda x: captcha.ERRORS.get(x, x),
+                    captcha_response.get('error-codes', ['bad-request']))
             )
             data = {
                 'data': message,
@@ -79,24 +98,32 @@ class CustomRegistrationView(BaseRegistrationView):
         profile.gender = form.cleaned_data['gender']
         profile.save()
 
+        send_activation_email = (
+            not settings.REGISTRATION_AUTO_ACTIVATE
+            and settings.REGISTRATION_SEND_ACTIVATION_EMAIL)
+
         new_user = self.registration_profile.objects.create_inactive_user(
             new_user=new_user_instance,
             site=site,
-            send_email=self.SEND_ACTIVATION_EMAIL,
+            send_email=send_activation_email,
             request=self.request,
         )
 
-        activation_key = RegistrationProfile.objects.get(
-            user=new_user).activation_key
+        if settings.REGISTRATION_AUTO_ACTIVATE:
+            new_user.is_active = True
+            new_user.save(update_fields=['is_active'])
+        elif settings.REGISTRATION_USE_RDSTATION:
+            activation_key = RegistrationProfile.objects.get(
+                user=new_user).activation_key
 
-        payload = {'token_rdstation': 'd04f2153c158f0f2b17fbf43dac9489f',
-                   'identificador': 'Cadastro no Wikilegis',
-                   'email': new_user.email,
-                   'WIKILEGIS_token': activation_key,
-                   'nome': new_user.first_name}
+            payload = {'token_rdstation': 'd04f2153c158f0f2b17fbf43dac9489f',
+                       'identificador': 'Cadastro no Wikilegis',
+                       'email': new_user.email,
+                       'WIKILEGIS_token': activation_key,
+                       'nome': new_user.first_name}
 
-        requests.post("https://www.rdstation.com.br/api/1.3/conversions",
-                      data=payload)  # to send email
+            requests.post("https://www.rdstation.com.br/api/1.3/conversions",
+                          data=payload, timeout=10)  # to send email
 
         signals.user_registered.send(sender=self.__class__,
                                      user=new_user,
@@ -107,7 +134,6 @@ class CustomRegistrationView(BaseRegistrationView):
         return getattr(settings, 'REGISTRATION_OPEN', True)
 
 
-@csrf_exempt
 def ajax_login(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, request.POST)
@@ -121,6 +147,55 @@ def ajax_login(request):
         return JsonResponse(response_data, status=status_code)
     else:
         return HttpResponse(status=405)
+
+
+@ensure_csrf_cookie
+def ajax_csrf(request):
+    return JsonResponse({'csrfToken': get_token(request)})
+
+
+def ajax_sync_sessions(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'synced': []}, status=401)
+
+    synced = []
+    if (settings.AUDIENCIAS_ENABLED and
+            AudienciasConfig.cookie_name not in request.COOKIES):
+        default_login(request.user, request, AudienciasConfig)
+        if AudienciasConfig.cookie_name in request.set_cookies:
+            synced.append('audiencias')
+
+    if (settings.WIKILEGIS_ENABLED and
+            WikilegisConfig.cookie_name not in request.COOKIES):
+        default_login(request.user, request, WikilegisConfig)
+        if WikilegisConfig.cookie_name in request.set_cookies:
+            synced.append('wikilegis')
+
+    if settings.DISCOURSE_ENABLED and '_t' not in request.COOKIES:
+        discourse_login(sender=None, user=request.user, request=request)
+        if '_t' in request.set_cookies:
+            synced.append('discourse')
+
+    return JsonResponse({'synced': synced})
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def global_logout(request, next_url=None):
+    next_url = (
+        request.GET.get('next') or
+        request.POST.get('next') or
+        next_url or
+        '/'
+    )
+
+    logout(request)
+    response = redirect(next_url)
+
+    for cookie_name in GLOBAL_SESSION_COOKIES:
+        response.delete_cookie(cookie_name)
+
+    return response
 
 
 class ProfileView(UpdateView):

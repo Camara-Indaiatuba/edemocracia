@@ -1,0 +1,10 @@
+--- a/templates/components/edem-navigation/edem-navigation.html
++++ b/templates/components/edem-navigation/edem-navigation.html
+@@ -47,6 +47,7 @@
+         <a class="edem-button" href="{% use_macro profile_url %}">Editar Perfil</a>
+         <form class="JS-logoutForm" action="{% use_macro logout_url %}" method="post">
+           {% csrf_token %}
++          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+           <button class="edem-button -negative" type="submit">Sair</button>
+         </form>
+       </div>

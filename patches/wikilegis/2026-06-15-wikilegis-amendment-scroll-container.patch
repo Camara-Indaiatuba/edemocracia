@@ -1,0 +1,116 @@
+diff --git a/public/javascript/content/modules/forms.js b/public/javascript/content/modules/forms.js
+index 7b53ef9..902e717 100644
+--- a/public/javascript/content/modules/forms.js
++++ b/public/javascript/content/modules/forms.js
+@@ -87,11 +87,7 @@ function formsModule() {
+ 
+         toggle(false);
+         if (newAmendmentEl) {
+-          newAmendmentEl.scrollIntoView({
+-            block: 'center',
+-            inline: 'nearest',
+-            behavior: 'smooth',
+-          });
++          setTimeout(() => revealAmendment(newAmendmentEl), 350);
+         }
+       });
+     } else {
+@@ -120,6 +116,29 @@ function formsModule() {
+     }
+   }
+ 
++  function revealAmendment(amendmentEl) {
++    const scrollContainer = amendmentEl.closest('.content__amendments');
++    if (!scrollContainer) {
++      amendmentEl.scrollIntoView({
++        block: 'nearest',
++        inline: 'nearest',
++        behavior: 'smooth',
++      });
++      return;
++    }
++
++    window.requestAnimationFrame(() => {
++      const containerRect = scrollContainer.getBoundingClientRect();
++      const amendmentRect = amendmentEl.getBoundingClientRect();
++      const targetTop = scrollContainer.scrollTop + amendmentRect.top - containerRect.top - 16;
++
++      scrollContainer.scrollTo({
++        top: Math.max(0, targetTop),
++        behavior: 'smooth',
++      });
++    });
++  }
++
+   function toggle(form) {
+     const wrapperEl = document.querySelector('[data-form-visible]');
+     wrapperEl.dataset.formVisible = form;
+diff --git a/public/styles/templates/amendments/_item.scss b/public/styles/templates/amendments/_item.scss
+index 758954a..2c11eb0 100644
+--- a/public/styles/templates/amendments/_item.scss
++++ b/public/styles/templates/amendments/_item.scss
+@@ -1,5 +1,6 @@
+ .amendment {
+   position: relative;
++  scroll-margin: 1rem 0;
+ 
+   + .amendment {
+     margin-top: .5em;
+diff --git a/static/javascript/content/modules/forms.js b/static/javascript/content/modules/forms.js
+index 7b53ef9..902e717 100644
+--- a/static/javascript/content/modules/forms.js
++++ b/static/javascript/content/modules/forms.js
+@@ -87,11 +87,7 @@ function formsModule() {
+ 
+         toggle(false);
+         if (newAmendmentEl) {
+-          newAmendmentEl.scrollIntoView({
+-            block: 'center',
+-            inline: 'nearest',
+-            behavior: 'smooth',
+-          });
++          setTimeout(() => revealAmendment(newAmendmentEl), 350);
+         }
+       });
+     } else {
+@@ -120,6 +116,29 @@ function formsModule() {
+     }
+   }
+ 
++  function revealAmendment(amendmentEl) {
++    const scrollContainer = amendmentEl.closest('.content__amendments');
++    if (!scrollContainer) {
++      amendmentEl.scrollIntoView({
++        block: 'nearest',
++        inline: 'nearest',
++        behavior: 'smooth',
++      });
++      return;
++    }
++
++    window.requestAnimationFrame(() => {
++      const containerRect = scrollContainer.getBoundingClientRect();
++      const amendmentRect = amendmentEl.getBoundingClientRect();
++      const targetTop = scrollContainer.scrollTop + amendmentRect.top - containerRect.top - 16;
++
++      scrollContainer.scrollTo({
++        top: Math.max(0, targetTop),
++        behavior: 'smooth',
++      });
++    });
++  }
++
+   function toggle(form) {
+     const wrapperEl = document.querySelector('[data-form-visible]');
+     wrapperEl.dataset.formVisible = form;
+diff --git a/static/styles/templates/amendments/_item.scss b/static/styles/templates/amendments/_item.scss
+index 758954a..2c11eb0 100644
+--- a/static/styles/templates/amendments/_item.scss
++++ b/static/styles/templates/amendments/_item.scss
+@@ -1,5 +1,6 @@
+ .amendment {
+   position: relative;
++  scroll-margin: 1rem 0;
+ 
+   + .amendment {
+     margin-top: .5em;

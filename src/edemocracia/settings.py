@@ -1,8 +1,16 @@
-from decouple import config, Csv
+from decouple import config
 import django.conf.global_settings as default
+import mimetypes
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+mimetypes.add_type('image/webp', '.webp', True)
+
+
+def csv_config(name, default=''):
+    value = config(name, default=default)
+    return [item.strip() for item in value.split(',') if item.strip()]
 
 # APPLICATION SETTINGS
 DEBUG = config('DEBUG', cast=bool, default=True)
@@ -19,12 +27,17 @@ RECAPTCHA_PRIVATE_KEY = config(
 
 SITE_NAME = config('SITE_NAME', default='Nome do site')
 SITE_LOGO = config('SITE_LOGO', default='https://exemple.com/img.png')
-SITE_URL = config('SITE_NAME', default='http://localhost:8000')
+SITE_LOGO_TEXT_LINE = config('SITE_LOGO_TEXT_LINE',
+                             default='Camara Municipal')
+SITE_LOGO_TEXT_CITY = config('SITE_LOGO_TEXT_CITY',
+                             default='Nome da Cidade')
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
 SITE_ID = 1
-ALLOWED_HOSTS = config('ALLOWED_HOSTS',
-                       cast=Csv(lambda x: x.strip().strip(',').strip()),
-                       default='*')
+ALLOWED_HOSTS = csv_config('ALLOWED_HOSTS', default='*')
+REVPROXY = {
+    'QUOTE_SPACES_AS_PLUS': False,
+}
 
 DATABASES = {
     'default': {
@@ -108,10 +121,15 @@ INCLUDE_AUTH_URLS = False
 REGISTRATION_FORM = 'apps.accounts.forms.SignUpAjaxForm'
 ACCOUNT_ACTIVATION_DAYS = 7
 REGISTRATION_AUTO_LOGIN = True
+REGISTRATION_AUTO_ACTIVATE = config('REGISTRATION_AUTO_ACTIVATE',
+                                    default=False, cast=bool)
+REGISTRATION_SEND_ACTIVATION_EMAIL = config(
+    'REGISTRATION_SEND_ACTIVATION_EMAIL', default=True, cast=bool)
+REGISTRATION_USE_RDSTATION = config('REGISTRATION_USE_RDSTATION',
+                                    default=False, cast=bool)
 
 # AUTHENTICATION
 AUTHENTICATION_BACKENDS = (
-    'apps.accounts.backends.CamaraOAuth2',
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.facebook.FacebookOAuth2',
     'apps.accounts.backends.AuthenticationEmailBackend',
@@ -149,17 +167,26 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
     'fields': 'id,name,email,gender,picture,birthday,location'
 }
 
-SOCIAL_AUTH_CAMARA_DEPUTADOS_KEY = config('SOCIAL_AUTH_CD_KEY', default='')
-SOCIAL_AUTH_CAMARA_DEPUTADOS_SECRET = config('SOCIAL_AUTH_CD_SECRET',
-                                             default='')
-SOCIAL_AUTH_CAMARA_DEPUTADOS_VERIFY_SSL = config('SOCIAL_AUTH_CD_VERIFY_SSL',
-                                                 default=True, cast=bool)
-CAMARA_DEPUTADOS_AUTHORIZATION_URL = config('CD_AUTHORIZATION_URL', default='')
-CAMARA_DEPUTADOS_ACCESS_TOKEN_URL = config('CD_ACCESS_TOKEN_URL', default='')
-CAMARA_DEPUTADOS_METADATA_URL = config('CD_METADATA_URL', default='')
-
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = config('SOCIAL_AUTH_REDIRECT_IS_HTTPS',
                                        default=True, cast=bool)
+
+# SECURITY SETTINGS
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS',
+                                        default=False, cast=bool)
+SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
+SECURE_CONTENT_TYPE_NOSNIFF = config('SECURE_CONTENT_TYPE_NOSNIFF',
+                                     default=True, cast=bool)
+SECURE_BROWSER_XSS_FILTER = config('SECURE_BROWSER_XSS_FILTER',
+                                   default=True, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE',
+                               default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+CSRF_TRUSTED_ORIGINS = csv_config('CSRF_TRUSTED_ORIGINS')
+X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', default='SAMEORIGIN')
+INTERNAL_API_KEY = config('INTERNAL_API_KEY', default='')
 
 # API
 REST_FRAMEWORK = {
@@ -195,6 +222,7 @@ EMAIL_PORT = config('EMAIL_PORT', cast=int, default=587)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool, default=True)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', cast=bool, default=False)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='')
 EMAIL_BACKEND = config('EMAIL_BACKEND',
                        default='django.core.mail.backends.console.EmailBackend')
@@ -247,23 +275,20 @@ COMPRESS_PRECOMPILERS = [
 
 NODE_MODULES = os.path.join(os.path.dirname(BASE_DIR), 'node_modules')
 COMPRESS_NODE_MODULES = NODE_MODULES
-COMPRESS_NODE_SASS_BIN = os.path.join(NODE_MODULES, '.bin/node-sass')
+COMPRESS_NODE_SASS_BIN = os.path.join(NODE_MODULES, '.bin/sass')
 COMPRESS_POSTCSS_BIN = os.path.join(NODE_MODULES, '.bin/postcss')
 COMPRESS_OFFLINE = config('COMPRESS_OFFLINE', default=False)
 
-if not DEBUG:
-    COMPRESS_SCSS_COMPILER_CMD = '{node_sass_bin}' \
-                                 ' --source-map true' \
-                                 ' --source-map-embed true' \
-                                 ' --source-map-contents true' \
-                                 ' --output-style expanded' \
-                                 ' {paths} "{infile}" "{outfile}"' \
-                                 ' &&' \
-                                 ' {postcss_bin}' \
-                                 ' --use "{node_modules}/autoprefixer"' \
-                                 ' --autoprefixer.browsers' \
-                                 ' "{autoprefixer_browsers}"' \
-                                 ' -r "{outfile}"'
+COMPRESS_SCSS_COMPILER_CMD = '{node_sass_bin}' \
+                             ' --source-map' \
+                             ' --embed-sources' \
+                             ' --style=expanded' \
+                             ' --load-path "{node_modules}"' \
+                             ' "{infile}" "{outfile}"' \
+                             ' &&' \
+                             ' {postcss_bin}' \
+                             ' --use autoprefixer' \
+                             ' --replace "{outfile}"'
 
 # E-DEMOCRACIA PLUGINS
 WIKILEGIS_ENABLED = config('WIKILEGIS_ENABLED', default=False, cast=bool)

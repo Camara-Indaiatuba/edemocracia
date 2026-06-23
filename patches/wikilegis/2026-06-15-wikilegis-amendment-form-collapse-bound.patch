@@ -1,0 +1,58 @@
+diff --git a/public/javascript/content/modules/forms.js b/public/javascript/content/modules/forms.js
+index 902e717..a705906 100644
+--- a/public/javascript/content/modules/forms.js
++++ b/public/javascript/content/modules/forms.js
+@@ -139,14 +139,22 @@ function formsModule() {
+     });
+   }
+ 
++  function getNavCollapseHeight(navWrapper) {
++    const navText = navWrapper.querySelector('[data-nav-text]');
++    if (!navText) return 0;
++
++    const tabsEl = navWrapper.querySelector('.amendments__nav');
++    const safeLimit = tabsEl ? tabsEl.offsetHeight + 16 : 64;
++    return Math.min(navText.offsetHeight + 1, safeLimit);
++  }
++
+   function toggle(form) {
+     const wrapperEl = document.querySelector('[data-form-visible]');
+     wrapperEl.dataset.formVisible = form;
+ 
+     const navWrapper = document.querySelector('[data-nav-wrapper]');
+     if (form) {
+-      const textHeight = document.querySelector('[data-nav-text]').offsetHeight;
+-      navWrapper.style.marginTop = `-${textHeight + 1}px`;
++      navWrapper.style.marginTop = `-${getNavCollapseHeight(navWrapper)}px`;
+     } else {
+       navWrapper.removeAttribute('style');
+     }
+diff --git a/static/javascript/content/modules/forms.js b/static/javascript/content/modules/forms.js
+index 902e717..a705906 100644
+--- a/static/javascript/content/modules/forms.js
++++ b/static/javascript/content/modules/forms.js
+@@ -139,14 +139,22 @@ function formsModule() {
+     });
+   }
+ 
++  function getNavCollapseHeight(navWrapper) {
++    const navText = navWrapper.querySelector('[data-nav-text]');
++    if (!navText) return 0;
++
++    const tabsEl = navWrapper.querySelector('.amendments__nav');
++    const safeLimit = tabsEl ? tabsEl.offsetHeight + 16 : 64;
++    return Math.min(navText.offsetHeight + 1, safeLimit);
++  }
++
+   function toggle(form) {
+     const wrapperEl = document.querySelector('[data-form-visible]');
+     wrapperEl.dataset.formVisible = form;
+ 
+     const navWrapper = document.querySelector('[data-nav-wrapper]');
+     if (form) {
+-      const textHeight = document.querySelector('[data-nav-text]').offsetHeight;
+-      navWrapper.style.marginTop = `-${textHeight + 1}px`;
++      navWrapper.style.marginTop = `-${getNavCollapseHeight(navWrapper)}px`;
+     } else {
+       navWrapper.removeAttribute('style');
+     }

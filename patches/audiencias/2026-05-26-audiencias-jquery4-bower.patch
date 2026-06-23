@@ -1,0 +1,56 @@
+diff --git a/audiencias_publicas/settings.py b/audiencias_publicas/settings.py
+index d0c61b5..912a04f 100644
+--- a/audiencias_publicas/settings.py
++++ b/audiencias_publicas/settings.py
+@@ -184,8 +184,8 @@ STATICFILES_FINDERS = [
+ BOWER_COMPONENTS_ROOT = os.path.join(BASE_DIR, 'static')
+ 
+ BOWER_INSTALLED_APPS = [
+-    'jquery#~2.2.0',
+-    'foundation-sites#~6.2.4',
++    'jquery#4.0.0',
++    'foundation-sites#6.9.0',
+     'mixitup#~2.1.11',
+     'https://github.com/labhackercd/fontastic-labhacker.git',
+     'https://github.com/joewalnes/reconnecting-websocket.git',
+diff --git a/bower.json b/bower.json
+index acd8a84..e19ec7b 100644
+--- a/bower.json
++++ b/bower.json
+@@ -2,8 +2,8 @@
+   "name": "audiencias-publicas",
+   "private": true,
+   "dependencies": {
+-    "jquery": "~2.2.0",
+-    "foundation-sites": "~6.2.4",
++    "jquery": "4.0.0",
++    "foundation-sites": "6.9.0",
+     "mixitup": "~2.1.11",
+     "fontastic-labhacker": "https://github.com/labhackercd/fontastic-labhacker.git",
+     "reconnecting-websocket": "https://github.com/joewalnes/reconnecting-websocket.git",
+diff --git a/static/js/helpers/cookies.js b/static/js/helpers/cookies.js
+index f45ca91..058e353 100644
+--- a/static/js/helpers/cookies.js
++++ b/static/js/helpers/cookies.js
+@@ -3,7 +3,7 @@ function getCookie(name) {
+     if (document.cookie && document.cookie !== '') {
+         var cookies = document.cookie.split(';');
+         for (var i = 0; i < cookies.length; i++) {
+-            var cookie = jQuery.trim(cookies[i]);
++            var cookie = cookies[i].trim();
+             // Does this cookie string begin with the name we want?
+             if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+diff --git a/templates/components/edem-navigation/static/edem-navigation/js/edem-navigation.js b/templates/components/edem-navigation/static/edem-navigation/js/edem-navigation.js
+index 0a3dd6c..57171dd 100644
+--- a/templates/components/edem-navigation/static/edem-navigation/js/edem-navigation.js
++++ b/templates/components/edem-navigation/static/edem-navigation/js/edem-navigation.js
+@@ -58,7 +58,7 @@ function getCookie(name) {
+   if (document.cookie && document.cookie !== '') {
+     var cookies = document.cookie.split(';');
+     for (var i = 0; i < cookies.length; i++) {
+-      var cookie = $.trim(cookies[i]);
++      var cookie = cookies[i].trim();
+       if (cookie.substring(0, name.length + 1) === (name + '=')) {
+         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+         break;

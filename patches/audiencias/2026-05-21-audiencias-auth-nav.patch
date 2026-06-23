@@ -1,0 +1,322 @@
+diff --git a/templates/components/base.html b/templates/components/base.html
+index 41c742a..617b6c1 100644
+--- a/templates/components/base.html
++++ b/templates/components/base.html
+@@ -77,7 +77,7 @@
+ 
+         {# edem-navigation scripts #}
+         <script type="text/javascript" src="{% static 'edem-navigation/js/vendor/ua-parser.min.js' %}"></script>
+-        <script type="text/javascript" src="{% static 'edem-navigation/js/edem-navigation.js' %}"></script>
++        <script type="text/javascript" src="{% static 'edem-navigation/js/edem-navigation.js' %}?v=20260521-auth-sync"></script>
+       {% endblock foot_js %}
+ 
+       {% block extra_js %}
+diff --git a/edem-navigation.html b/edem-navigation.html
+index 09dfe9f..7f94e73 100644
+--- a/edem-navigation.html
++++ b/edem-navigation.html
+@@ -53,7 +53,10 @@
+         {% if not CAMARA_LOGIN %}
+         <a class="edem-button" href="{% use_macro profile_url %}">Editar Perfil</a>
+         {% endif %}
+-        <a class="edem-button -negative" href="{% use_macro logout_url %}">Sair</a>
++        <form class="JS-logoutForm" action="{% use_macro logout_url %}" method="post">
++          {% csrf_token %}
++          <button class="edem-button -negative" type="submit">Sair</button>
++        </form>
+       </div>
+ 
+     {% else %}
+@@ -61,16 +64,8 @@
+       <div class="content JS-sidebarContent JS-signinContent">
+         <h1 class="header">Entrar</h1>
+ 
+-        <div class="social">
+-            <a class="edem-button -social -facebook" href="{% use_macro facebook_url %}">
+-              Continuar com Facebook
+-            </a>
+-            <a class="edem-button -social -google" href="{% use_macro google_url %}">
+-              Continuar com Google
+-            </a>
+-        </div>
+-
+         <form class="access JS-loginForm">
++          {% csrf_token %}
+           <div class="form-field">
+             <input class="input JS-formInput" id="id_username" name="username">
+             <label class="label" for="id_username"><span class="labeltext">Endereço de email</span></label>
+@@ -103,16 +98,8 @@
+           Ao se cadastrar no e-Democracia você concorda com nossos <a class="link" href="{% use_macro tos_url %}">Termos de Serviço</a>
+         </p>
+ 
+-        <div class="social">
+-            <a class="edem-button -social -facebook" href="{% use_macro facebook_url %}">
+-              Continuar com Facebook
+-            </a>
+-            <a class="edem-button -social -google" href="{% use_macro google_url %}">
+-              Continuar com Google
+-            </a>
+-        </div>
+-
+         <form class="access JS-signUpForm">
++          {% csrf_token %}
+           <div class="form-field">
+             <input class="input JS-formInput" id="mail" name="email" type="email">
+             <label class="label" for="mail"><span class="labeltext">Endereço de email *</span></label>
+diff --git a/static/edem-navigation/js/edem-navigation.js b/static/edem-navigation/js/edem-navigation.js
+index 9a0194a..0a3dd6c 100644
+--- a/static/edem-navigation/js/edem-navigation.js
++++ b/static/edem-navigation/js/edem-navigation.js
+@@ -43,16 +43,69 @@ function showError(errorMessage) {
+   $('.JS-accessError').text(errorMessage);
+ }
+ 
+-function showSuccessSignupMessage() {
++function showSuccessSignupMessage(message) {
+ // Replace signup content html with our success message.
+   var userEmail = $('#mail').val();
+-  var successMessage = "Para ativar sua conta, siga as instruções enviadas para o email que você forneceu (<span class='highlight'>" + userEmail + "</span>).";
++  var successMessage = message || "Cadastro realizado. Você já pode entrar com o email que você forneceu (<span class='highlight'>" + userEmail + "</span>).";
+   var thanksElement = $('<p/>').addClass('success').text('Obrigado por se cadastrar!')
+   var successElement = $('<p/>').addClass('success').html(successMessage);
+ 
+   $('.JS-signupContent').addClass('JS-signupFinished').html(thanksElement).append(successElement);
+ }
+ 
++function getCookie(name) {
++  var cookieValue = null;
++  if (document.cookie && document.cookie !== '') {
++    var cookies = document.cookie.split(';');
++    for (var i = 0; i < cookies.length; i++) {
++      var cookie = $.trim(cookies[i]);
++      if (cookie.substring(0, name.length + 1) === (name + '=')) {
++        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
++        break;
++      }
++    }
++  }
++  return cookieValue;
++}
++
++function csrfHeaders() {
++  var token = getCookie('csrftoken');
++  return token ? {'X-CSRFToken': token} : {};
++}
++
++function updateCsrfToken(token) {
++  if (token) {
++    $('input[name="csrfmiddlewaretoken"]').val(token);
++  }
++}
++
++function refreshCsrfToken() {
++  return $.ajax({
++    type: 'GET',
++    url: '/accounts/ajax/csrf/',
++    cache: false,
++    dataType: 'json'
++  }).then(function(response) {
++    updateCsrfToken(response.csrfToken);
++    return response.csrfToken;
++  });
++}
++
++function syncExternalSessions() {
++  $.ajax({
++    type: 'GET',
++    url: '/accounts/ajax/sync-sessions/',
++    cache: false,
++    dataType: 'json',
++    success: function(response) {
++      var synced = response.synced || [];
++      if (synced.length && location.pathname.match(/^\/(audiencias|wikilegis|expressao)(\/|$)/)) {
++        location.reload();
++      }
++    }
++  });
++}
++
+ // Resize reCAPTCHA on window resize
+ $(window).resize(function(){
+   if ($('body').hasClass('-sidebaropen')) {
+@@ -139,6 +192,22 @@ $('.JS-closeAccessError').click(function(){
+   $('.JS-accessErrorBox').attr('hidden', '');
+ });
+ 
++$('.JS-logoutForm').submit(function(event) {
++  event.preventDefault();
++  var logoutForm = this;
++  var submitButton = $(logoutForm).find('button[type="submit"]');
++
++  submitButton.addClass('-loading');
++  refreshCsrfToken()
++    .done(function() {
++      logoutForm.submit();
++    })
++    .fail(function() {
++      submitButton.removeClass('-loading');
++      showError("Ocorreu um erro no servidor, tente novamente em alguns instantes.");
++    });
++});
++
+ // Ajax calls for login and signup
+ $('.JS-loginForm').submit(function(event) {
+   event.preventDefault();
+@@ -148,33 +217,39 @@ $('.JS-loginForm').submit(function(event) {
+   if (loginForm.hasClass('JS-submitting')) {
+     return false;
+   } else {
+-    $.ajax({
+-      type:"POST",
+-      url: '/accounts/ajax/login/',
+-      data: $(event.target).serialize(),
+-      beforeSend: function() {
+-        loginForm.addClass('JS-submitting');
+-        submitButton.addClass('-loading');
+-      },
+-      success: function(response){
+-        location.reload();
+-      },
+-      error: function(jqXRH){
+-        loginForm.removeClass('JS-submitting');
+-        submitButton.removeClass('-loading');
++    loginForm.addClass('JS-submitting');
++    submitButton.addClass('-loading');
++
++    refreshCsrfToken().done(function() {
++      $.ajax({
++        type:"POST",
++        url: '/accounts/ajax/login/',
++        headers: csrfHeaders(),
++        data: $(event.target).serialize(),
++        success: function(response){
++          location.reload();
++        },
++        error: function(jqXRH){
++          loginForm.removeClass('JS-submitting');
++          submitButton.removeClass('-loading');
+ 
+-        if (jqXRH.status == 0) {
+-          showError("Verifique sua conexão com a internet.")
+-        } else if (jqXRH.status == 401) {
+-          $('.JS-inputError').text('');
+-          $(event.target)
+-            .find('.JS-inputError')
+-            .text(jqXRH.responseJSON['data'])
+-            .removeAttr('hidden');
+-        } else {
+-          showError("Ocorreu um erro no servidor, tente novamente em alguns instantes.");
++          if (jqXRH.status == 0) {
++            showError("Verifique sua conexão com a internet.")
++          } else if (jqXRH.status == 401) {
++            $('.JS-inputError').text('');
++            $(event.target)
++              .find('.JS-inputError')
++              .text(jqXRH.responseJSON['data'])
++              .removeAttr('hidden');
++          } else {
++            showError("Ocorreu um erro no servidor, tente novamente em alguns instantes.");
++          }
+         }
+-      }
++      });
++    }).fail(function() {
++        loginForm.removeClass('JS-submitting');
++        submitButton.removeClass('-loading');
++        showError("Ocorreu um erro no servidor, tente novamente em alguns instantes.");
+     });
+   }
+ 
+@@ -192,48 +267,56 @@ $('.JS-signUpForm').submit(function(event) {
+     return false;
+ 
+   } else {
+-    $.ajax({
+-      type:"POST",
+-      url: '/accounts/ajax/signup/',
+-      data: $(event.target).serialize(),
+-      beforeSend: function() {
+-        signUpForm.addClass('JS-submitting');
+-        submitButton.addClass('-loading');
+-      },
+-      success: function(response){
+-        showSuccessSignupMessage();
+-      },
+-
+-      error: function(jqXRH) {
+-        signUpForm.removeClass('JS-submitting');
+-        submitButton.removeClass('-loading');
++    signUpForm.addClass('JS-submitting');
++    submitButton.addClass('-loading');
++
++    refreshCsrfToken().done(function() {
++      $.ajax({
++        type:"POST",
++        url: '/accounts/ajax/signup/',
++        headers: csrfHeaders(),
++        data: $(event.target).serialize(),
++        success: function(response){
++          showSuccessSignupMessage(response.data);
++        },
++
++        error: function(jqXRH) {
++          signUpForm.removeClass('JS-submitting');
++          submitButton.removeClass('-loading');
+ 
+-        grecaptcha.reset();
+-        $("#g-recaptcha-response").val("");
+-        if (jqXRH.status == 0) {
+-          showError('Verifique sua conexão com a internet.');
+-        } else if (jqXRH.status == 400) {
+-          $('.JS-inputError').text('');
+-          $.each(jqXRH.responseJSON["data"], function(key, value) {
+-            if (key != '__all__') {
+-              $(event.target)
+-                .find('[data-input-name="'+key+'"]')
+-                .text(value)
+-                .removeAttr('hidden');
+-            } else {
+-              showError(value);
+-            }
+-          });
+-        } else if (jqXRH.status == 401) {
+-          showError(jqXRH.responseJSON["data"])
+-        } else {
+-          showError("Ocorreu um erro no servidor, tente novamente em alguns instantes.");
++          grecaptcha.reset();
++          $("#g-recaptcha-response").val("");
++          if (jqXRH.status == 0) {
++            showError('Verifique sua conexão com a internet.');
++          } else if (jqXRH.status == 400) {
++            $('.JS-inputError').text('');
++            $.each(jqXRH.responseJSON["data"], function(key, value) {
++              if (key != '__all__') {
++                $(event.target)
++                  .find('[data-input-name="'+key+'"]')
++                  .text(value)
++                  .removeAttr('hidden');
++              } else {
++                showError(value);
++              }
++            });
++          } else if (jqXRH.status == 401) {
++            showError(jqXRH.responseJSON["data"])
++          } else {
++            showError("Ocorreu um erro no servidor, tente novamente em alguns instantes.");
++          }
+         }
+-      }
++      });
++    }).fail(function() {
++        signUpForm.removeClass('JS-submitting');
++        submitButton.removeClass('-loading');
++        showError("Ocorreu um erro no servidor, tente novamente em alguns instantes.");
+     });
+   }
+ });
+ 
++syncExternalSessions();
++
+ // XXX This should be exclusively on Audiencias Plugin whenever is possible
+ if (location.href.match(/audiencias/)) {
+   $(document).on('click', 'a[href^="/home/?next="]', function(e){

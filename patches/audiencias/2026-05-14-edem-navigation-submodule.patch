@@ -1,0 +1,32 @@
+diff --git a/edem-navigation.html b/edem-navigation.html
+index 09dfe9f..5b3631e 100644
+--- a/edem-navigation.html
++++ b/edem-navigation.html
+@@ -53,7 +53,10 @@
+         {% if not CAMARA_LOGIN %}
+         <a class="edem-button" href="{% use_macro profile_url %}">Editar Perfil</a>
+         {% endif %}
+-        <a class="edem-button -negative" href="{% use_macro logout_url %}">Sair</a>
++        <form action="{% use_macro logout_url %}" method="post">
++          {% csrf_token %}
++          <button class="edem-button -negative" type="submit">Sair</button>
++        </form>
+       </div>
+ 
+     {% else %}
+@@ -71,6 +74,7 @@
+         </div>
+ 
+         <form class="access JS-loginForm">
++          {% csrf_token %}
+           <div class="form-field">
+             <input class="input JS-formInput" id="id_username" name="username">
+             <label class="label" for="id_username"><span class="labeltext">Endereço de email</span></label>
+@@ -113,6 +117,7 @@
+         </div>
+ 
+         <form class="access JS-signUpForm">
++          {% csrf_token %}
+           <div class="form-field">
+             <input class="input JS-formInput" id="mail" name="email" type="email">
+             <label class="label" for="mail"><span class="labeltext">Endereço de email *</span></label>

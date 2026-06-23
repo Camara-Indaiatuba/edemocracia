@@ -277,7 +277,11 @@ $callout-link-tint: 30%;
 $closebutton-position: right top;
 $closebutton-offset-horizontal: 1rem;
 $closebutton-offset-vertical: 0.5rem;
-$closebutton-size: 2em;
+$closebutton-default-size: medium;
+$closebutton-size: (
+  small: 1.5em,
+  medium: 2em,
+);
 $closebutton-lineheight: 1;
 $closebutton-color: white;
 $closebutton-color-hover: $black;

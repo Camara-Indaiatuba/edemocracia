@@ -1,52 +1,277 @@
-## **Configurando Ambiente de Desenvolvimento**
+# e-Democracia Municipal
 
-Primeiramente, para rodar o e-Democracia, é preciso instalar algumas dependências e o [Node.js](https://nodejs.org/en/download/) no sistema para que algumas bibliotecas funcionem adequadamente:
+Esta é uma versão municipal do e-Democracia, preparada para câmaras que querem disponibilizar participação social pela web com login centralizado, confirmação de e-mail, reCAPTCHA e integração opcional com Google.
 
+O projeto é uma obra derivada do e-Democracia original, mantido sob a licença GPLv3. Ele não é um sistema feito do zero: mantém a base e o histórico do projeto original, com atualizações, correções e adaptações para uso municipal.
 
-    sudo dnf install libxml2-devel libxslt-devel # Fedora/CentOS
-    # ou
-    sudo apt-get install libxml2-dev libxslt-dev
+## Módulos
 
-Além disso, usamos o `pipenv` para gerênciar as dependências python do projeto, então você também precisa instalá-lo:
+- `/` - portal principal do e-Democracia.
+- `/audiencias/` - Audiências Públicas Interativas.
+- `/wikilegis/` - Wikilegis.
+- `/expressao/` - Expressão/Discourse.
+- `/admin/` - administração principal do Django.
 
+## Estado desta distribuição
 
-    sudo pip install pipenv
+O objetivo desta distribuição é permitir que uma câmara clone o repositório, preencha um `.env` e suba o portal com Docker.
 
-Em seguida, basta executar o seguinte comando para instalar todas as bibliotecas:
+O compose usa imagens versionadas para Wikilegis, Audiências e Discourse. Antes de publicar uma versão final para terceiros, publique essas imagens no registry configurado em `IMAGE_REGISTRY` ou ajuste o compose para apontar para outro registry.
 
+## Requisitos
 
-    pipenv install --dev
-    npm install
+- Servidor Linux com Docker Engine e Docker Compose Plugin.
+- Domínio apontando para o servidor.
+- Proxy HTTPS, como Nginx Proxy Manager, Nginx ou Traefik.
+- Conta SMTP para envio de confirmação de e-mail.
+- Chaves reCAPTCHA v2 Checkbox para o domínio público.
+- Credenciais Google OAuth, se o login com Google for usado.
 
-**Obs:** A configuração das outras ferramentas (Audiências Interativas, Discourse, Pauta Participativa ou Wikilegis) deve ser feita individualmente.
+## Instalação
 
-## **Contribuindo com o e-Democracia**
-1. Faça um *fork*  do repositório (https://github.com/eDemocracia/edemocracia)
-2. Faça todas as implementações necessárias no seu próprio *fork*
-3. Quando terminar é só submeter um *Pull Request* para o repositório principal 😃 
+Clone o repositório:
 
-Caso esteja trabalhando em uma *issue* específica, pedimos apenas para você comentar na *issue*, dizendo que começou a fazer, pra não termos problemas de duas pessoas trabalhando na mesma coisa.
+```bash
+git clone URL_DO_REPOSITORIO edemocracia
+cd edemocracia
+```
 
-Você também pode seguir nosso [Guia de Desenvolvimento](https://paper.dropbox.com/doc/Guia-de-Desenvolvimento-G4x38rz4ctNlseA4IIV4H?_tk=share_copylink).
+Crie o arquivo de ambiente:
 
-## **Tecnologias Utilizadas**
-- Python 3.6+
-- Django 2.0+
-- Node.js + npm
+```bash
+cp .env.example .env
+nano .env
+```
 
-## **Arquitetura do projeto**
+Preencha pelo menos:
 
-O e-Democracia é formado por um conjunto de 4 ferramentas: Audiências Interativas, Discourse, Pauta Participativa e Wikilegis. Cada ferramenta funciona independentemente, possuem *stacks* diferentes e são versionadas em repositórios diferentes. Para juntar tudo isso, o e-Democracia funciona como um *reverse proxy*, conforme o diagrama:
+- `PUBLIC_HOST`: domínio público, sem `https://`.
+- `IMAGE_REGISTRY`: registry das imagens dos módulos, por exemplo `ghcr.io/camara-indaiatuba`.
+- `IMAGE_TAG`: versão das imagens, por exemplo `1.0.0-rc1`.
+- `SITE_NAME`: nome da instituição.
+- `SITE_LOGO`: caminho do brasão ou logotipo.
+- `SITE_LOGO_TEXT_LINE` e `SITE_LOGO_TEXT_CITY`: textos exibidos ao lado do brasão.
+- `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`: conta administrativa inicial.
+- `POSTGRES_PASSWORD`: senha do banco.
+- `EDEMOCRACIA_SECRET_KEY`, `WIKILEGIS_SECRET_KEY`, `AUDIENCIAS_SECRET_KEY`, `DISCOURSE_SSO_SECRET` e `INTERNAL_API_KEY`.
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL` e `DEFAULT_FROM_EMAIL`.
+- `RECAPTCHA_SITE_KEY` e `RECAPTCHA_PRIVATE_KEY`.
 
-![](https://d2mxuefqeaa7sj.cloudfront.net/s_D883ADE33F36F76087DE519EA82DCF2FCD9D39CF76CEB0F810E99EB141F91A63_1516296177301_diagrama-edem.png)
+Gere valores fortes para segredos e senhas:
 
+```bash
+openssl rand -hex 32
+```
 
-Todas as requisições passam pelo e-Democracia e ele redireciona cada uma de acordo com a URL:
+Suba os serviços:
 
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
 
-- `/audiencias` → Audiências Interativas
-- `/pautaparticipativa` → Pauta Participativa
-- `/wikilegis` → Wikilegis
-- `/expressao` → Discourse
+Verifique se os containers subiram:
 
-A comunicação do e-Democracia com cada aplicação é feita através de um `app` django. Cada aplicação tem seu `app` respectivo dentro do projeto do e-Democracia e dentro de cada `app` estão presentes funções de autenticação nas ferramentas (disparadas quando um usuário faz login no e-Democracia), funções para propagar as alterações nas informações dos usuários para as outras ferramentas, entre outras.
+```bash
+docker compose ps
+```
+
+Verifique a configuração do Django:
+
+```bash
+docker compose exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py check'
+```
+
+Colete os arquivos estáticos se necessário:
+
+```bash
+docker compose exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py collectstatic --noinput'
+```
+
+## Proxy HTTPS
+
+Configure o proxy para encaminhar o domínio público para a porta definida em `PUBLIC_HTTP_PORT`.
+
+Exemplo com Nginx Proxy Manager:
+
+- Domain Names: valor de `PUBLIC_HOST`.
+- Scheme: `http`.
+- Forward Hostname/IP: IP do servidor ou nome do serviço.
+- Forward Port: valor de `PUBLIC_HTTP_PORT`, por padrão `8000`.
+- Websockets Support: habilitado.
+- SSL Certificate: Let's Encrypt.
+- Force SSL: habilitado depois que o certificado estiver emitido.
+
+Depois que HTTPS estiver funcionando, ajuste no `.env`:
+
+```dotenv
+SECURE_SSL_REDIRECT=True
+SECURE_HSTS_SECONDS=0
+```
+
+Mantenha `SECURE_HSTS_SECONDS=0` até ter certeza de que o HTTPS está definitivo. Depois disso, a câmara pode avaliar ativar HSTS.
+
+## SMTP e confirmação de e-mail
+
+O cadastro por e-mail depende de SMTP real. Em produção, mantenha:
+
+```dotenv
+REGISTRATION_AUTO_ACTIVATE=False
+REGISTRATION_SEND_ACTIVATION_EMAIL=True
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+```
+
+Para porta `587`, normalmente use:
+
+```dotenv
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+```
+
+Para porta `465`, normalmente use:
+
+```dotenv
+EMAIL_USE_TLS=False
+EMAIL_USE_SSL=True
+```
+
+## reCAPTCHA
+
+Crie uma chave reCAPTCHA v2 Checkbox para o domínio definido em `PUBLIC_HOST`.
+
+No `.env`, preencha:
+
+```dotenv
+RECAPTCHA_SITE_KEY=...
+RECAPTCHA_PRIVATE_KEY=...
+```
+
+## Login com Google
+
+No Google Cloud, crie um OAuth Client Web.
+
+Use este callback autorizado:
+
+```text
+https://SEU_DOMINIO/accounts/complete/google-oauth2/
+```
+
+No `.env`, preencha:
+
+```dotenv
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY=...
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET=...
+GOOGLE_LOGIN_ENABLED=True
+```
+
+O login Google segue o comportamento padrão do Google: se o usuário já autorizou o app e está com sessão Google válida, ele pode entrar direto.
+
+## Publicação no GitHub e GHCR
+
+Para manter o projeto fácil de encontrar, o caminho recomendado é criar um fork público no GitHub a partir do e-Democracia original e subir esta versão municipal nesse fork.
+
+Depois de criar o fork/repositório, configure o remote:
+
+```bash
+git remote add origin URL_DO_REPOSITORIO_NOVO
+git remote -v
+```
+
+Configure o usuário do Git antes do primeiro commit:
+
+```bash
+git config user.name "Nome da Câmara ou responsável"
+git config user.email "email@example.org"
+```
+
+As imagens dos módulos auxiliares devem ser publicadas no GitHub Container Registry. Faça login no GHCR com um token do GitHub que tenha permissão `write:packages`:
+
+```bash
+echo "TOKEN_GITHUB" | docker login ghcr.io -u USUARIO_OU_ORG --password-stdin
+```
+
+Marque as imagens locais com o namespace definido em `IMAGE_REGISTRY`:
+
+```bash
+docker tag edemocracia-wikilegis:django52-py312-local-20260527-municipal-clean ghcr.io/camara-indaiatuba/edemocracia-wikilegis:1.0.0-rc1
+docker tag edemocracia-audiencias-publicas:5.2-local-20260528-testdeps ghcr.io/camara-indaiatuba/edemocracia-audiencias:1.0.0-rc1
+docker tag local_discourse/edem-modern:latest ghcr.io/camara-indaiatuba/edemocracia-discourse:1.0.0-rc1
+```
+
+Publique:
+
+```bash
+docker push ghcr.io/camara-indaiatuba/edemocracia-wikilegis:1.0.0-rc1
+docker push ghcr.io/camara-indaiatuba/edemocracia-audiencias:1.0.0-rc1
+docker push ghcr.io/camara-indaiatuba/edemocracia-discourse:1.0.0-rc1
+```
+
+No GitHub, confirme que os packages ficaram públicos. Se ficarem privados, outra câmara não conseguirá baixar as imagens sem autenticação.
+
+Por organização e licença, mantenha também as fontes, patches ou receitas de build usadas para gerar essas imagens. Publicar só a imagem resolve a instalação, mas não é suficiente para manutenção de longo prazo.
+
+## Brasão e identidade visual
+
+Por padrão, o brasão usado pelo portal fica em:
+
+```text
+src/static/img/brasao-camara.svg
+```
+
+A câmara pode substituir esse arquivo ou apontar `SITE_LOGO` para outro caminho estático.
+
+Os textos ao lado do brasão são configurados no `.env`:
+
+```dotenv
+SITE_LOGO_TEXT_LINE="Camara Municipal"
+SITE_LOGO_TEXT_CITY="Nome da Cidade"
+```
+
+## Administração
+
+Depois da instalação, acesse:
+
+```text
+https://SEU_DOMINIO/admin/
+```
+
+Use a conta definida por:
+
+```dotenv
+ADMIN_EMAIL=...
+ADMIN_USERNAME=...
+ADMIN_PASSWORD=...
+```
+
+Troque a senha administrativa depois do primeiro acesso.
+
+## Segurança
+
+- Nunca publique o arquivo `.env`.
+- Use senhas fortes para banco, admin e chaves internas.
+- Use `DEBUG=False` em produção.
+- Use HTTPS antes de liberar o portal publicamente.
+- Faça backup regular dos volumes Docker e do banco PostgreSQL.
+- Rotacione chaves caso alguma credencial tenha sido exposta.
+
+## Desenvolvimento local
+
+Para desenvolvimento em rede local, use `.env.local.example` como base:
+
+```bash
+cp .env.local.example .env
+```
+
+Depois suba sem o arquivo de produção:
+
+```bash
+docker compose up -d --build
+```
+
+## Histórico de mudanças
+
+As mudanças feitas nesta versão estão registradas em:
+
+- `CHANGES.md`
+- `CHANGELOG.md`
+
+Use esses arquivos para entender atualizações de segurança, migrações de versões, correções de login/logout e adaptações municipais.
