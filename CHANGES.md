@@ -58,6 +58,28 @@ Preparar o projeto para ser publicado como distribuicao municipal mais simples d
 
 - Antes de uma versao publica instalavel por terceiros, publicar em registry ou empacotar no repositorio as imagens/fontes modernizadas de Wikilegis, Audiencias e Discourse. Hoje elas existem como imagens locais nesta VM.
 
+## 2026-06-24 - Imagens auxiliares publicadas no GHCR
+
+### Objetivo
+
+Permitir que outras instalacoes baixem as imagens modernizadas dos modulos auxiliares sem depender das imagens locais desta VM.
+
+### Arquivos alterados
+
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- As imagens `1.0.0-rc1` foram publicadas no GitHub Container Registry da organizacao `Camara-Indaiatuba`.
+- Os packages foram configurados como publicos no GitHub.
+
+### Validacao
+
+- `docker manifest inspect ghcr.io/camara-indaiatuba/edemocracia-wikilegis:1.0.0-rc1`: ok sem login.
+- `docker manifest inspect ghcr.io/camara-indaiatuba/edemocracia-audiencias:1.0.0-rc1`: ok sem login.
+- `docker manifest inspect ghcr.io/camara-indaiatuba/edemocracia-discourse:1.0.0-rc1`: ok sem login.
+- Paginas publicas dos packages no GitHub retornaram HTTP `200`.
+
 ## 2026-06-23 - Defaults genericos para distribuicao
 
 ### Objetivo
