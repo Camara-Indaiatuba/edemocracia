@@ -40,6 +40,11 @@ Permitir que clones novos subam os modulos auxiliares com volumes proprios do pr
 ### Correcao adicional
 
 - `docker-compose.yml` passou a criar `POSTGRES_DB=discourse` no servico `discourse_modern_db`.
+- Apos reiniciar o teste com volumes limpos, os quatro modulos responderam HTTP `200`:
+  - `/`;
+  - `/wikilegis/`;
+  - `/audiencias/`;
+  - `/expressao/`.
 
 ## 2026-06-23 - README de instalacao e remocao de submodulo
 
