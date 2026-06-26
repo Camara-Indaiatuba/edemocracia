@@ -15,6 +15,27 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-06-26 - Compose preparado para instalacao isolada
+
+### Objetivo
+
+Permitir que clones novos subam os modulos auxiliares com volumes proprios do projeto Docker, sem depender de volumes externos criados nesta VM.
+
+### Arquivos alterados
+
+- `docker-compose.yml`
+- `CHANGELOG.md`
+
+### Resumo tecnico
+
+- Removidas declaracoes `external: true` dos volumes de Wikilegis, Audiencias e Discourse legado.
+- Removidos volumes antigos de rollback que nao eram referenciados pelos servicos ativos.
+- Com project name diferente, uma instalacao de teste passa a usar volumes isolados, sem montar os volumes do ambiente principal.
+
+### Validacao
+
+- Limpeza Docker elevou o espaco livre em `/` para cerca de `8.4G`.
+
 ## 2026-06-23 - README de instalacao e remocao de submodulo
 
 ### Objetivo

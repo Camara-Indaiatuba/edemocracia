@@ -6,7 +6,9 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
-Nenhuma mudanca registrada ainda.
+### Corrigido
+
+- `docker-compose.yml` deixa de depender de volumes externos especificos desta VM para Wikilegis, Audiencias e Discourse legado, permitindo instalacoes isoladas por `project name`.
 
 ## v1.0.0-rc1 - 2026-06-24
 

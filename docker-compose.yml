@@ -1,25 +1,7 @@
 volumes:
-  wikilegis:
-  wikilegis_django32:
-    external: true
-    name: edemocracia_wikilegis_django32
-  wikilegis_django52:
-    external: true
-    name: edemocracia_wikilegis_django52
   wikilegis_py312:
-    external: true
-    name: edemocracia_wikilegis_py312
-  audiencias:
-  audiencias_403:
-    external: true
-    name: edemocracia_audiencias_403
   audiencias_django52:
-    external: true
-    name: edemocracia_audiencias_django52
-  discourse:
   discourse_pg16:
-    external: true
-    name: edemocracia_discourse_pg16
   discourse_modern_shared:
   discourse_modern_log:
   discourse_modern_db_data:
