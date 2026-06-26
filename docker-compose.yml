@@ -51,7 +51,7 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      POSTGRES_DB: root
+      POSTGRES_DB: discourse
 
   redis:
     image: redis:alpine

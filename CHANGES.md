@@ -35,6 +35,11 @@ Permitir que clones novos subam os modulos auxiliares com volumes proprios do pr
 ### Validacao
 
 - Limpeza Docker elevou o espaco livre em `/` para cerca de `8.4G`.
+- Teste de clone limpo em `/opt/edemocracia-e2e/install-test` revelou que o banco moderno do Discourse era criado como `root`, enquanto o Discourse procura o database `discourse`.
+
+### Correcao adicional
+
+- `docker-compose.yml` passou a criar `POSTGRES_DB=discourse` no servico `discourse_modern_db`.
 
 ## 2026-06-23 - README de instalacao e remocao de submodulo
 
