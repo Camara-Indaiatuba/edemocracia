@@ -45,6 +45,8 @@ Permitir que clones novos subam os modulos auxiliares com volumes proprios do pr
   - `/wikilegis/`;
   - `/audiencias/`;
   - `/expressao/`.
+- Identificado no teste visual que imagens versionadas como brasao e logotipos de secoes retornavam `404`, pois o Nginx servia apenas `src/public/static`.
+- `config/etc/nginx/conf.d/default.conf` passou a servir `/static/` procurando primeiro em `src/public/static` e depois em `src/static`.
 
 ## 2026-06-23 - README de instalacao e remocao de submodulo
 

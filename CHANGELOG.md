@@ -10,6 +10,7 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 - `docker-compose.yml` deixa de depender de volumes externos especificos desta VM para Wikilegis, Audiencias e Discourse legado, permitindo instalacoes isoladas por `project name`.
 - Banco PostgreSQL moderno do Discourse passa a criar o database `discourse` em instalacoes novas, alinhado com `DISCOURSE_DB_NAME`.
+- Nginx passa a servir tanto assets compilados em `src/public/static` quanto arquivos estaticos versionados em `src/static`, corrigindo imagens quebradas em clones limpos.
 
 ## v1.0.0-rc1 - 2026-06-24
 
