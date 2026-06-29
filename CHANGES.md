@@ -46,7 +46,7 @@ Permitir que clones novos subam os modulos auxiliares com volumes proprios do pr
   - `/audiencias/`;
   - `/expressao/`.
 - Identificado no teste visual que imagens versionadas como brasao e logotipos de secoes retornavam `404`, pois o Nginx servia apenas `src/public/static`.
-- `config/etc/nginx/conf.d/default.conf` passou a servir `/static/` procurando primeiro em `src/public/static`, depois em `src/static` e, por fim, em `node_modules`.
+- `config/etc/nginx/conf.d/default.conf` passou a servir `/static/` procurando primeiro em `src/public/static`, depois em `src/static`, depois em `src/templates/edem-navigation/static` e, por fim, em `node_modules`.
 - `docker-compose.yml` passou a montar o volume `node_modules` no Nginx para permitir servir dependencias npm como `jquery`.
 
 ## 2026-06-23 - README de instalacao e remocao de submodulo
