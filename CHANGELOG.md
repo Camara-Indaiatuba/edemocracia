@@ -19,6 +19,7 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 - `docker-compose.yml` deixa de depender de volumes externos especificos desta VM para Wikilegis, Audiencias e Discourse legado, permitindo instalacoes isoladas por `project name`.
 - Banco PostgreSQL moderno do Discourse passa a criar o database `discourse` em instalacoes novas, alinhado com `DISCOURSE_DB_NAME`.
 - Nginx passa a servir assets compilados em `src/public/static`, arquivos estaticos versionados em `src/static`, assets do `edem-navigation` e dependencias npm montadas em `node_modules`, corrigindo imagens e scripts quebrados em clones limpos.
+- Boot do e-Democracia passa a executar `collectstatic`, garantindo assets do Django Admin e demais arquivos estaticos em instalacoes feitas por clone.
 
 ## v1.0.0-rc1 - 2026-06-24
 

@@ -48,6 +48,28 @@ Garantir que instalacoes novas tenham uma conta administrativa pronta no e-Democ
 - Consulta ao banco principal confirmou usuario `admin`, `admin@example.org`, `is_staff=True`, `is_superuser=True`, `is_active=True`.
 - `/` e `/admin/login/` responderam HTTP `200` no ambiente de teste.
 
+## 2026-06-30 - Assets do Django Admin em instalacao limpa
+
+### Objetivo
+
+Corrigir a administracao principal sem CSS/JS em clones limpos.
+
+### Arquivos alterados
+
+- `runserver`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- O Dockerfile ja executava `collectstatic` durante o build, mas o compose monta o codigo local em `/var/labhacker/edemocracia`.
+- Em instalacoes feitas por clone, esse bind mount esconde os assets coletados dentro da imagem.
+- `runserver` passou a executar `python3 src/manage.py collectstatic --no-input` apos as migrations e antes de iniciar o servidor.
+
+### Validacao
+
+- Pendente aplicar no clone limpo de teste e confirmar `/static/admin/...` com HTTP `200`.
+
 ## 2026-06-26 - Compose preparado para instalacao isolada
 
 ### Objetivo
