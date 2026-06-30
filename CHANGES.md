@@ -42,7 +42,11 @@ Garantir que instalacoes novas tenham uma conta administrativa pronta no e-Democ
 
 ### Validacao
 
-- Pendente aplicar no clone limpo de teste e confirmar criacao do admin no banco principal.
+- Aplicado no clone limpo de teste em `/opt/edemocracia-e2e/install-test`.
+- Container `edemocracia_install_test-edemocracia-1` recriado com o novo boot.
+- Log confirmou: `Initial admin user created for admin@example.org.`
+- Consulta ao banco principal confirmou usuario `admin`, `admin@example.org`, `is_staff=True`, `is_superuser=True`, `is_active=True`.
+- `/` e `/admin/login/` responderam HTTP `200` no ambiente de teste.
 
 ## 2026-06-26 - Compose preparado para instalacao isolada
 
