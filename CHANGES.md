@@ -68,7 +68,11 @@ Corrigir a administracao principal sem CSS/JS em clones limpos.
 
 ### Validacao
 
-- Pendente aplicar no clone limpo de teste e confirmar `/static/admin/...` com HTTP `200`.
+- Aplicado no clone limpo de teste em `/opt/edemocracia-e2e/install-test`.
+- Container `edemocracia_install_test-edemocracia-1` recriado com o novo boot.
+- Log confirmou `6150 static files copied to '/var/labhacker/edemocracia/src/public/static'`.
+- `/static/admin/css/base.css`, `/static/admin/css/dark_mode.css` e `/static/admin/js/theme.js` responderam HTTP `200`.
+- `/admin/` sem sessao respondeu HTTP `302`, redirecionando corretamente para login.
 
 ## 2026-06-26 - Compose preparado para instalacao isolada
 
