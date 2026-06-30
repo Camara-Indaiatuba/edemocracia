@@ -46,6 +46,9 @@ nano .env
 Preencha pelo menos:
 
 - `PUBLIC_HOST`: domínio público, sem `https://`.
+- `PUBLIC_BIND_ADDRESS`: endereço em que o Nginx do compose escutará. Use `0.0.0.0` para expor na rede do servidor, ou `127.0.0.1` quando o proxy reverso conseguir acessar a porta localmente.
+- `PUBLIC_HTTP_PORT`: porta HTTP local usada pelo proxy reverso.
+- `EXTRA_ALLOWED_HOSTS`: hosts extras separados por vírgula, útil para testes por IP ou nomes internos adicionais.
 - `IMAGE_REGISTRY`: registry das imagens dos módulos, por exemplo `ghcr.io/camara-indaiatuba`.
 - `IMAGE_TAG`: versão das imagens, por exemplo `1.0.0-rc1`.
 - `SITE_NAME`: nome da instituição.
@@ -72,24 +75,36 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 Verifique se os containers subiram:
 
 ```bash
-docker compose ps
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+```
+
+Faça uma validação rápida:
+
+```bash
+curl -fsS "http://localhost:${PUBLIC_HTTP_PORT:-8000}/admin/" >/dev/null
+curl -fsS "http://localhost:${PUBLIC_HTTP_PORT:-8000}/" >/dev/null
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec edemocracia curl -fsS "http://wikilegis:8000/api/v1/bill/?limit=1" >/dev/null
 ```
 
 Verifique a configuração do Django:
 
 ```bash
-docker compose exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py check'
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py check'
 ```
 
 Colete os arquivos estáticos se necessário:
 
 ```bash
-docker compose exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py collectstatic --noinput'
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py collectstatic --noinput'
 ```
 
 ## Proxy HTTPS
 
 Configure o proxy para encaminhar o domínio público para a porta definida em `PUBLIC_HTTP_PORT`.
+
+Se `PUBLIC_BIND_ADDRESS=0.0.0.0`, proteja essa porta com firewall ou mantenha o acesso restrito à rede do proxy. Se o proxy reverso roda no mesmo host e consegue acessar o loopback do servidor, você pode usar `PUBLIC_BIND_ADDRESS=127.0.0.1`.
+
+Se você testar o portal por IP ou por outro nome além de `PUBLIC_HOST`, adicione esse host em `EXTRA_ALLOWED_HOSTS` e recrie os containers.
 
 Exemplo com Nginx Proxy Manager:
 

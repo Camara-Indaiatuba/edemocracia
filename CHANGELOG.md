@@ -13,6 +13,7 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 ### Alterado
 
 - README detalha que reCAPTCHA v2 real e valido para o dominio publico e obrigatorio para cadastro em producao.
+- `PUBLIC_BIND_ADDRESS`, `PUBLIC_HTTP_PORT` e `EXTRA_ALLOWED_HOSTS` passam a controlar a exposicao HTTP e hosts extras em instalacoes por compose.
 
 ### Corrigido
 
@@ -20,6 +21,8 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 - Banco PostgreSQL moderno do Discourse passa a criar o database `discourse` em instalacoes novas, alinhado com `DISCOURSE_DB_NAME`.
 - Nginx passa a servir assets compilados em `src/public/static`, arquivos estaticos versionados em `src/static`, assets do `edem-navigation` e dependencias npm montadas em `node_modules`, corrigindo imagens e scripts quebrados em clones limpos.
 - Boot do e-Democracia passa a executar `collectstatic`, garantindo assets do Django Admin e demais arquivos estaticos em instalacoes feitas por clone.
+- Compose de producao deixa de somar uma porta fixa `8000` com a porta configurada em `PUBLIC_HTTP_PORT`.
+- Wikilegis e Audiencias aceitam os nomes internos da rede Docker em `ALLOWED_HOSTS`, evitando erro `500` na home por chamadas internas bloqueadas.
 
 ## v1.0.0-rc1 - 2026-06-24
 

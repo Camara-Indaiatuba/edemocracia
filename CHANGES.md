@@ -48,6 +48,40 @@ Garantir que instalacoes novas tenham uma conta administrativa pronta no e-Democ
 - Consulta ao banco principal confirmou usuario `admin`, `admin@example.org`, `is_staff=True`, `is_superuser=True`, `is_active=True`.
 - `/` e `/admin/login/` responderam HTTP `200` no ambiente de teste.
 
+## 2026-06-30 - Correcoes apontadas pela instalacao cega
+
+### Objetivo
+
+Corrigir bloqueios encontrados por um agente instalador que seguiu apenas o README em um clone limpo.
+
+### Arquivos alterados
+
+- `docker-compose.yml`
+- `docker-compose.prod.yml`
+- `.env.example`
+- `.env.local.example`
+- `.env.prod.example`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- A porta publicada pelo Nginx passou a ser controlada por `PUBLIC_BIND_ADDRESS` e `PUBLIC_HTTP_PORT` no compose base.
+- `docker-compose.prod.yml` deixou de declarar outra lista de `ports`, evitando que Docker Compose some a porta fixa `8000` com a porta configurada no `.env`.
+- `ALLOWED_HOSTS` de e-Democracia, Wikilegis e Audiencias em producao passou a incluir o dominio publico, `localhost`, `127.0.0.1`, `nginx` e os nomes internos dos servicos.
+- Criada variavel `EXTRA_ALLOWED_HOSTS` para testes por IP ou nomes adicionais.
+- README passou a documentar `PUBLIC_BIND_ADDRESS`, `PUBLIC_HTTP_PORT`, `EXTRA_ALLOWED_HOSTS` e smoke tests depois do boot.
+
+### Validacao
+
+- Agente de instalacao cega gerou relatorio em `/opt/edemocracia-e2e/agent-install/INSTALL_AGENT_REPORT.md`.
+- O relatorio confirmou que admin e CSS carregaram, mas apontou falha da home por `ALLOWED_HOSTS` interno do Wikilegis e conflito de porta `8000`.
+
+### Pendencias ou observacoes
+
+- Reexecutar a instalacao limpa apos essas correcoes para confirmar que `/`, `/admin/` e a chamada interna `http://wikilegis:8000/api/v1/bill/` passam sem workaround local.
+
 ## 2026-06-30 - Assets do Django Admin em instalacao limpa
 
 ### Objetivo
