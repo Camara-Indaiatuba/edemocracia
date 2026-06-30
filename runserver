@@ -30,4 +30,5 @@ if [[ "$DB_EXISTS" != "1" ]]; then
 fi
 
 python3 src/manage.py migrate
+python3 src/manage.py ensure_initial_admin
 python3 src/manage.py runserver 0.0.0.0:8000

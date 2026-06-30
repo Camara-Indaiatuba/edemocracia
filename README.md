@@ -136,13 +136,29 @@ EMAIL_USE_SSL=True
 
 ## reCAPTCHA
 
-Crie uma chave reCAPTCHA v2 Checkbox para o domínio definido em `PUBLIC_HOST`.
+O cadastro público depende de reCAPTCHA real. Sem chaves válidas para o domínio público, o botão de cadastro pode abrir normalmente, mas o envio do formulário falhará na validação do captcha.
+
+Crie uma chave **reCAPTCHA v2 Checkbox** para o domínio definido em `PUBLIC_HOST`.
+
+Passos gerais:
+
+1. Acesse o console do reCAPTCHA/Google Cloud.
+2. Crie uma chave do tipo `reCAPTCHA v2`.
+3. Selecione a opção `Caixa de seleção "Não sou um robô"`.
+4. Cadastre o domínio público do portal, sem `https://`, por exemplo `edemocracia.exemplo.leg.br`.
+5. Copie a chave do site e a chave secreta.
 
 No `.env`, preencha:
 
 ```dotenv
 RECAPTCHA_SITE_KEY=...
 RECAPTCHA_PRIVATE_KEY=...
+```
+
+As chaves de exemplo ou chaves criadas para outro domínio não servem para produção. Depois de alterar o `.env`, recrie os containers para carregar as novas variáveis:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 ## Login com Google
@@ -236,18 +252,20 @@ SITE_LOGO_TEXT_CITY="Nome da Cidade"
 
 ## Administração
 
-Depois da instalação, acesse:
-
-```text
-https://SEU_DOMINIO/admin/
-```
-
-Use a conta definida por:
+Durante o primeiro boot, o e-Democracia cria automaticamente a conta administrativa inicial com os valores definidos no `.env`:
 
 ```dotenv
 ADMIN_EMAIL=...
 ADMIN_USERNAME=...
 ADMIN_PASSWORD=...
+```
+
+Essa senha é usada apenas na criação inicial. Se o usuário administrativo já existir, o sistema garante que ele continue ativo, staff e superusuário, mas preserva a senha já cadastrada. Assim, a senha não é sobrescrita em todo restart do container.
+
+Depois da instalação, acesse:
+
+```text
+https://SEU_DOMINIO/admin/
 ```
 
 Troque a senha administrativa depois do primeiro acesso.

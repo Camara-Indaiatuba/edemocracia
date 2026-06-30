@@ -15,6 +15,35 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-06-30 - Admin inicial e documentacao de reCAPTCHA
+
+### Objetivo
+
+Garantir que instalacoes novas tenham uma conta administrativa pronta no e-Democracia principal e deixar explicito que cadastro publico depende de reCAPTCHA real.
+
+### Arquivos alterados
+
+- `src/apps/accounts/management/commands/ensure_initial_admin.py`
+- `runserver`
+- `docker-compose.yml`
+- `docker-compose.prod.yml`
+- `.env.local.example`
+- `README.md`
+- `CHANGELOG.md`
+
+### Resumo tecnico
+
+- Criado comando `ensure_initial_admin` para criar ou conferir o usuario administrativo inicial usando `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`.
+- `runserver` executa o comando apos as migrations do e-Democracia principal.
+- `docker-compose.yml` e `docker-compose.prod.yml` passaram a enviar `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD` tambem para o servico `edemocracia`.
+- O comando cria o usuario se ele nao existir e garante `is_staff`, `is_superuser` e `is_active`.
+- Se o usuario ja existir, a senha e preservada para nao desfazer trocas feitas pelo administrador depois do primeiro acesso.
+- README passou a explicar que reCAPTCHA v2 Checkbox real, valido para o dominio publico, e necessario para cadastro em producao.
+
+### Validacao
+
+- Pendente aplicar no clone limpo de teste e confirmar criacao do admin no banco principal.
+
 ## 2026-06-26 - Compose preparado para instalacao isolada
 
 ### Objetivo

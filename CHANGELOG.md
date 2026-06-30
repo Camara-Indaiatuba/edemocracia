@@ -6,6 +6,14 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+### Adicionado
+
+- Comando `ensure_initial_admin` cria a conta administrativa inicial do e-Democracia principal a partir de `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`.
+
+### Alterado
+
+- README detalha que reCAPTCHA v2 real e valido para o dominio publico e obrigatorio para cadastro em producao.
+
 ### Corrigido
 
 - `docker-compose.yml` deixa de depender de volumes externos especificos desta VM para Wikilegis, Audiencias e Discourse legado, permitindo instalacoes isoladas por `project name`.
