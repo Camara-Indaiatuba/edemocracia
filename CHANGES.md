@@ -105,10 +105,16 @@ Corrigir o erro `502` em `/expressao/` encontrado na segunda instalacao cega.
 
 - Segunda instalacao cega em `/opt/edemocracia-e2e/agent-install` confirmou que `/`, `/admin/`, CSS do admin, login admin, `manage.py check` e chamada interna ao Wikilegis estavam OK.
 - A mesma rodada apontou `/expressao/` com `502` e logs `PG::ConnectionBad: password authentication failed for user "root"`, motivando esta correcao.
+- Apos aplicar a correcao, a instalacao de teste foi recriada com volumes limpos e commit `67304d5`.
+- Smoke test em `http://localhost:8020` confirmou HTTP `200` para `/`, `/admin/login/?next=/admin/`, `/wikilegis/`, `/audiencias/` e `/expressao/`.
+- `python manage.py check` retornou sem problemas.
+- Chamada interna `http://wikilegis:8000/api/v1/bill/?limit=1` a partir do container `edemocracia` retornou HTTP `200 application/json`.
+- Login admin no ambiente limpo retornou `302` para `/admin/` e a pagina autenticada carregou.
+- Logs recentes do banco `discourse_modern_db` nao exibiram novos erros de senha.
 
 ### Pendencias ou observacoes
 
-- Para validar a correcao no ambiente de teste que ja falhou, e necessario remover os volumes da instalacao de teste e subir novamente, pois o Postgres nao troca a senha inicial apenas alterando variaveis de ambiente depois que o volume ja existe.
+- Se uma instalacao ja tiver sido iniciada antes desta correcao, e necessario recriar os volumes do teste para que o Postgres seja inicializado com a senha correta; em instalacoes novas, o compose ja nasce alinhado.
 
 ## 2026-06-30 - Assets do Django Admin em instalacao limpa
 
