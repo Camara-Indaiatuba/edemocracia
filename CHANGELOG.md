@@ -23,6 +23,7 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 - Boot do e-Democracia passa a executar `collectstatic`, garantindo assets do Django Admin e demais arquivos estaticos em instalacoes feitas por clone.
 - Compose de producao deixa de somar uma porta fixa `8000` com a porta configurada em `PUBLIC_HTTP_PORT`.
 - Wikilegis e Audiencias aceitam os nomes internos da rede Docker em `ALLOWED_HOSTS`, evitando erro `500` na home por chamadas internas bloqueadas.
+- Banco PostgreSQL moderno do Discourse passa a receber a mesma senha forte usada pelo servico Discourse em producao, corrigindo `/expressao/` em instalacoes limpas.
 
 ## v1.0.0-rc1 - 2026-06-24
 

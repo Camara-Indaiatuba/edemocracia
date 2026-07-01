@@ -82,6 +82,34 @@ Corrigir bloqueios encontrados por um agente instalador que seguiu apenas o READ
 
 - Reexecutar a instalacao limpa apos essas correcoes para confirmar que `/`, `/admin/` e a chamada interna `http://wikilegis:8000/api/v1/bill/` passam sem workaround local.
 
+## 2026-07-01 - Correcao do banco do Discourse em instalacao limpa
+
+### Objetivo
+
+Corrigir o erro `502` em `/expressao/` encontrado na segunda instalacao cega.
+
+### Arquivos alterados
+
+- `docker-compose.prod.yml`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Em producao, o servico `discourse` recebia `DISCOURSE_DB_PASSWORD=${POSTGRES_PASSWORD}`.
+- O banco `discourse_modern_db`, porem, continuava herdando `POSTGRES_PASSWORD=root` do compose base.
+- Em instalacoes limpas, isso fazia o Discourse tentar autenticar com a senha forte do `.env` contra um banco criado com senha `root`.
+- `docker-compose.prod.yml` agora tambem envia `POSTGRES_PASSWORD=${POSTGRES_PASSWORD}` para `discourse_modern_db`.
+
+### Validacao
+
+- Segunda instalacao cega em `/opt/edemocracia-e2e/agent-install` confirmou que `/`, `/admin/`, CSS do admin, login admin, `manage.py check` e chamada interna ao Wikilegis estavam OK.
+- A mesma rodada apontou `/expressao/` com `502` e logs `PG::ConnectionBad: password authentication failed for user "root"`, motivando esta correcao.
+
+### Pendencias ou observacoes
+
+- Para validar a correcao no ambiente de teste que ja falhou, e necessario remover os volumes da instalacao de teste e subir novamente, pois o Postgres nao troca a senha inicial apenas alterando variaveis de ambiente depois que o volume ja existe.
+
 ## 2026-06-30 - Assets do Django Admin em instalacao limpa
 
 ### Objetivo

@@ -12,6 +12,11 @@ services:
   redis:
     restart: unless-stopped
 
+  discourse_modern_db:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
   edemocracia:
     restart: unless-stopped
     environment:
