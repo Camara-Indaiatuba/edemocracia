@@ -120,10 +120,22 @@ Depois que HTTPS estiver funcionando, ajuste no `.env`:
 
 ```dotenv
 SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
 SECURE_HSTS_SECONDS=0
 ```
 
 Mantenha `SECURE_HSTS_SECONDS=0` até ter certeza de que o HTTPS está definitivo. Depois disso, a câmara pode avaliar ativar HSTS.
+
+Para uma validação temporária em HTTP local, por exemplo `http://IP_DO_SERVIDOR:8020`, use apenas no ambiente de teste:
+
+```dotenv
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+CSRF_TRUSTED_ORIGINS=http://IP_DO_SERVIDOR:8020,http://localhost:8020,http://127.0.0.1:8020
+```
+
+Volte `SESSION_COOKIE_SECURE=True` e `CSRF_COOKIE_SECURE=True` antes de liberar o portal publicamente em HTTPS.
 
 ## SMTP e confirmação de e-mail
 

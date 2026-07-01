@@ -116,6 +116,35 @@ Corrigir o erro `502` em `/expressao/` encontrado na segunda instalacao cega.
 
 - Se uma instalacao ja tiver sido iniciada antes desta correcao, e necessario recriar os volumes do teste para que o Postgres seja inicializado com a senha correta; em instalacoes novas, o compose ja nasce alinhado.
 
+## 2026-07-01 - Validacao HTTP local com login admin
+
+### Objetivo
+
+Permitir testar login administrativo em instalacoes de validacao acessadas por HTTP/IP, sem enfraquecer o padrao seguro de producao.
+
+### Arquivos alterados
+
+- `docker-compose.prod.yml`
+- `.env.example`
+- `.env.prod.example`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- `SESSION_COOKIE_SECURE` e `CSRF_COOKIE_SECURE` no compose de producao continuam com default `True`.
+- Esses valores agora podem ser sobrescritos por `.env`, permitindo `False` apenas em ambiente temporario de teste HTTP.
+- README passou a documentar o ajuste temporario para testes por `http://IP:PORTA`.
+
+### Validacao
+
+- O teste na porta `8020` mostrou que `admin / mudar` existia, mas login por `http://192.168.193.110:8020` retornava `403` porque cookies `Secure` nao sao enviados em HTTP comum.
+
+### Pendencias ou observacoes
+
+- Em producao publica com HTTPS, manter `SESSION_COOKIE_SECURE=True` e `CSRF_COOKIE_SECURE=True`.
+
 ## 2026-06-30 - Assets do Django Admin em instalacao limpa
 
 ### Objetivo

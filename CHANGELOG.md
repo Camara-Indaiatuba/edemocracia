@@ -14,6 +14,7 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 - README detalha que reCAPTCHA v2 real e valido para o dominio publico e obrigatorio para cadastro em producao.
 - `PUBLIC_BIND_ADDRESS`, `PUBLIC_HTTP_PORT` e `EXTRA_ALLOWED_HOSTS` passam a controlar a exposicao HTTP e hosts extras em instalacoes por compose.
+- Cookies `Secure` de sessao e CSRF continuam ativos por padrao em producao, mas agora podem ser desligados explicitamente por `.env` em validacoes HTTP locais.
 
 ### Corrigido
 
