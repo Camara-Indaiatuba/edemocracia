@@ -1,7 +1,16 @@
 from decouple import config
+from collections import OrderedDict
 import django.conf.global_settings as default
 import mimetypes
 import os
+
+from apps.core.auth_config import get_auth_config, get_auth_fieldsets
+from apps.core.themes import (
+    THEME_CHOICES,
+    THEME_ORIGINAL,
+    get_theme_color_config,
+    get_theme_color_fieldsets,
+)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
@@ -130,7 +139,7 @@ REGISTRATION_USE_RDSTATION = config('REGISTRATION_USE_RDSTATION',
 
 # AUTHENTICATION
 AUTHENTICATION_BACKENDS = (
-    'social_core.backends.google.GoogleOAuth2',
+    'apps.accounts.backends.ConfigurableGoogleOAuth2',
     'social_core.backends.facebook.FacebookOAuth2',
     'apps.accounts.backends.AuthenticationEmailBackend',
     'django.contrib.auth.backends.ModelBackend',
@@ -224,8 +233,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool, default=True)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', cast=bool, default=False)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='')
-EMAIL_BACKEND = config('EMAIL_BACKEND',
-                       default='django.core.mail.backends.console.EmailBackend')
+EMAIL_BACKEND = 'apps.core.email_backend.ConfigurableEmailBackend'
 
 # STATICFILES SETTINGS
 STATIC_URL = config('STATIC_URL', default='/static/')
@@ -261,6 +269,7 @@ TEMPLATES = [
                 'social_django.context_processors.login_redirect',
                 'apps.core.processors.settings_variables',
                 'apps.core.processors.home_customization',
+                'apps.core.processors.theme_customization',
             ],
         },
     },
@@ -315,8 +324,52 @@ DISCOURSE_SSO_SECRET = config('DISCOURSE_SSO_SECRET', default='sso_secret')
 
 
 # EDITABLE SETTINGS
-CONSTANCE_CONFIG = {
+CONSTANCE_ADDITIONAL_FIELDS = {
+    'theme_choice': [
+        'django.forms.fields.ChoiceField',
+        {
+            'choices': THEME_CHOICES,
+        },
+    ],
+    'theme_color': [
+        'apps.core.forms.ThemeColorField',
+        {},
+    ],
+    'secret_text': [
+        'apps.core.forms.SecretTextField',
+        {},
+    ],
 }
+
+GOOGLE_LOGIN_DEFAULT = bool(
+    SOCIAL_AUTH_GOOGLE_OAUTH2_KEY and SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET
+)
+
+CONSTANCE_CONFIG = OrderedDict((
+    ('TEMA_VISUAL', (
+        THEME_ORIGINAL,
+        'Escolha o tema visual aplicado ao e-Democracia, Audiencias, Wikilegis e barra superior da Expressao.',
+        'theme_choice',
+    )),
+))
+CONSTANCE_CONFIG.update(get_auth_config({
+    'email_enabled': True,
+    'google_enabled': GOOGLE_LOGIN_DEFAULT,
+    'google_key': SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
+    'google_secret': SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
+    'email_host': EMAIL_HOST,
+    'email_port': EMAIL_PORT,
+    'email_host_user': EMAIL_HOST_USER,
+    'email_host_password': EMAIL_HOST_PASSWORD,
+    'email_use_tls': EMAIL_USE_TLS,
+    'email_use_ssl': EMAIL_USE_SSL,
+    'default_from_email': DEFAULT_FROM_EMAIL,
+}))
+CONSTANCE_CONFIG.update(get_theme_color_config())
+
+CONSTANCE_CONFIG_FIELDSETS = OrderedDict()
+CONSTANCE_CONFIG_FIELDSETS.update(get_theme_color_fieldsets())
+CONSTANCE_CONFIG_FIELDSETS.update(get_auth_fieldsets())
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 

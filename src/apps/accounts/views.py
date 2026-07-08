@@ -23,6 +23,7 @@ from django.views.generic import UpdateView
 from django.contrib import messages
 from apps.accounts.forms import UserProfileForm
 from django.urls import reverse
+from apps.core.auth_config import is_email_login_enabled
 import requests
 
 
@@ -56,6 +57,10 @@ class CustomRegistrationView(BaseRegistrationView):
         return JsonResponse(data, status=400)
 
     def form_valid(self, form):
+        if not is_email_login_enabled():
+            return JsonResponse({'data': _('Cadastro por e-mail desabilitado.')},
+                                status=403)
+
         captcha_token = form.data.get('g-recaptcha-response')
         if not captcha_token:
             return JsonResponse({'data': captcha.ERRORS['missing-input-response']},
@@ -131,10 +136,17 @@ class CustomRegistrationView(BaseRegistrationView):
         return new_user
 
     def registration_allowed(self):
-        return getattr(settings, 'REGISTRATION_OPEN', True)
+        return (
+            is_email_login_enabled() and
+            getattr(settings, 'REGISTRATION_OPEN', True)
+        )
 
 
 def ajax_login(request):
+    if not is_email_login_enabled():
+        return JsonResponse({'data': _('Login por e-mail desabilitado.')},
+                            status=403)
+
     if request.method == 'POST':
         form = AuthenticationForm(request, request.POST)
         response_data = {}

@@ -1,0 +1,219 @@
+{% extends "admin/base_site.html" %}
+{% load admin_list static i18n %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/changelists.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+  {{ media.css }}
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/constance.css' %}">
+  <style>
+    .constance .edem-theme-reset {
+      margin: 0 0 1rem;
+    }
+
+    .constance .edem-theme-note {
+      margin: 0.75rem 0 0;
+    }
+  </style>
+{% endblock %}
+
+{% block extrahead %}
+{% url 'admin:jsi18n' as jsi18nurl %}
+<script type="text/javascript" src="{{ jsi18nurl|default:'../../jsi18n/' }}"></script>
+{{ block.super }}
+{{ media.js }}
+<script type="text/javascript" src="{% static 'admin/js/constance.js' %}"></script>
+{% if django_version < "5.1" %}
+<script type="text/javascript" src="{% static 'admin/js/collapse.js' %}"></script>
+{% endif %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var themeFieldsets = {
+      blue_white_red: 'Cores - Tema 2 - Azul, branco e vermelho',
+      blue_green: 'Cores - Tema 3 - Azul e verde',
+      white_red: 'Cores - Tema 4 - Branco e vermelho',
+      blue_red_yellow: 'Cores - Tema 5 - Azul, vermelho e amarelo'
+    };
+    var resetBaseUrl = '/admin/theme/reset-colors/?theme=';
+    var selector = document.querySelector('select[name="TEMA_VISUAL"], #id_TEMA_VISUAL');
+    var emailLoginCheckbox = document.querySelector('input[name="LOGIN_EMAIL_ENABLED"], #id_LOGIN_EMAIL_ENABLED');
+    var googleLoginCheckbox = document.querySelector('input[name="LOGIN_GOOGLE_ENABLED"], #id_LOGIN_GOOGLE_ENABLED');
+
+    function getFieldsetTitle(fieldset) {
+      var heading = fieldset.querySelector('.fieldset-heading, h2');
+      return heading ? heading.textContent.trim() : '';
+    }
+
+    function getThemeFieldsets() {
+      return Array.prototype.slice.call(
+        document.querySelectorAll('#changelist-form fieldset.module')
+      ).filter(function (fieldset) {
+        return getFieldsetTitle(fieldset).indexOf('Cores - ') === 0;
+      });
+    }
+
+    function getThemeSelectorFieldset() {
+      var fieldsets = Array.prototype.slice.call(
+        document.querySelectorAll('#changelist-form fieldset.module')
+      );
+      return fieldsets.find(function (fieldset) {
+        return getFieldsetTitle(fieldset) === 'Tema visual';
+      });
+    }
+
+    function getFieldsetByTitle(title) {
+      var fieldsets = Array.prototype.slice.call(
+        document.querySelectorAll('#changelist-form fieldset.module')
+      );
+      return fieldsets.find(function (fieldset) {
+        return getFieldsetTitle(fieldset) === title;
+      });
+    }
+
+    function getResetBlock() {
+      var block = document.getElementById('edem-theme-reset');
+      if (!block) {
+        block = document.createElement('p');
+        block.id = 'edem-theme-reset';
+        block.className = 'edem-theme-reset help';
+      }
+      return block;
+    }
+
+    function moveThemeSelectorToTop() {
+      var selectorFieldset = getThemeSelectorFieldset();
+      var form = document.getElementById('changelist-form');
+      if (!selectorFieldset || !form) {
+        return;
+      }
+
+      var firstFieldset = form.querySelector('fieldset.module');
+      if (firstFieldset && firstFieldset !== selectorFieldset) {
+        form.insertBefore(selectorFieldset, firstFieldset);
+      }
+    }
+
+    function updateLoginConfigFields() {
+      var googleFieldset = getFieldsetByTitle('Login com Google');
+      var emailFieldset = getFieldsetByTitle('Login por e-mail - SMTP');
+
+      if (googleFieldset && googleLoginCheckbox) {
+        googleFieldset.hidden = !googleLoginCheckbox.checked;
+      }
+
+      if (emailFieldset && emailLoginCheckbox) {
+        emailFieldset.hidden = !emailLoginCheckbox.checked;
+      }
+    }
+
+    function updateVisibleThemeFields() {
+      if (!selector) {
+        return;
+      }
+
+      var selectedTheme = selector.value;
+      var selectedFieldsetTitle = themeFieldsets[selectedTheme];
+      var selectedFieldset = null;
+
+      getThemeFieldsets().forEach(function (fieldset) {
+        var isSelected = getFieldsetTitle(fieldset) === selectedFieldsetTitle;
+        fieldset.hidden = !isSelected;
+        if (isSelected) {
+          selectedFieldset = fieldset;
+        }
+      });
+
+      var resetBlock = getResetBlock();
+      if (selectedFieldset) {
+        resetBlock.innerHTML = '<a class="button" href="' +
+          resetBaseUrl + encodeURIComponent(selectedTheme) +
+          '">Restaurar cores padrao deste tema</a>';
+        var firstResults = selectedFieldset.querySelector('#results');
+        selectedFieldset.insertBefore(resetBlock, firstResults);
+        return;
+      }
+
+      resetBlock.innerHTML = '<span class="edem-theme-note">' +
+        'O tema original usa as cores nativas do projeto e nao possui campos editaveis.' +
+        '</span>';
+      var selectorFieldset = getThemeSelectorFieldset();
+      if (selectorFieldset) {
+        selectorFieldset.appendChild(resetBlock);
+      }
+    }
+
+    if (selector) {
+      moveThemeSelectorToTop();
+      selector.addEventListener('change', updateVisibleThemeFields);
+      updateVisibleThemeFields();
+    }
+
+    if (emailLoginCheckbox) {
+      emailLoginCheckbox.addEventListener('change', updateLoginConfigFields);
+    }
+    if (googleLoginCheckbox) {
+      googleLoginCheckbox.addEventListener('change', updateLoginConfigFields);
+    }
+    updateLoginConfigFields();
+  });
+</script>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} change-list{% endblock %}
+
+{% block content %}
+  <div id="content-main" class="constance">
+    <div class="module" id="changelist">
+        <form id="changelist-form" action="" method="post" enctype="multipart/form-data">{% csrf_token %}
+            {% if form.non_field_errors %}
+                <ul class="errorlist">
+                    {% for error in form.non_field_errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if form.errors %}
+            <ul class="errorlist">
+            {% endif %}
+            {% for field in form.hidden_fields %}
+                {% for error in field.errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+                {{ field }}
+            {% endfor %}
+            {% if form.errors %}
+            </ul>
+            {% endif %}
+
+            {% if fieldsets %}
+              {% for fieldset in fieldsets %}
+              <fieldset class="module{% if fieldset.collapse %} collapse{% endif %}">
+                  {% if django_version >= "5.1" and fieldset.collapse %}<details><summary>{% endif %}
+                  <h2 class="fieldset-heading">{{ fieldset.title }}</h2>
+                  {% if django_version >= "5.1" and fieldset.collapse %}</summary>{% endif %}
+                  {% with config_values=fieldset.config_values %}
+                    {% include "admin/constance/includes/results_list.html" %}
+                  {% endwith %}
+                  {% if django_version >= "5.1" and fieldset.collapse %}</details>{% endif %}
+              </fieldset>
+              {% endfor %}
+            {% else %}
+              {% include "admin/constance/includes/results_list.html" %}
+            {% endif %}
+
+            <p class="paginator sticky-footer">
+              <input type="submit" name="_save" class="default" value="{% trans 'Save' %}">
+            </p>
+        </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; {{ opts.verbose_name_plural|capfirst }}
+</div>
+{% endblock %}

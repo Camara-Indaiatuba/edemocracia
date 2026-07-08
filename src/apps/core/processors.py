@@ -1,5 +1,8 @@
 from django.conf import settings
 
+from .auth_config import is_email_login_enabled, is_google_login_enabled
+from .themes import get_active_theme
+
 
 def settings_variables(request):
     return {
@@ -11,8 +14,8 @@ def settings_variables(request):
         'PAUTAS_ENABLED': settings.PAUTAS_ENABLED,
         'DISCOURSE_ENABLED': settings.DISCOURSE_ENABLED,
         'AUDIENCIAS_ENABLED': settings.AUDIENCIAS_ENABLED,
-        'GOOGLE_LOGIN_ENABLED': bool(settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
-                                     and settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET),
+        'EMAIL_LOGIN_ENABLED': is_email_login_enabled(),
+        'GOOGLE_LOGIN_ENABLED': is_google_login_enabled(),
         'FACEBOOK_LOGIN_ENABLED': bool(settings.SOCIAL_AUTH_FACEBOOK_KEY
                                        and settings.SOCIAL_AUTH_FACEBOOK_SECRET),
     }
@@ -24,4 +27,10 @@ def home_customization(request):
         'site_logo': settings.SITE_LOGO,
         'site_logo_text_line': settings.SITE_LOGO_TEXT_LINE,
         'site_logo_text_city': settings.SITE_LOGO_TEXT_CITY,
+    }
+
+
+def theme_customization(request):
+    return {
+        'active_theme': get_active_theme(),
     }

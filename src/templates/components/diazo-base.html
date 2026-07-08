@@ -16,6 +16,7 @@
           <link rel="stylesheet" href="{% static 'edem-navigation/scss/edem.scss' %}" type="text/x-scss" />
         {% endblock styles %}
       {% endcompress %}
+      {% include "components/theme-overrides.html" %}
     </head>
 
     <body {% block body_properties %}{% endblock %}>

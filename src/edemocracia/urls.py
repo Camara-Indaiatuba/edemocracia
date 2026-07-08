@@ -4,14 +4,17 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from apps.accounts.views import global_logout
 from apps.accounts.api import api_root, UserListAPI
-from apps.core.views import index
+from apps.core.views import index, reset_theme_colors, theme_css
 from django.views.generic import TemplateView
 
 urlpatterns = [
     path('', index, name='home'),
+    path('theme.css', theme_css, name='theme_css'),
     path('sobre/tos/', TemplateView.as_view(template_name='about/tos.html'),
          name='terms_of_service'),
     path('admin/logout/', global_logout, {'next_url': '/admin/login/'}),
+    path('admin/theme/reset-colors/', reset_theme_colors,
+         name='reset_theme_colors'),
     path('admin/', admin.site.urls),
     path('accounts/', include('apps.accounts.urls')),
     path('api/v1/', api_root),

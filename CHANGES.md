@@ -15,6 +15,152 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-08 - Preparacao da versao v1.0.0-rc2
+
+### Objetivo
+
+Registrar a rodada de melhorias administrativas e preparar o repositorio para publicacao da versao `v1.0.0-rc2` no GitHub.
+
+### Arquivos alterados
+
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+- Arquivos de tema visual, login configuravel e admin Constance dividido ja listados nas entradas anteriores desta rodada.
+
+### Resumo tecnico
+
+- `CHANGELOG.md` ganhou a secao `v1.0.0-rc2 - 2026-07-08`.
+- `README.md` passou a explicar que `IMAGE_TAG` versiona as imagens auxiliares de Wikilegis, Audiencias e Discourse, e que a tag so deve ser alterada depois de publicar as tres imagens auxiliares correspondentes.
+- Mantido `IMAGE_TAG=1.0.0-rc1` nos exemplos porque as imagens auxiliares nao foram republicadas nesta rodada.
+- Planejado push para o repositorio `Camara-Indaiatuba/edemocracia` e tag Git `v1.0.0-rc2`.
+
+### Validacao
+
+- `python manage.py check` retornou sem problemas.
+- `git diff --check` retornou sem problemas.
+
+### Pendencias ou observacoes
+
+- Se Wikilegis, Audiencias ou Discourse forem alterados em uma proxima rodada, publicar novas imagens auxiliares no GHCR e entao atualizar `IMAGE_TAG`.
+
+## 2026-07-01 - Temas visuais configuraveis no admin
+
+### Objetivo
+
+Permitir que administradores escolham o tema visual do portal sem editar codigo, aplicando as cores ao e-Democracia, Audiencias, Wikilegis e barra superior da Expressao.
+
+### Arquivos alterados
+
+- `src/apps/core/themes.py`
+- `src/apps/core/forms.py`
+- `src/apps/core/processors.py`
+- `src/apps/core/views.py`
+- `src/edemocracia/settings.py`
+- `src/edemocracia/urls.py`
+- `src/templates/components/theme-overrides.css`
+- `src/templates/components/theme-overrides.html`
+- `src/templates/admin/constance/change_list.html`
+- `src/templates/components/base.html`
+- `src/templates/components/diazo-base.html`
+- `config/etc/nginx/conf.d/default.conf`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Criados cinco temas no Constance:
+  - Tema 1 original, sem CSS extra;
+  - Tema 2 azul/branco/vermelho;
+  - Tema 3 azul/verde;
+  - Tema 4 branco/vermelho;
+  - Tema 5 azul/vermelho/amarelo.
+- Temas 2 a 5 ganharam campos editaveis de cor no admin, mantendo o Tema 1 original sem override.
+- `theme_customization` injeta o tema ativo nos templates.
+- `theme-overrides.html` aplica CSS variavel carregado apos os estilos originais.
+- Criado endpoint `/theme.css` para servir o mesmo CSS dinamico como arquivo externo.
+- Nginx injeta `/theme.css` em respostas HTML de `/audiencias/`, pois esse modulo e servido diretamente pelo container de Audiencias.
+- O Tema 6 customizado foi removido antes da validacao final.
+- O Tema 2 deixou de usar Indaiatuba no nome exibido no admin.
+- As cores customizaveis foram recolocadas como campos por tema, e nao como um sexto tema separado.
+- Ajustados overrides do Tema 2 para corrigir contraste de links/botoes, fundo do Wikilegis na home, faixa visual da capa, cabecalhos/abas/acoes de Audiencias e icone vazado dos cards do Wikilegis.
+- Painel do Constance passou a mostrar somente as cores do tema selecionado e ganhou link para restaurar as cores padrao desse tema.
+- Painel do Constance passou a reposicionar a selecao de tema no topo, antes da edicao das cores do tema ativo.
+- O destaque do texto da capa no Tema 2 passou a usar vermelho claro, mantendo enfase com melhor leitura no fundo azul.
+- Os arcos da capa usam o mesmo desenho SVG do tema original, preenchido com as cores do tema ativo.
+- A area do Wikilegis na home voltou a usar a textura original com pontos, agora tonalizada pelas cores do tema ativo e estendida tambem atras do logo.
+- O botao "Ver todos" do Expressao voltou ao padrao de link sublinhado, sem fundo vermelho preenchido.
+- Os marcadores de projetos do Wikilegis passaram a usar circulo vazado no Tema 2.
+
+### Validacao
+
+- `python manage.py check` retornou sem problemas.
+- `git diff --check` nao encontrou problemas de whitespace.
+- `edemocracia` e `nginx` foram reiniciados.
+- Com Tema 1 original, `/theme.css` retorna CSS vazio e a home nao injeta `edem-theme-overrides`.
+- Com Tema 2 temporariamente ativo, `/theme.css`, home, Wikilegis e Expressao exibiram `--edem-theme-primary: #005ca7`.
+- `/audiencias/` passou a receber `<link rel="stylesheet" href="/theme.css">`.
+- Apos remover o Tema 6, o formulario do Constance foi conferido e exibiu apenas cinco opcoes.
+- Formulario do Constance foi conferido com campos de cor por tema e widget `color`.
+- `/audiencias/sala/7/` foi conferida e tambem recebe `<link rel="stylesheet" href="/theme.css">`.
+- `TEMA_VISUAL` ficou em `blue_white_red` para conferencia manual do Tema 2.
+- `TEMA_2_COR_LINK` foi ajustado no banco local para o novo padrao `#ffb3b8`, substituindo o branco salvo durante a primeira validacao.
+
+## 2026-07-07 - Configuracao administrativa de formas de login
+
+### Objetivo
+
+Permitir que administradores configurem formas de login e credenciais relacionadas pelo painel admin, sem editar `.env` para alternar e-mail/Google ou trocar SMTP/chaves OAuth.
+
+### Arquivos alterados
+
+- `src/apps/accounts/backends.py`
+- `src/apps/accounts/views.py`
+- `src/apps/core/admin.py`
+- `src/apps/core/auth_config.py`
+- `src/apps/core/constance_forms.py`
+- `src/apps/core/email_backend.py`
+- `src/apps/core/forms.py`
+- `src/apps/core/processors.py`
+- `src/edemocracia/settings.py`
+- `src/templates/admin/constance/change_list.html`
+- `src/templates/edem-navigation/edem-navigation.html`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Adicionados campos no Constance para habilitar/desabilitar login por e-mail e login com Google.
+- Adicionados campos no Constance para Client ID e Client secret do Google.
+- Adicionados campos no Constance para SMTP: host, porta, usuario, senha, TLS, SSL e remetente padrao.
+- Criado formulario customizado do Constance validando que pelo menos uma forma de login fique habilitada.
+- A validacao tambem exige chaves quando Google estiver habilitado e SMTP minimo quando e-mail estiver habilitado.
+- Backend OAuth do Google passou a ler credenciais do Constance.
+- Backend de e-mail passou a ler SMTP do Constance no momento do envio.
+- Barra lateral de login/cadastro passa a esconder formulario local, cadastro por e-mail e recuperacao de senha quando login por e-mail estiver desabilitado.
+- Endpoints AJAX de login e cadastro por e-mail passam a bloquear chamadas diretas quando o login por e-mail estiver desabilitado.
+- No admin, campos do Google aparecem apenas quando Google esta habilitado; campos SMTP aparecem apenas quando e-mail esta habilitado.
+- O menu combinado `Config` foi removido do admin e dividido em dois itens: `Tema visual` e `Formas de login`.
+- README atualizado para explicar que `.env` fornece valores iniciais/fallback e que login, Google e SMTP podem ser alterados em `/admin/core/login_settings/`.
+
+### Validacao
+
+- `python src/manage.py check` retornou sem problemas.
+- `git diff --check` nao encontrou problemas de whitespace.
+- Validado que a configuracao ativa usa `apps.core.email_backend.ConfigurableEmailBackend`.
+- Validado que o backend Google ativo e `apps.accounts.backends.ConfigurableGoogleOAuth2`.
+- Validado que o formulario do Constance bloqueia salvar e-mail e Google desligados ao mesmo tempo.
+- Validado que o formulario do Constance bloqueia Google habilitado sem Client ID/secret.
+- Validado que o formulario do Constance bloqueia e-mail habilitado sem host SMTP e remetente padrao.
+- `edemocracia` e `nginx` foram reiniciados.
+- Home renderizou com Google, formulario de login por e-mail, cadastro por e-mail e recuperacao de senha habilitados conforme a configuracao atual.
+
+### Pendencias ou observacoes
+
+- Login Gov.br ainda nao foi implementado porque os campos oficiais de integracao ainda precisam ser definidos.
+- As credenciais salvas pelo admin ficam no banco do e-Democracia; o `.env` continua servindo como valor inicial/fallback.
+
 ## 2026-06-30 - Admin inicial e documentacao de reCAPTCHA
 
 ### Objetivo

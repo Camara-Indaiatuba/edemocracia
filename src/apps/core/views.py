@@ -1,12 +1,17 @@
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from revproxy.views import DiazoProxyView
-from django.shortcuts import render
 import json
 
 from apps.discourse.data import get_discourse_index_data
 from apps.wikilegis.data import get_wikilegis_index_data
 from apps.pautas.data import get_pautas_index_data
 from apps.audiencias.data import get_audiencias_index_data
+from apps.core.themes import THEME_PRESETS, get_active_theme, reset_config_colors
 
 
 class EdemProxyView(DiazoProxyView):
@@ -59,3 +64,27 @@ def index(request):
         context['live_rooms'] = rooms['live_rooms']
 
     return render(request, 'index.html', context)
+
+
+def theme_css(request):
+    css = render_to_string(
+        'components/theme-overrides.css',
+        {'active_theme': get_active_theme()},
+        request=request,
+    )
+    response = HttpResponse(css, content_type='text/css')
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+@staff_member_required
+def reset_theme_colors(request):
+    from constance import config
+
+    selected_theme = request.GET.get('theme')
+    if selected_theme not in THEME_PRESETS:
+        messages.error(request, 'Selecione um tema editavel para restaurar as cores.')
+    elif reset_config_colors(config, selected_theme):
+        messages.success(request, 'Cores padrao do tema restauradas.')
+
+    return redirect('/admin/core/theme_settings/')

@@ -73,31 +73,32 @@
         </div>
         {% endif %}
 
-        <form class="access JS-loginForm">
-          {% csrf_token %}
-          <div class="form-field">
-            <input class="input JS-formInput" id="id_username" name="username">
-            <label class="label" for="id_username"><span class="labeltext">Endereço de email</span></label>
-            <p class="error JS-inputError" data-input-name="username" hidden></p>
-          </div>
+        {% if EMAIL_LOGIN_ENABLED %}
+          <form class="access JS-loginForm">
+            {% csrf_token %}
+            <div class="form-field">
+              <input class="input JS-formInput" id="id_username" name="username">
+              <label class="label" for="id_username"><span class="labeltext">Endereço de email</span></label>
+              <p class="error JS-inputError" data-input-name="username" hidden></p>
+            </div>
 
-          <div class="form-field">
-            <input class="input JS-formInput" id="id_password" name="password" type="password">
-            <label class="label" for="id_password"><span class="labeltext">Senha</span></label>
-            <a class="action -input JS-fieldActionPassword" role="button">Mostrar Senha</a>
-            <p class="error JS-inputError" data-input-name="password" hidden></p>
-          </div>
+            <div class="form-field">
+              <input class="input JS-formInput" id="id_password" name="password" type="password">
+              <label class="label" for="id_password"><span class="labeltext">Senha</span></label>
+              <a class="action -input JS-fieldActionPassword" role="button">Mostrar Senha</a>
+              <p class="error JS-inputError" data-input-name="password" hidden></p>
+            </div>
 
-          <button class="edem-button JS-sendForm">Entrar</button>
+            <button class="edem-button JS-sendForm">Entrar</button>
 
-          <div class="errorbox JS-accessErrorBox" hidden>
-            <p class="error JS-accessError"></p>
-            <button class="edem-close-button -white JS-closeAccessError" type="button"></button>
-          </div>
-        </form>
+            <div class="errorbox JS-accessErrorBox" hidden>
+              <p class="error JS-accessError"></p>
+              <button class="edem-close-button -white JS-closeAccessError" type="button"></button>
+            </div>
+          </form>
 
-
-        <a class="link" href="/accounts/password/reset/">Esqueceu sua senha?</a>
+          <a class="link" href="/accounts/password/reset/">Esqueceu sua senha?</a>
+        {% endif %}
       </div>
 
       <div class="content JS-sidebarContent JS-signupContent">
@@ -122,6 +123,7 @@
         </div>
         {% endif %}
 
+        {% if EMAIL_LOGIN_ENABLED %}
         <form class="access JS-signUpForm">
           {% csrf_token %}
           <div class="form-field">
@@ -391,6 +393,7 @@
             <button class="edem-close-button -white JS-closeAccessError" type="button"></button>
           </div>
         </form>
+        {% endif %}
       </div>
     {% endif %}
 

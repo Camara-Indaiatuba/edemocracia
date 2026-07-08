@@ -1,5 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from social_core.backends.google import GoogleOAuth2
+
+from apps.core.auth_config import get_google_credentials
+
+
+class ConfigurableGoogleOAuth2(GoogleOAuth2):
+    def get_key_and_secret(self):
+        return get_google_credentials()
 
 
 class AuthenticationEmailBackend(object):

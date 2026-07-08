@@ -1,0 +1,376 @@
+{% if active_theme.enabled %}
+:root {
+  --edem-theme-primary: {{ active_theme.colors.primary }};
+  --edem-theme-primary-dark: {{ active_theme.colors.primary_dark }};
+  --edem-theme-secondary: {{ active_theme.colors.secondary }};
+  --edem-theme-accent: {{ active_theme.colors.accent }};
+  --edem-theme-link: {{ active_theme.colors.link }};
+  --edem-theme-surface: {{ active_theme.colors.surface }};
+  --edem-theme-surface-alt: {{ active_theme.colors.surface_alt }};
+  --edem-theme-text: {{ active_theme.colors.text }};
+  --edem-theme-on-primary: {{ active_theme.colors.on_primary }};
+  --edem-theme-on-secondary: {{ active_theme.colors.on_secondary }};
+  --edem-theme-soft-highlight: color-mix(in srgb, var(--edem-theme-link) 82%, white);
+}
+
+.edem-topbar > .stick,
+.footer {
+  background: linear-gradient(90deg, var(--edem-theme-primary) 0%, var(--edem-theme-primary-dark) 100%) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.edem-topbar > .stick > .brand > .name,
+.edem-topbar > .stick > .actions > .menu > .link,
+.edem-sidebar > .stick > .content > .username,
+.edem-sidebar > .stick > .content > .header,
+.edem-sidebar > .stick > .content > .info {
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.edem-topbar > .stick > .actions > .menu > .link.-highlight,
+.edem-sidebar > .stick > .content > .info > .link,
+.edem-sidebar > .stick > .content > .success > .highlight,
+.edem-sidebar > .stick > .content > .link,
+.footer > .briefing > .text > .owner,
+.footer > .tos > .link,
+.login-box__option.active,
+.login-box__link--forgotten-password,
+.edem-access a:not(.button),
+.edem-access .login-box__title,
+.owner-section > .secondhalf > .briefing > .owner {
+  color: var(--edem-theme-link) !important;
+}
+
+.edem-topbar > .stick > .actions > .menu > .link.-highlight::after,
+.edem-topbar > .stick > .actions > .menu > .link.-highlight::before,
+.login-box__yellow-bar {
+  background-color: var(--edem-theme-accent) !important;
+}
+
+.login-box__options,
+.edem-sidebar > .stick > .content > .header {
+  border-color: var(--edem-theme-accent) !important;
+}
+
+.edem-access .login-box__title,
+.edem-access a:not(.button) {
+  background-image: linear-gradient(var(--edem-theme-accent), var(--edem-theme-accent)) !important;
+}
+
+.edem-sidebar > .stick,
+.login-box {
+  background-color: var(--edem-theme-primary) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.edem-access {
+  background: linear-gradient(var(--edem-theme-primary), var(--edem-theme-primary-dark)) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.edem-access .login-box__choice-text {
+  color: var(--edem-theme-accent) !important;
+}
+
+.owner-section > .firsthalf {
+  background-color: var(--edem-theme-surface) !important;
+}
+
+.owner-section > .firsthalf > .logo > .label {
+  color: var(--edem-theme-text) !important;
+}
+
+.owner-section > .secondhalf {
+  background-color: var(--edem-theme-primary-dark) !important;
+  overflow: visible !important;
+}
+
+.owner-section > .secondhalf::before {
+  content: '' !important;
+  display: block !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  z-index: 0 !important;
+}
+
+.owner-section > .secondhalf::after {
+  content: none !important;
+  display: none !important;
+}
+
+@media (min-width: 64em) {
+  .owner-section > .secondhalf::before {
+    background-image: url("{{ active_theme.assets.left_leak }}") !important;
+    background-position: calc(100% + 1px) -1px !important;
+    background-repeat: no-repeat !important;
+    background-size: auto calc(100% + 2px) !important;
+    bottom: 0 !important;
+    height: 100% !important;
+    right: 100% !important;
+    top: 0 !important;
+    width: 15rem !important;
+  }
+}
+
+@media (max-width: 63.9375em) {
+  .owner-section > .secondhalf::before {
+    background-image: url("{{ active_theme.assets.top_leak }}") !important;
+    background-position: -4px calc(100% + 2px) !important;
+    background-repeat: no-repeat !important;
+    background-size: calc(100% + 8px) auto !important;
+    bottom: 100% !important;
+    height: 12rem !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+  }
+}
+
+.owner-section > .secondhalf > .briefing {
+  color: var(--edem-theme-on-primary) !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.owner-section > .secondhalf > .briefing > .owner {
+  color: var(--edem-theme-soft-highlight) !important;
+  text-shadow: 0 1px 1px color-mix(in srgb, var(--edem-theme-primary-dark) 70%, transparent) !important;
+}
+
+.section--audiencias {
+  background-color: var(--edem-theme-primary) !important;
+}
+
+.section--audiencias .section__info {
+  background-color: var(--edem-theme-primary-dark) !important;
+}
+
+.section--audiencias .section__title::before,
+.section--wikilegis .section__title::before,
+.section--discourse .section__title::before {
+  background-color: var(--edem-theme-secondary) !important;
+}
+
+.section--audiencias .section__button,
+.section--wikilegis .section__button,
+.section--discourse .section__button {
+  background-color: transparent !important;
+}
+
+.section--audiencias .section__button,
+.section--wikilegis .section__button {
+  background-image: linear-gradient(var(--edem-theme-accent), var(--edem-theme-accent)) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.section--discourse .section__button {
+  background-image: linear-gradient(var(--edem-theme-primary), var(--edem-theme-primary)) !important;
+  color: var(--edem-theme-text) !important;
+}
+
+.section--audiencias .section__title::before {
+  background-color: var(--edem-theme-accent) !important;
+}
+
+.section--audiencias .section__info {
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.section--wikilegis {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--edem-theme-primary-dark) 86%, transparent),
+      color-mix(in srgb, var(--edem-theme-primary) 72%, transparent)
+    ),
+    url("/static/img/wikilegis-bg.png") center center fixed !important;
+  background-color: var(--edem-theme-primary-dark) !important;
+  background-size: cover !important;
+}
+
+.section--wikilegis .section__info {
+  background-color: transparent !important;
+}
+
+.section--wikilegis .section__text,
+.section--wikilegis .section__link {
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.info-card--wikilegis .card-stats__value {
+  color: var(--edem-theme-secondary) !important;
+}
+
+.info-card--wikilegis .info-card__icon {
+  background-color: transparent !important;
+  border-color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-secondary) !important;
+}
+
+.section--discourse .section__title::before,
+.info-card--discourse .info-card__header,
+.info-card--discourse .card-stats__value {
+  background-color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-on-secondary) !important;
+}
+
+.info-card--audiencias .info-card__header--live,
+.info-card--audiencias .info-card__header--old-video,
+.info-card--audiencias .info-card__header--calendar {
+  background-color: var(--edem-theme-primary-dark) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.info-card--audiencias .card-stats__value {
+  color: var(--edem-theme-secondary) !important;
+}
+
+.wikilegis__banner {
+  background-color: var(--edem-theme-primary-dark) !important;
+}
+
+.wikilegis__banner .banner__info,
+.wikilegis__banner .banner__search {
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.wikilegis__banner .banner__search {
+  border-color: var(--edem-theme-accent) !important;
+}
+
+.wikilegis__bill-list [class^="item__icon"] {
+  background-color: transparent !important;
+  border-color: var(--edem-theme-secondary) !important;
+  border-style: solid !important;
+  border-width: 0.15em !important;
+  color: var(--edem-theme-secondary) !important;
+}
+
+.wikilegis__bill-list .suggestions__amount,
+.bill__content-wrapper .content__close,
+.bill__info .extra-infos__highlight,
+.bill__info .extra-infos__link {
+  color: var(--edem-theme-secondary) !important;
+}
+
+.wikilegis__bill-list .item__title,
+.wikilegis__bill-list .suggestions__label,
+.bill__info .info__title,
+.bill__content .title__name {
+  color: var(--edem-theme-text) !important;
+}
+
+.bill__content,
+.bill__amendments {
+  background-color: var(--edem-theme-surface-alt) !important;
+}
+
+.amendments__nav .nav__item[data-active="true"],
+.amendments__nav .nav__item:hover,
+.wikilegis .button,
+.button--modifier-amendment,
+.button--additive-amendment,
+.button--supress-amendment,
+.comments__submit,
+.amendments__form .button,
+.actions__link:hover,
+.amendments__suggest-button,
+.action-footer .action,
+.action-footer .button,
+.aud-button,
+.preview__floating-header,
+.show-all__button {
+  background-color: var(--edem-theme-secondary) !important;
+  border-color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-on-secondary) !important;
+}
+
+body.room-body,
+body.room-questions-body {
+  background-color: var(--edem-theme-primary-dark) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.room-header,
+.room-tabs .marker,
+.section-top,
+.navigation {
+  background: linear-gradient(45deg, var(--edem-theme-primary) 0%, var(--edem-theme-primary-dark) 100%) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.room-header > .logo {
+  background-color: var(--edem-theme-primary) !important;
+}
+
+.room-header > .logo::after {
+  background: linear-gradient(-45deg, var(--edem-theme-primary-dark) calc(50% - 1px), var(--edem-theme-primary) 50%) !important;
+}
+
+.room-main::before,
+.room-info::before {
+  background: linear-gradient(var(--edem-theme-primary-dark), transparent) !important;
+}
+
+.room-video > .extras,
+.room-h2::after,
+.question-box,
+.chat__floating-header,
+[class^="chat__read-more"],
+.read-more,
+.questions-section .vote-block__total-votes,
+.questions-section .vote-block__upvote-button:not(.disabled),
+.question-card .question-actions__button:not(.disabled),
+.action-footer {
+  background-color: var(--edem-theme-primary) !important;
+}
+
+.questions-section .vote-block__upvote-button.voted:not(.disabled),
+.questions-section .vote-block__total-votes.voted,
+.question-box .button,
+.preview--calendar .button,
+.preview--calendar .button:hover {
+  background-color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-on-secondary) !important;
+}
+
+.question-box .button {
+  border-color: var(--edem-theme-secondary) !important;
+}
+
+.room-main .alert {
+  background-color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-on-secondary) !important;
+}
+
+.room-tabs {
+  background-color: color-mix(in srgb, var(--edem-theme-primary) 55%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--edem-theme-secondary) 55%, transparent) !important;
+}
+
+.room-tabs .marker {
+  border-bottom-color: var(--edem-theme-secondary) !important;
+}
+
+.room-tabs a,
+.room-h2,
+.room-info h3,
+.calendar-table__weekday,
+.calendar-table__day,
+.calendar-table__month,
+.room-questions .link,
+.room-info .link {
+  color: var(--edem-theme-secondary) !important;
+}
+
+.preview--live-videos .preview__floating-header,
+.preview--calendar .preview__floating-header,
+.preview--closed-videos .preview__floating-header {
+  background-color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-on-secondary) !important;
+}
+
+.preview__show-all .show-all__button {
+  color: var(--edem-theme-on-secondary) !important;
+}
+{% endif %}

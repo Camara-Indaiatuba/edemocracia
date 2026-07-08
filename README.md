@@ -50,14 +50,14 @@ Preencha pelo menos:
 - `PUBLIC_HTTP_PORT`: porta HTTP local usada pelo proxy reverso.
 - `EXTRA_ALLOWED_HOSTS`: hosts extras separados por vírgula, útil para testes por IP ou nomes internos adicionais.
 - `IMAGE_REGISTRY`: registry das imagens dos módulos, por exemplo `ghcr.io/camara-indaiatuba`.
-- `IMAGE_TAG`: versão das imagens, por exemplo `1.0.0-rc1`.
+- `IMAGE_TAG`: versão das imagens auxiliares de Wikilegis, Audiências e Discourse. O release `v1.0.0-rc2` continua usando `1.0.0-rc1` enquanto essas imagens auxiliares não forem republicadas com uma tag nova.
 - `SITE_NAME`: nome da instituição.
 - `SITE_LOGO`: caminho do brasão ou logotipo.
 - `SITE_LOGO_TEXT_LINE` e `SITE_LOGO_TEXT_CITY`: textos exibidos ao lado do brasão.
 - `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`: conta administrativa inicial.
 - `POSTGRES_PASSWORD`: senha do banco.
 - `EDEMOCRACIA_SECRET_KEY`, `WIKILEGIS_SECRET_KEY`, `AUDIENCIAS_SECRET_KEY`, `DISCOURSE_SSO_SECRET` e `INTERNAL_API_KEY`.
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL` e `DEFAULT_FROM_EMAIL`.
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL` e `DEFAULT_FROM_EMAIL`: valores iniciais do SMTP. Depois do primeiro boot, esses dados podem ser alterados em `/admin/core/login_settings/`, no item `Formas de login`.
 - `RECAPTCHA_SITE_KEY` e `RECAPTCHA_PRIVATE_KEY`.
 
 Gere valores fortes para segredos e senhas:
@@ -139,12 +139,13 @@ Volte `SESSION_COOKIE_SECURE=True` e `CSRF_COOKIE_SECURE=True` antes de liberar 
 
 ## SMTP e confirmação de e-mail
 
-O cadastro por e-mail depende de SMTP real. Em produção, mantenha:
+O cadastro por e-mail depende de SMTP real. O `.env` define os valores iniciais, mas depois do primeiro acesso administrativo eles podem ser alterados em `/admin/core/login_settings/`, no item `Formas de login`, seção `Login por e-mail - SMTP`.
+
+Em produção, mantenha:
 
 ```dotenv
 REGISTRATION_AUTO_ACTIVATE=False
 REGISTRATION_SEND_ACTIVATION_EMAIL=True
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 ```
 
 Para porta `587`, normalmente use:
@@ -203,10 +204,19 @@ No `.env`, preencha:
 ```dotenv
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY=...
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET=...
-GOOGLE_LOGIN_ENABLED=True
 ```
 
+Esses valores entram como configuração inicial. Depois do primeiro boot, habilite/desabilite o login com Google e altere Client ID/secret em `/admin/core/login_settings/`, no item `Formas de login`, seção `Login com Google`.
+
 O login Google segue o comportamento padrão do Google: se o usuário já autorizou o app e está com sessão Google válida, ele pode entrar direto.
+
+## Formas de login no admin
+
+Em `/admin/core/login_settings/`, o item `Formas de login` permite habilitar login por e-mail e login com Google.
+
+O sistema exige pelo menos uma forma de login ativa. Se o login por e-mail estiver ativo, configure SMTP. Se o login com Google estiver ativo, configure Client ID e Client secret.
+
+O Gov.br ainda não está implementado nesta versão. Quando a integração for adicionada, ela deve entrar nessa mesma área de configuração.
 
 ## Publicação no GitHub e GHCR
 
@@ -226,7 +236,7 @@ git config user.name "Nome da Câmara ou responsável"
 git config user.email "email@example.org"
 ```
 
-As imagens dos módulos auxiliares devem ser publicadas no GitHub Container Registry. Faça login no GHCR com um token do GitHub que tenha permissão `write:packages`:
+As imagens dos módulos auxiliares devem ser publicadas no GitHub Container Registry. Só altere `IMAGE_TAG` para uma tag nova depois de publicar as três imagens auxiliares com essa mesma tag. Faça login no GHCR com um token do GitHub que tenha permissão `write:packages`:
 
 ```bash
 echo "TOKEN_GITHUB" | docker login ghcr.io -u USUARIO_OU_ORG --password-stdin

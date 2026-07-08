@@ -6,15 +6,26 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+Nenhuma mudanca registrada ainda.
+
+## v1.0.0-rc2 - 2026-07-08
+
+Segundo release candidate da versao municipal modernizada, com instalacao mais robusta, temas administrativos e configuracao de login pelo painel.
+
 ### Adicionado
 
 - Comando `ensure_initial_admin` cria a conta administrativa inicial do e-Democracia principal a partir de `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`.
+- Configuracao de tema visual no admin, com tema original preservado, quatro temas predefinidos e cores editaveis para os temas 2 a 5.
+- Edicao de cores no admin mostra apenas o tema selecionado e permite restaurar as cores padrao desse tema.
+- Configuracao administrativa de login por e-mail, login com Google, chaves OAuth Google e SMTP.
+- Admin separa `Tema visual` e `Formas de login` em itens distintos, mantendo Constance apenas como mecanismo interno.
 
 ### Alterado
 
 - README detalha que reCAPTCHA v2 real e valido para o dominio publico e obrigatorio para cadastro em producao.
 - `PUBLIC_BIND_ADDRESS`, `PUBLIC_HTTP_PORT` e `EXTRA_ALLOWED_HOSTS` passam a controlar a exposicao HTTP e hosts extras em instalacoes por compose.
 - Cookies `Secure` de sessao e CSRF continuam ativos por padrao em producao, mas agora podem ser desligados explicitamente por `.env` em validacoes HTTP locais.
+- Login com Google e envio de e-mails passam a ler credenciais salvas no admin, mantendo `.env` como valor inicial/fallback.
 
 ### Corrigido
 
@@ -25,6 +36,8 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 - Compose de producao deixa de somar uma porta fixa `8000` com a porta configurada em `PUBLIC_HTTP_PORT`.
 - Wikilegis e Audiencias aceitam os nomes internos da rede Docker em `ALLOWED_HOSTS`, evitando erro `500` na home por chamadas internas bloqueadas.
 - Banco PostgreSQL moderno do Discourse passa a receber a mesma senha forte usada pelo servico Discourse em producao, corrigindo `/expressao/` em instalacoes limpas.
+- Tema 2 ajusta contraste, arcos originais recoloridos da capa, fundo texturizado do Wikilegis na home, links "Ver todos" e marcadores vazados do Wikilegis.
+- Admin impede salvar configuracao sem nenhuma forma de login habilitada ou com Google/SMTP incompletos.
 
 ## v1.0.0-rc1 - 2026-06-24
 
