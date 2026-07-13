@@ -7,8 +7,11 @@ class SecretTextField(forms.CharField):
         kwargs.setdefault(
             'widget',
             forms.PasswordInput(
-                attrs={'autocomplete': 'new-password'},
-                render_value=True,
+                attrs={
+                    'autocomplete': 'new-password',
+                    'placeholder': 'Valor atual preservado se deixar em branco',
+                },
+                render_value=False,
             ),
         )
         super().__init__(*args, **kwargs)

@@ -7,8 +7,17 @@ class ThemeConstanceForm(ConstanceForm):
 
 
 class LoginConstanceForm(ConstanceForm):
+    secret_fields = (
+        'LOGIN_GOOGLE_OAUTH2_SECRET',
+        'LOGIN_EMAIL_HOST_PASSWORD',
+    )
+
     def clean(self):
         cleaned_data = super().clean()
+
+        for field_name in self.secret_fields:
+            if not cleaned_data.get(field_name):
+                cleaned_data[field_name] = self.initial.get(field_name, '')
 
         email_enabled = cleaned_data.get('LOGIN_EMAIL_ENABLED')
         google_enabled = cleaned_data.get('LOGIN_GOOGLE_ENABLED')

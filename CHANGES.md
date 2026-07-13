@@ -15,6 +15,42 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-13 - Protecao de segredos no admin de login
+
+### Objetivo
+
+Evitar que Client secret do Google e senha SMTP aparecam legiveis no admin ou no HTML da pagina de configuracao.
+
+### Arquivos alterados
+
+- `src/apps/core/admin.py`
+- `src/apps/core/constance_forms.py`
+- `src/apps/core/forms.py`
+- `src/templates/admin/constance/includes/results_list.html`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Campos `secret_text` deixam de renderizar o valor atual no HTML.
+- Ao salvar `Formas de login` com campos de segredo em branco, o valor anterior e preservado.
+- A coluna `DEFAULT` tambem passa a mascarar segredos.
+- Links de `Reset to default` foram removidos dos campos sensiveis para nao colocar segredos em atributos HTML.
+- O `.env` local teve a permissao ajustada para `600`.
+- README passou a orientar `chmod 600 .env` na instalacao.
+
+### Validacao
+
+- `python manage.py check` retornou sem problemas.
+- A pagina `/admin/core/login_settings/` respondeu `200`.
+- Validado que os valores sensiveis atuais nao aparecem no HTML renderizado.
+- Validado que salvar segredo em branco preserva o valor atual.
+
+### Pendencias ou observacoes
+
+- Como os segredos chegaram a aparecer em tela/captura durante os testes, o ideal e rotacionar o Client secret do Google e a senha SMTP antes de producao.
+
 ## 2026-07-08 - Preparacao da versao v1.0.0-rc2
 
 ### Objetivo

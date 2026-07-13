@@ -85,6 +85,21 @@ def _constance_settings_subset(fieldsets):
 
 class SplitConstanceAdmin(ConstanceAdmin):
     config_fieldsets = OrderedDict()
+    secret_mask = '********'
+
+    def get_config_value(self, name, options, form, initial):
+        config_value = super().get_config_value(name, options, form, initial)
+        field_type = options[2] if len(options) == 3 else None
+
+        if field_type == 'secret_text':
+            config_value.update({
+                'default': self.secret_mask if options[0] else '',
+                'raw_default': '',
+                'value': self.secret_mask if config_value.get('value') else '',
+                'is_secret': True,
+            })
+
+        return config_value
 
     def changelist_view(self, request, extra_context=None):
         with _constance_settings_subset(self.config_fieldsets):

@@ -8,6 +8,14 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 Nenhuma mudanca registrada ainda.
 
+## v1.0.0-rc3 - 2026-07-13
+
+Terceiro release candidate com correcao de exposicao visual de segredos no admin.
+
+### Corrigido
+
+- Admin deixa de exibir valores padrao sensiveis de SMTP/OAuth e preserva segredos quando o campo de senha e salvo em branco.
+
 ## v1.0.0-rc2 - 2026-07-08
 
 Segundo release candidate da versao municipal modernizada, com instalacao mais robusta, temas administrativos e configuracao de login pelo painel.

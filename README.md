@@ -40,6 +40,7 @@ Crie o arquivo de ambiente:
 
 ```bash
 cp .env.example .env
+chmod 600 .env
 nano .env
 ```
 
@@ -215,6 +216,8 @@ O login Google segue o comportamento padrão do Google: se o usuário já autori
 Em `/admin/core/login_settings/`, o item `Formas de login` permite habilitar login por e-mail e login com Google.
 
 O sistema exige pelo menos uma forma de login ativa. Se o login por e-mail estiver ativo, configure SMTP. Se o login com Google estiver ativo, configure Client ID e Client secret.
+
+Os campos sensíveis, como Client secret do Google e senha SMTP, ficam mascarados no admin. Ao editar `Formas de login`, deixe esses campos em branco para preservar o valor atual, ou preencha um novo valor para trocar o segredo.
 
 O Gov.br ainda não está implementado nesta versão. Quando a integração for adicionada, ela deve entrar nessa mesma área de configuração.
 
