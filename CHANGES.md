@@ -15,6 +15,43 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-13 - Alinhamento de segredos entre .env e compose local
+
+### Objetivo
+
+Remover senhas e chaves fixas do compose local quando houver valores no `.env`, deixando desenvolvimento e producao mais proximos sem perder defaults simples para testes locais.
+
+### Arquivos alterados
+
+- `docker-compose.yml`
+- `.env.local.example`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+- `.env` local, nao versionado
+
+### Resumo tecnico
+
+- `docker-compose.yml` passou a ler `POSTGRES_PASSWORD`, `EDEMOCRACIA_SECRET_KEY`, `WIKILEGIS_SECRET_KEY`, `AUDIENCIAS_SECRET_KEY`, `DISCOURSE_SSO_SECRET`, `WIKILEGIS_API_KEY` e `AUDIENCIAS_API_KEY`.
+- `.env.local.example` passou a listar as mesmas variaveis de segredo usadas pelo compose.
+- O `.env` local foi complementado com as variaveis faltantes, sem registrar valores reais no Git.
+- A senha do usuario `root` dos bancos PostgreSQL em execucao foi rotacionada para o novo `POSTGRES_PASSWORD`.
+- README passou a explicar a relacao entre `docker-compose.yml` e `docker-compose.prod.yml`.
+
+### Validacao
+
+- `docker compose config --quiet` retornou sem problemas.
+- `git diff --check` retornou sem problemas.
+- `python manage.py check` retornou sem problemas.
+- Containers principais foram recriados com o `.env` atualizado.
+- `/admin/` respondeu `302` para login.
+- `/` respondeu `200`.
+- Chamada interna do e-Democracia para o Wikilegis respondeu com sucesso.
+
+### Pendencias ou observacoes
+
+- O compose base ainda mantem fallbacks simples para desenvolvimento local. Em producao, usar sempre o overlay `docker-compose.prod.yml`.
+
 ## 2026-07-13 - Protecao de segredos no admin de login
 
 ### Objetivo

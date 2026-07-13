@@ -18,6 +18,20 @@ O objetivo desta distribuição é permitir que uma câmara clone o repositório
 
 O compose usa imagens versionadas para Wikilegis, Audiências e Discourse. Antes de publicar uma versão final para terceiros, publique essas imagens no registry configurado em `IMAGE_REGISTRY` ou ajuste o compose para apontar para outro registry.
 
+## Compose local e produção
+
+O `docker-compose.yml` é a base comum do projeto. Ele também permite desenvolvimento local, por isso mantém alguns defaults de conveniência, como `DEBUG=True` e cookies não seguros quando a variável correspondente não existe.
+
+O `docker-compose.prod.yml` é uma camada de produção aplicada por cima da base. Ele troca defaults de desenvolvimento por valores obrigatórios do `.env`, ativa configurações mais rígidas e remove valores fixos de banco, APIs e segredos.
+
+Para produção ou homologação pública, use sempre:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+O `.env` continua sendo o único lugar para segredos de boot e infraestrutura, como senhas de banco, `SECRET_KEY` dos módulos, segredo SSO do Discourse e chaves internas. Configurações operacionais que podem mudar depois, como SMTP, Google, reCAPTCHA e identidade visual, podem ser preenchidas inicialmente no `.env` e depois ajustadas pelo admin quando houver tela para isso.
+
 ## Requisitos
 
 - Servidor Linux com Docker Engine e Docker Compose Plugin.

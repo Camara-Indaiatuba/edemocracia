@@ -29,7 +29,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
       POSTGRES_DB: root
 
   discourse_db:
@@ -40,7 +40,7 @@ services:
       - discourse_db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
       POSTGRES_DB: root
 
   discourse_modern_db:
@@ -51,7 +51,7 @@ services:
       - discourse_modern_db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
       POSTGRES_DB: discourse
 
   redis:
@@ -76,7 +76,7 @@ services:
       SITE_LOGO_TEXT_CITY: ${SITE_LOGO_TEXT_CITY:-Nome da Cidade}
       SITE_URL: ${SITE_URL:-http://localhost:8000}
       DEBUG: ${EDEMOCRACIA_DEBUG:-True}
-      SECRET_KEY: ${SECRET_KEY:-secret_key}
+      SECRET_KEY: ${EDEMOCRACIA_SECRET_KEY:-secret_key}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-email@admin.com}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-123}
@@ -95,7 +95,7 @@ services:
       DATABASE_ENGINE: postgresql_psycopg2
       DATABASE_NAME: edemocracia
       DATABASE_USER: root
-      DATABASE_PASSWORD: root
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-root}
       DATABASE_HOST: db
       DATABASE_PORT: 5432
       SOCIAL_AUTH_GOOGLE_OAUTH2_KEY: ${SOCIAL_AUTH_GOOGLE_OAUTH2_KEY:-}
@@ -118,7 +118,7 @@ services:
       WIKILEGIS_ENABLED: 'True'
       WIKILEGIS_UPSTREAM: http://wikilegis:8000
       WIKILEGIS_API_URL: '/api/v1/'
-      WIKILEGIS_API_KEY: api_key
+      WIKILEGIS_API_KEY: ${WIKILEGIS_API_KEY:-api_key}
       PAUTAS_ENABLED: 'False'
       PAUTAS_UPSTREAM:
       PAUTAS_API_URL:
@@ -126,10 +126,10 @@ services:
       AUDIENCIAS_ENABLED: 'True'
       AUDIENCIAS_UPSTREAM: http://audienciasweb:8000/audiencias/
       AUDIENCIAS_API_URL:
-      AUDIENCIAS_API_KEY:
+      AUDIENCIAS_API_KEY: ${AUDIENCIAS_API_KEY:-secret_key}
       DISCOURSE_ENABLED: 'True'
       DISCOURSE_UPSTREAM: http://discourse/expressao
-      DISCOURSE_SSO_SECRET: sso_secret
+      DISCOURSE_SSO_SECRET: ${DISCOURSE_SSO_SECRET:-sso_secret}
 
   wikilegis:
     image: ${IMAGE_REGISTRY:-ghcr.io/camara-indaiatuba}/edemocracia-wikilegis:${IMAGE_TAG:-1.0.0-rc1}
@@ -141,8 +141,8 @@ services:
     volumes:
       - wikilegis_py312:/var/labhacker/wikilegis
     environment:
-      API_KEY: api_key
-      SECRET_KEY: secret_key
+      API_KEY: ${WIKILEGIS_API_KEY:-api_key}
+      SECRET_KEY: ${WIKILEGIS_SECRET_KEY:-secret_key}
       FORCE_SCRIPT_NAME: /wikilegis
       DEBUG: 'True'
       ALLOWED_HOSTS: '*'
@@ -165,7 +165,7 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       DATABASE_ENGINE: postgresql
       DATABASE_NAME: wikilegis
-      DATABASE_PASSWORD: root
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-root}
       DATABASE_USER: root
       DATABASE_HOST: db
       DATABASE_PORT: 5432
@@ -191,7 +191,7 @@ services:
       EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@example.invalid}
       NOTIFICATION_EMAIL_LIST: ''
-      DJANGO_SECRET_KEY: secret_key
+      DJANGO_SECRET_KEY: ${AUDIENCIAS_SECRET_KEY:-secret_key}
       DEBUG: 'False'
       ENABLE_REMOTE_USER: 'True'
       URL_PREFIX: audiencias
@@ -216,7 +216,7 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       DATABASE_ENGINE: postgresql_psycopg2
       DATABASE_NAME: audiencias
-      DATABASE_PASSWORD: root
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-root}
       DATABASE_USER: root
       DATABASE_HOST: db
       DATABASE_PORT: 5432
@@ -245,7 +245,7 @@ services:
       EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-no-reply@example.invalid}
       NOTIFICATION_EMAIL_LIST: ''
-      DJANGO_SECRET_KEY: secret_key
+      DJANGO_SECRET_KEY: ${AUDIENCIAS_SECRET_KEY:-secret_key}
       DEBUG: 'False'
       ENABLE_REMOTE_USER: 'True'
       URL_PREFIX: audiencias
@@ -270,7 +270,7 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       DATABASE_ENGINE: postgresql_psycopg2
       DATABASE_NAME: audiencias
-      DATABASE_PASSWORD: root
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-root}
       DATABASE_USER: root
       DATABASE_HOST: db
       DATABASE_PORT: 5432
@@ -307,7 +307,7 @@ services:
       DISCOURSE_DB_PORT: '5432'
       DISCOURSE_DB_NAME: 'discourse'
       DISCOURSE_DB_USERNAME: 'root'
-      DISCOURSE_DB_PASSWORD: 'root'
+      DISCOURSE_DB_PASSWORD: ${POSTGRES_PASSWORD:-root}
       DISCOURSE_HOSTNAME: ${SITE_DOMAIN:-192.168.193.110}
       DISCOURSE_DEVELOPER_EMAILS: ${ADMIN_EMAIL:-email@admin.com}
       DISCOURSE_SKIP_EMAIL_SETUP: '1'
@@ -317,7 +317,7 @@ services:
       DISCOURSE_REDIS_PORT: 6379
       DISCOURSE_RELATIVE_URL_ROOT: '/expressao'
       DISCOURSE_DISABLE_EMAILS: 'yes'
-      DISCOURSE_SSO_SECRET: 'sso_secret'
+      DISCOURSE_SSO_SECRET: ${DISCOURSE_SSO_SECRET:-sso_secret}
 
   discourse_legacy:
     image: labhackercd/discourse-docker
@@ -340,7 +340,7 @@ services:
       DISCOURSE_DB_PORT: '5432'
       DISCOURSE_DB_NAME: 'discourse'
       DISCOURSE_DB_USERNAME: 'root'
-      DISCOURSE_DB_PASSWORD: 'root'
+      DISCOURSE_DB_PASSWORD: ${POSTGRES_PASSWORD:-root}
       DISCOURSE_HOSTNAME: 'localhost'
       DISCOURSE_SMTP_ADDRESS:
       DISCOURSE_SMTP_PORT: 587
@@ -358,5 +358,5 @@ services:
       DISCOURSE_FAVICON_URL: '\/images\/default-favicon.ico'
       DISCOURSE_APPLE_TOUCH_ICON_URL: '\/images\/default-apple-touch-icon.png'
       DISCOURSE_SSO_URL: 'http:\/\/127.0.0.1:8000'
-      DISCOURSE_SSO_SECRET: 'sso_secret'
+      DISCOURSE_SSO_SECRET: ${DISCOURSE_SSO_SECRET:-sso_secret}
       DISCOURSE_FORCE_HOSTNAME: ''

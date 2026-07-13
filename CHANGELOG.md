@@ -8,6 +8,16 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 Nenhuma mudanca registrada ainda.
 
+## v1.0.0-rc4 - 2026-07-13
+
+Quarto release candidate com alinhamento de segredos no compose local e no modelo de `.env`.
+
+### Alterado
+
+- `docker-compose.yml` passa a ler senhas, segredos e chaves internas do `.env` quando informados, mantendo valores simples apenas como fallback local.
+- `.env.local.example` passa a listar `POSTGRES_PASSWORD`, secrets dos modulos, segredo SSO do Discourse e chaves internas/API.
+- README explica a diferenca entre compose base/local e overlay de producao.
+
 ## v1.0.0-rc3 - 2026-07-13
 
 Terceiro release candidate com correcao de exposicao visual de segredos no admin.
