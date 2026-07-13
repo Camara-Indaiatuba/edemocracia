@@ -18,16 +18,26 @@ O objetivo desta distribuição é permitir que uma câmara clone o repositório
 
 O compose usa imagens versionadas para Wikilegis, Audiências e Discourse. Antes de publicar uma versão final para terceiros, publique essas imagens no registry configurado em `IMAGE_REGISTRY` ou ajuste o compose para apontar para outro registry.
 
-## Compose local e produção
+## Compose e ambientes
 
-O `docker-compose.yml` é a base comum do projeto. Ele também permite desenvolvimento local, por isso mantém alguns defaults de conveniência, como `DEBUG=True` e cookies não seguros quando a variável correspondente não existe.
+O `docker-compose.yml` é o arquivo único para subir o portal. Para uma instalação comum, copie `.env.example` para `.env`, preencha os valores reais e suba com `docker compose up -d`.
 
-O `docker-compose.prod.yml` é uma camada de produção aplicada por cima da base. Ele troca defaults de desenvolvimento por valores obrigatórios do `.env`, ativa configurações mais rígidas e remove valores fixos de banco, APIs e segredos.
-
-Para produção ou homologação pública, use sempre:
+Para produção, use `.env` com domínio público, HTTPS, SMTP real, reCAPTCHA real e segredos fortes:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose up -d
+```
+
+Se quiser manter uma homologação separada no mesmo servidor, crie outro arquivo de ambiente e use outro nome de projeto, evitando misturar volumes e bancos:
+
+```bash
+docker compose --project-name edemocracia-homologa --env-file .env.homologa up -d
+```
+
+Para produção no mesmo servidor:
+
+```bash
+docker compose --project-name edemocracia-prod --env-file .env.prod up -d
 ```
 
 O `.env` continua sendo o único lugar para segredos de boot e infraestrutura, como senhas de banco, `SECRET_KEY` dos módulos, segredo SSO do Discourse e chaves internas. Configurações operacionais que podem mudar depois, como SMTP, Google, reCAPTCHA e identidade visual, podem ser preenchidas inicialmente no `.env` e depois ajustadas pelo admin quando houver tela para isso.
@@ -65,7 +75,7 @@ Preencha pelo menos:
 - `PUBLIC_HTTP_PORT`: porta HTTP local usada pelo proxy reverso.
 - `EXTRA_ALLOWED_HOSTS`: hosts extras separados por vírgula, útil para testes por IP ou nomes internos adicionais.
 - `IMAGE_REGISTRY`: registry das imagens dos módulos, por exemplo `ghcr.io/camara-indaiatuba`.
-- `IMAGE_TAG`: versão das imagens auxiliares de Wikilegis, Audiências e Discourse. O release `v1.0.0-rc2` continua usando `1.0.0-rc1` enquanto essas imagens auxiliares não forem republicadas com uma tag nova.
+- `IMAGE_TAG`: versão das imagens auxiliares de Wikilegis, Audiências e Discourse. O release `v1.0.0-rc5` continua usando `1.0.0-rc1` enquanto essas imagens auxiliares não forem republicadas com uma tag nova.
 - `SITE_NAME`: nome da instituição.
 - `SITE_LOGO`: caminho do brasão ou logotipo.
 - `SITE_LOGO_TEXT_LINE` e `SITE_LOGO_TEXT_CITY`: textos exibidos ao lado do brasão.
@@ -84,13 +94,13 @@ openssl rand -hex 32
 Suba os serviços:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose up -d --build
 ```
 
 Verifique se os containers subiram:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+docker compose ps
 ```
 
 Faça uma validação rápida:
@@ -98,19 +108,19 @@ Faça uma validação rápida:
 ```bash
 curl -fsS "http://localhost:${PUBLIC_HTTP_PORT:-8000}/admin/" >/dev/null
 curl -fsS "http://localhost:${PUBLIC_HTTP_PORT:-8000}/" >/dev/null
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec edemocracia curl -fsS "http://wikilegis:8000/api/v1/bill/?limit=1" >/dev/null
+docker compose exec edemocracia curl -fsS "http://wikilegis:8000/api/v1/bill/?limit=1" >/dev/null
 ```
 
 Verifique a configuração do Django:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py check'
+docker compose exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py check'
 ```
 
 Colete os arquivos estáticos se necessário:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py collectstatic --noinput'
+docker compose exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py collectstatic --noinput'
 ```
 
 ## Proxy HTTPS
@@ -201,7 +211,7 @@ RECAPTCHA_PRIVATE_KEY=...
 As chaves de exemplo ou chaves criadas para outro domínio não servem para produção. Depois de alterar o `.env`, recrie os containers para carregar as novas variáveis:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose up -d
 ```
 
 ## Login com Google
@@ -341,7 +351,7 @@ Para desenvolvimento em rede local, use `.env.local.example` como base:
 cp .env.local.example .env
 ```
 
-Depois suba sem o arquivo de produção:
+Depois suba normalmente:
 
 ```bash
 docker compose up -d --build

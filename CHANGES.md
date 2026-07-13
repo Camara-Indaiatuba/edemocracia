@@ -15,6 +15,47 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-13 - Compose unico para instalacao
+
+### Objetivo
+
+Simplificar a instalacao para outras camaras, evitando a orientacao de sempre combinar `docker-compose.yml` com `docker-compose.prod.yml`.
+
+### Arquivos alterados
+
+- `docker-compose.yml`
+- `docker-compose.prod.yml`
+- `.env.local.example`
+- `.env.prod.example`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+- `.env` local, nao versionado
+
+### Resumo tecnico
+
+- Regras de producao foram consolidadas em `docker-compose.yml`.
+- `docker-compose.prod.yml` foi removido.
+- `.env.prod.example` foi removido para evitar duplicidade com `.env.example`.
+- O fluxo principal de instalacao agora e `docker compose up -d --build`.
+- Homologacao e producao no mesmo servidor passam a ser diferenciadas por `--project-name` e `--env-file`, nao por compose diferente.
+- `.env.local.example` recebeu as variaveis que faltavam para validar com o compose unico.
+- O `.env` local recebeu variaveis de bootstrap administrativo que antes vinham de fallback do compose.
+
+### Validacao
+
+- `docker compose config --quiet` retornou sem problemas com o `.env` local.
+- `docker compose --env-file .env.example config --quiet` retornou sem problemas.
+- `docker compose --env-file .env.local.example config --quiet` retornou sem problemas.
+- `docker compose up -d` recriou os servicos com o compose unico.
+- `python manage.py check` no container principal retornou sem problemas.
+- Home, admin, Wikilegis, Audiências, Expressão e CSS do admin responderam por HTTP.
+- Chamada interna do e-Democracia para a API do Wikilegis respondeu com sucesso.
+
+### Pendencias ou observacoes
+
+- Os registros antigos neste arquivo ainda citam `docker-compose.prod.yml` como historico do caminho anterior. A partir desta entrada, o fluxo vigente e compose unico.
+
 ## 2026-07-13 - Alinhamento de segredos entre .env e compose local
 
 ### Objetivo

@@ -8,6 +8,17 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 Nenhuma mudanca registrada ainda.
 
+## v1.0.0-rc5 - 2026-07-13
+
+Quinto release candidate com instalacao simplificada em um unico arquivo Compose.
+
+### Alterado
+
+- `docker-compose.yml` passa a ser o unico compose necessario para producao, homologacao e desenvolvimento.
+- `docker-compose.prod.yml` foi removido para reduzir ambiguidade na instalacao.
+- `.env.prod.example` foi removido; `.env.example` e o modelo principal para instalacao e `.env.local.example` fica apenas para desenvolvimento local.
+- README passa a orientar `docker compose up -d` como fluxo principal.
+
 ## v1.0.0-rc4 - 2026-07-13
 
 Quarto release candidate com alinhamento de segredos no compose local e no modelo de `.env`.
