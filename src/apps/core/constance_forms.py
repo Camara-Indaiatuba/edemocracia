@@ -10,6 +10,7 @@ class LoginConstanceForm(ConstanceForm):
     secret_fields = (
         'LOGIN_GOOGLE_OAUTH2_SECRET',
         'LOGIN_EMAIL_HOST_PASSWORD',
+        'LOGIN_RECAPTCHA_PRIVATE_KEY',
     )
 
     def clean(self):
@@ -57,5 +58,17 @@ class LoginConstanceForm(ConstanceForm):
                 'LOGIN_EMAIL_USE_SSL',
                 'Escolha TLS ou SSL, nao os dois ao mesmo tempo.',
             )
+
+        if cleaned_data.get('LOGIN_RECAPTCHA_ENABLED'):
+            if not cleaned_data.get('LOGIN_RECAPTCHA_SITE_KEY'):
+                self.add_error(
+                    'LOGIN_RECAPTCHA_SITE_KEY',
+                    'Informe a chave publica para habilitar o reCAPTCHA.',
+                )
+            if not cleaned_data.get('LOGIN_RECAPTCHA_PRIVATE_KEY'):
+                self.add_error(
+                    'LOGIN_RECAPTCHA_PRIVATE_KEY',
+                    'Informe a chave secreta para habilitar o reCAPTCHA.',
+                )
 
         return cleaned_data

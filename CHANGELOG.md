@@ -6,7 +6,17 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
-Nenhuma mudanca registrada ainda.
+### Adicionado
+
+- Admin passa a ter `Identidade do portal`, para editar nome da Camara, brasao e texto ao lado do brasao sem mexer no `.env`.
+- Admin passa a ter `Modulos`, para exibir/ocultar Audiencias, Wikilegis e Expressao.
+- `Formas de login` passa a configurar e ligar/desligar reCAPTCHA do cadastro por e-mail.
+
+### Alterado
+
+- `.env.example` passa a conter apenas dominio, porta, segredos, conta admin inicial e seguranca de boot.
+- `.env` local foi limpo para manter apenas configuracao tecnica/infraestrutura, com valores operacionais migrados para o admin.
+- README separa o que deve ser configurado no `.env` e o que deve ser configurado pelo admin.
 
 ## v1.0.0-rc5 - 2026-07-13
 

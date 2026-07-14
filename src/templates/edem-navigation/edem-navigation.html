@@ -382,8 +382,10 @@
             <p class="error JS-inputError" data-input-name="birthdate" hidden></p>
           </div>
 
-          <div id="recaptcha" class="g-recaptcha" data-sitekey="{% use_macro recaptcha %}"></div>
-          <script src='https://www.google.com/recaptcha/api.js'></script>
+          {% if RECAPTCHA_ENABLED %}
+            <div id="recaptcha" class="g-recaptcha" data-sitekey="{% use_macro recaptcha %}"></div>
+            <script src="https://www.google.com/recaptcha/api.js"></script>
+          {% endif %}
 
           <button class="edem-button JS-sendForm">Cadastrar</button>
 

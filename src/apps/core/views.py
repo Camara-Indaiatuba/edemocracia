@@ -11,6 +11,11 @@ from apps.discourse.data import get_discourse_index_data
 from apps.wikilegis.data import get_wikilegis_index_data
 from apps.pautas.data import get_pautas_index_data
 from apps.audiencias.data import get_audiencias_index_data
+from apps.core.module_config import (
+    is_audiencias_enabled,
+    is_discourse_enabled,
+    is_wikilegis_enabled,
+)
 from apps.core.themes import THEME_PRESETS, get_active_theme, reset_config_colors
 
 
@@ -50,13 +55,13 @@ def index(request):
     if settings.PAUTAS_ENABLED:
         context['pautas'] = get_pautas_index_data()
 
-    if settings.WIKILEGIS_ENABLED:
+    if is_wikilegis_enabled():
         context['bills'] = get_wikilegis_index_data()
 
-    if settings.DISCOURSE_ENABLED:
+    if is_discourse_enabled():
         context['topics'] = get_discourse_index_data()
 
-    if settings.AUDIENCIAS_ENABLED:
+    if is_audiencias_enabled():
         rooms = get_audiencias_index_data()
 
         context['history_rooms'] = rooms['history_rooms']

@@ -393,8 +393,9 @@ $('.JS-signUpForm').submit(function(event) {
   event.preventDefault();
   var signUpForm = $(this);
   var submitButton = $('.JS-signUpForm .JS-sendForm');
+  var hasRecaptcha = typeof grecaptcha !== 'undefined' && $('.g-recaptcha').length;
 
-  if (grecaptcha.getResponse() == "") {
+  if (hasRecaptcha && grecaptcha.getResponse() == "") {
     showError("Por favor preencha o reCAPTCHA.");
 
   } else if (signUpForm.hasClass('JS-submitting')) {
@@ -418,8 +419,10 @@ $('.JS-signUpForm').submit(function(event) {
           signUpForm.removeClass('JS-submitting');
           submitButton.removeClass('-loading');
 
-          grecaptcha.reset();
-          $("#g-recaptcha-response").val("");
+          if (hasRecaptcha) {
+            grecaptcha.reset();
+            $("#g-recaptcha-response").val("");
+          }
           if (jqXRH.status == 0) {
             showError('Verifique sua conexão com a internet.');
           } else if (jqXRH.status == 400) {

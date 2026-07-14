@@ -15,6 +15,66 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-13 - Separacao entre .env e configuracao administrativa
+
+### Objetivo
+
+Definir com mais clareza o que uma camara precisa editar antes do primeiro boot e o que deve ser configurado pelo painel administrativo.
+
+### Arquivos alterados
+
+- `.env.example`
+- `.env.local.example`
+- `docker-compose.yml`
+- `README.md`
+- `CHANGELOG.md`
+- `src/edemocracia/settings.py`
+- `src/apps/core/admin.py`
+- `src/apps/core/auth_config.py`
+- `src/apps/core/constance_forms.py`
+- `src/apps/core/middleware.py`
+- `src/apps/core/module_config.py`
+- `src/apps/core/processors.py`
+- `src/apps/core/site_config.py`
+- `src/apps/core/views.py`
+- `src/apps/accounts/captcha.py`
+- `src/apps/accounts/views.py`
+- `src/templates/admin/constance/change_list.html`
+- `src/templates/edem-navigation/edem-navigation.html`
+- `src/templates/edem-navigation/static/edem-navigation/js/edem-navigation.js`
+
+### Resumo tecnico
+
+- Dominio, porta, senhas, `SECRET_KEY`, chaves internas e conta admin inicial permanecem no `.env`.
+- `.env` local foi limpo para remover identidade visual, SMTP, Google e reCAPTCHA, mantendo esses valores no banco de configuracao administrativa.
+- Nome da Camara, brasao e texto ao lado do brasao passam a ser configuraveis em `/admin/core/site_settings/`.
+- Audiências, Wikilegis e Expressão passam a ter controle de exibicao em `/admin/core/module_settings/`.
+- Modulo desativado no admin deixa de aparecer na home, nao recebe sincronizacao de sessao e retorna 404 no caminho publico direto.
+- SMTP, Google e reCAPTCHA ficam reunidos em `/admin/core/login_settings/`.
+- reCAPTCHA passa a poder ser desligado para ambiente local ou homologacao fechada.
+- `.env.example` foi reduzido para variaveis de infraestrutura e primeiro boot.
+- O compose deixou de exigir variaveis operacionais que agora sao configuraveis pelo admin.
+
+### Validacao
+
+- `docker compose config --quiet` retornou sem problemas com o `.env` local.
+- `docker compose --env-file .env.example config --quiet` retornou sem problemas.
+- `docker compose --env-file .env.local.example config --quiet` retornou sem problemas.
+- `git diff --check` retornou sem problemas.
+- `python manage.py check` retornou sem problemas.
+- `docker compose up -d` recriou os servicos afetados.
+- Home, telas novas do admin, Audiências, Wikilegis e Expressão responderam por HTTP.
+- `.env` local ficou sem variaveis operacionais migradas para o admin.
+- Configuracoes administrativas de identidade, modulos, SMTP, Google e reCAPTCHA ficaram preenchidas.
+- Expressão retornou `404` quando desativado em `MODULE_DISCOURSE_ENABLED` e voltou a responder `200` ao restaurar a opção.
+- Home nao renderizou markup/script de reCAPTCHA quando `LOGIN_RECAPTCHA_ENABLED=False`.
+- Home voltou a renderizar markup/script de reCAPTCHA apos religar `LOGIN_RECAPTCHA_ENABLED=True`.
+- Chamada interna do e-Democracia para a API do Wikilegis respondeu com sucesso.
+
+### Pendencias ou observacoes
+
+- Mudanca ainda nao publicada no GitHub a pedido do usuario.
+
 ## 2026-07-13 - Compose unico para instalacao
 
 ### Objetivo

@@ -22,7 +22,7 @@ O compose usa imagens versionadas para Wikilegis, Audiências e Discourse. Antes
 
 O `docker-compose.yml` é o arquivo único para subir o portal. Para uma instalação comum, copie `.env.example` para `.env`, preencha os valores reais e suba com `docker compose up -d`.
 
-Para produção, use `.env` com domínio público, HTTPS, SMTP real, reCAPTCHA real e segredos fortes:
+Para produção, use `.env` com domínio público, HTTPS e segredos fortes. Depois do primeiro boot, configure SMTP, reCAPTCHA, login social, identidade visual, tema e módulos pelo admin:
 
 ```bash
 docker compose up -d
@@ -40,16 +40,16 @@ Para produção no mesmo servidor:
 docker compose --project-name edemocracia-prod --env-file .env.prod up -d
 ```
 
-O `.env` continua sendo o único lugar para segredos de boot e infraestrutura, como senhas de banco, `SECRET_KEY` dos módulos, segredo SSO do Discourse e chaves internas. Configurações operacionais que podem mudar depois, como SMTP, Google, reCAPTCHA e identidade visual, podem ser preenchidas inicialmente no `.env` e depois ajustadas pelo admin quando houver tela para isso.
+O `.env` é o lugar para domínio, porta, segredos de boot e infraestrutura, como senhas de banco, `SECRET_KEY` dos módulos, segredo SSO do Discourse e chaves internas. Configurações operacionais do portal, como identidade visual, módulos exibidos, SMTP, Google e reCAPTCHA, devem ser ajustadas pelo admin depois do primeiro boot.
 
 ## Requisitos
 
 - Servidor Linux com Docker Engine e Docker Compose Plugin.
 - Domínio apontando para o servidor.
 - Proxy HTTPS, como Nginx Proxy Manager, Nginx ou Traefik.
-- Conta SMTP para envio de confirmação de e-mail.
-- Chaves reCAPTCHA v2 Checkbox para o domínio público.
-- Credenciais Google OAuth, se o login com Google for usado.
+- Conta SMTP para envio de confirmação de e-mail, configurada depois pelo admin.
+- Chaves reCAPTCHA v2 Checkbox para o domínio público, configuradas depois pelo admin.
+- Credenciais Google OAuth, se o login com Google for usado, configuradas depois pelo admin.
 
 ## Instalação
 
@@ -76,14 +76,12 @@ Preencha pelo menos:
 - `EXTRA_ALLOWED_HOSTS`: hosts extras separados por vírgula, útil para testes por IP ou nomes internos adicionais.
 - `IMAGE_REGISTRY`: registry das imagens dos módulos, por exemplo `ghcr.io/camara-indaiatuba`.
 - `IMAGE_TAG`: versão das imagens auxiliares de Wikilegis, Audiências e Discourse. O release `v1.0.0-rc5` continua usando `1.0.0-rc1` enquanto essas imagens auxiliares não forem republicadas com uma tag nova.
-- `SITE_NAME`: nome da instituição.
-- `SITE_LOGO`: caminho do brasão ou logotipo.
-- `SITE_LOGO_TEXT_LINE` e `SITE_LOGO_TEXT_CITY`: textos exibidos ao lado do brasão.
 - `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`: conta administrativa inicial.
 - `POSTGRES_PASSWORD`: senha do banco.
 - `EDEMOCRACIA_SECRET_KEY`, `WIKILEGIS_SECRET_KEY`, `AUDIENCIAS_SECRET_KEY`, `DISCOURSE_SSO_SECRET` e `INTERNAL_API_KEY`.
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL` e `DEFAULT_FROM_EMAIL`: valores iniciais do SMTP. Depois do primeiro boot, esses dados podem ser alterados em `/admin/core/login_settings/`, no item `Formas de login`.
-- `RECAPTCHA_SITE_KEY` e `RECAPTCHA_PRIVATE_KEY`.
+- `WIKILEGIS_API_KEY` e `AUDIENCIAS_API_KEY`.
+- `REGISTRATION_AUTO_ACTIVATE` e `REGISTRATION_SEND_ACTIVATION_EMAIL`: em produção, mantenha ativação automática desligada e envio de e-mail ligado.
+- `SESSION_COOKIE_SECURE` e `CSRF_COOKIE_SECURE`: em produção HTTPS, mantenha ambos como `True`.
 
 Gere valores fortes para segredos e senhas:
 
@@ -122,6 +120,19 @@ Colete os arquivos estáticos se necessário:
 ```bash
 docker compose exec edemocracia sh -lc 'cd /var/labhacker/edemocracia/src && python manage.py collectstatic --noinput'
 ```
+
+## Primeira configuração pelo admin
+
+Depois que o compose subir, acesse `/admin/` com a conta inicial definida no `.env`.
+
+Configure no painel:
+
+- `/admin/core/site_settings/`: nome da Câmara, brasão e texto ao lado do brasão.
+- `/admin/core/module_settings/`: exibir ou ocultar Audiências, Wikilegis e Expressão.
+- `/admin/core/theme_settings/`: tema visual e cores.
+- `/admin/core/login_settings/`: login por e-mail, SMTP, Google e reCAPTCHA.
+
+O compose continua subindo todos os serviços. A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado.
 
 ## Proxy HTTPS
 
@@ -164,7 +175,7 @@ Volte `SESSION_COOKIE_SECURE=True` e `CSRF_COOKIE_SECURE=True` antes de liberar 
 
 ## SMTP e confirmação de e-mail
 
-O cadastro por e-mail depende de SMTP real. O `.env` define os valores iniciais, mas depois do primeiro acesso administrativo eles podem ser alterados em `/admin/core/login_settings/`, no item `Formas de login`, seção `Login por e-mail - SMTP`.
+O cadastro por e-mail depende de SMTP real. Configure esses dados em `/admin/core/login_settings/`, no item `Formas de login`, seção `Login por e-mail - SMTP`.
 
 Em produção, mantenha:
 
@@ -189,7 +200,9 @@ EMAIL_USE_SSL=True
 
 ## reCAPTCHA
 
-O cadastro público depende de reCAPTCHA real. Sem chaves válidas para o domínio público, o botão de cadastro pode abrir normalmente, mas o envio do formulário falhará na validação do captcha.
+O reCAPTCHA é configurado em `/admin/core/login_settings/`, na seção `Login por e-mail - reCAPTCHA`.
+
+Em ambiente local ou homologação fechada, ele pode ficar desligado. Em produção pública, habilite reCAPTCHA real antes de liberar o cadastro por e-mail.
 
 Crie uma chave **reCAPTCHA v2 Checkbox** para o domínio definido em `PUBLIC_HOST`.
 
@@ -201,18 +214,7 @@ Passos gerais:
 4. Cadastre o domínio público do portal, sem `https://`, por exemplo `edemocracia.exemplo.leg.br`.
 5. Copie a chave do site e a chave secreta.
 
-No `.env`, preencha:
-
-```dotenv
-RECAPTCHA_SITE_KEY=...
-RECAPTCHA_PRIVATE_KEY=...
-```
-
-As chaves de exemplo ou chaves criadas para outro domínio não servem para produção. Depois de alterar o `.env`, recrie os containers para carregar as novas variáveis:
-
-```bash
-docker compose up -d
-```
+As chaves de exemplo ou chaves criadas para outro domínio não servem para produção.
 
 ## Login com Google
 
@@ -224,14 +226,7 @@ Use este callback autorizado:
 https://SEU_DOMINIO/accounts/complete/google-oauth2/
 ```
 
-No `.env`, preencha:
-
-```dotenv
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY=...
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET=...
-```
-
-Esses valores entram como configuração inicial. Depois do primeiro boot, habilite/desabilite o login com Google e altere Client ID/secret em `/admin/core/login_settings/`, no item `Formas de login`, seção `Login com Google`.
+Depois do primeiro boot, habilite/desabilite o login com Google e informe Client ID/secret em `/admin/core/login_settings/`, no item `Formas de login`, seção `Login com Google`.
 
 O login Google segue o comportamento padrão do Google: se o usuário já autorizou o app e está com sessão Google válida, ele pode entrar direto.
 
@@ -241,7 +236,7 @@ Em `/admin/core/login_settings/`, o item `Formas de login` permite habilitar log
 
 O sistema exige pelo menos uma forma de login ativa. Se o login por e-mail estiver ativo, configure SMTP. Se o login com Google estiver ativo, configure Client ID e Client secret.
 
-Os campos sensíveis, como Client secret do Google e senha SMTP, ficam mascarados no admin. Ao editar `Formas de login`, deixe esses campos em branco para preservar o valor atual, ou preencha um novo valor para trocar o segredo.
+Os campos sensíveis, como Client secret do Google, senha SMTP e chave secreta do reCAPTCHA, ficam mascarados no admin. Ao editar `Formas de login`, deixe esses campos em branco para preservar o valor atual, ou preencha um novo valor para trocar o segredo.
 
 O Gov.br ainda não está implementado nesta versão. Quando a integração for adicionada, ela deve entrar nessa mesma área de configuração.
 
@@ -305,14 +300,7 @@ Por padrão, o brasão usado pelo portal fica em:
 src/static/img/brasao-camara.svg
 ```
 
-A câmara pode substituir esse arquivo ou apontar `SITE_LOGO` para outro caminho estático.
-
-Os textos ao lado do brasão são configurados no `.env`:
-
-```dotenv
-SITE_LOGO_TEXT_LINE="Camara Municipal"
-SITE_LOGO_TEXT_CITY="Nome da Cidade"
-```
+A câmara pode substituir esse arquivo ou apontar o campo `PORTAL_SITE_LOGO`, em `/admin/core/site_settings/`, para outro caminho estático.
 
 ## Administração
 

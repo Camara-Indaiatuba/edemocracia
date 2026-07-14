@@ -5,6 +5,8 @@ import mimetypes
 import os
 
 from apps.core.auth_config import get_auth_config, get_auth_fieldsets
+from apps.core.module_config import get_module_config, get_module_fieldsets
+from apps.core.site_config import get_site_config, get_site_fieldsets
 from apps.core.themes import (
     THEME_CHOICES,
     THEME_ORIGINAL,
@@ -27,15 +29,20 @@ SECRET_KEY = config('SECRET_KEY', default='secret_key')
 
 RECAPTCHA_SITE_KEY = config(
     'RECAPTCHA_SITE_KEY',
-    default='6LeqwioUAAAAAJQwLBKGmmpuazIQM6hEYYoFSTYW'
+    default=''
 )
 RECAPTCHA_PRIVATE_KEY = config(
     'RECAPTCHA_PRIVATE_KEY',
-    default='6LeqwioUAAAAAHs4i1Zq4D_9kc1I-OL0TmaUowq3'
+    default=''
+)
+RECAPTCHA_ENABLED_DEFAULT = config(
+    'RECAPTCHA_ENABLED',
+    default=False,
+    cast=bool,
 )
 
-SITE_NAME = config('SITE_NAME', default='Nome do site')
-SITE_LOGO = config('SITE_LOGO', default='https://exemple.com/img.png')
+SITE_NAME = config('SITE_NAME', default='Camara Municipal')
+SITE_LOGO = config('SITE_LOGO', default='/static/img/brasao-camara.svg')
 SITE_LOGO_TEXT_LINE = config('SITE_LOGO_TEXT_LINE',
                              default='Camara Municipal')
 SITE_LOGO_TEXT_CITY = config('SITE_LOGO_TEXT_CITY',
@@ -100,6 +107,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.core.middleware.ModuleVisibilityMiddleware',
     'apps.core.middleware.CookieHandler',
 
 ]
@@ -364,12 +372,28 @@ CONSTANCE_CONFIG.update(get_auth_config({
     'email_use_tls': EMAIL_USE_TLS,
     'email_use_ssl': EMAIL_USE_SSL,
     'default_from_email': DEFAULT_FROM_EMAIL,
+    'recaptcha_enabled': RECAPTCHA_ENABLED_DEFAULT,
+    'recaptcha_site_key': RECAPTCHA_SITE_KEY,
+    'recaptcha_private_key': RECAPTCHA_PRIVATE_KEY,
+}))
+CONSTANCE_CONFIG.update(get_module_config({
+    'AUDIENCIAS_ENABLED': AUDIENCIAS_ENABLED,
+    'WIKILEGIS_ENABLED': WIKILEGIS_ENABLED,
+    'DISCOURSE_ENABLED': DISCOURSE_ENABLED,
+}))
+CONSTANCE_CONFIG.update(get_site_config({
+    'site_name': SITE_NAME,
+    'site_logo': SITE_LOGO,
+    'logo_text_line': SITE_LOGO_TEXT_LINE,
+    'logo_text_city': SITE_LOGO_TEXT_CITY,
 }))
 CONSTANCE_CONFIG.update(get_theme_color_config())
 
 CONSTANCE_CONFIG_FIELDSETS = OrderedDict()
+CONSTANCE_CONFIG_FIELDSETS.update(get_site_fieldsets())
 CONSTANCE_CONFIG_FIELDSETS.update(get_theme_color_fieldsets())
 CONSTANCE_CONFIG_FIELDSETS.update(get_auth_fieldsets())
+CONSTANCE_CONFIG_FIELDSETS.update(get_module_fieldsets())
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 

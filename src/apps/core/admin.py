@@ -10,6 +10,8 @@ from django.contrib.admin.sites import NotRegistered
 
 from apps.core.auth_config import get_auth_fieldsets
 from apps.core.constance_forms import LoginConstanceForm, ThemeConstanceForm
+from apps.core.module_config import get_module_fieldsets
+from apps.core.site_config import get_site_fieldsets
 from apps.core.themes import get_theme_color_fieldsets
 
 
@@ -50,6 +52,14 @@ class ThemeSettings:
 
 class LoginSettings:
     _meta = ConfigMeta('login_settings', 'LoginSettings', 'Formas de login')
+
+
+class ModuleSettings:
+    _meta = ConfigMeta('module_settings', 'ModuleSettings', 'Módulos')
+
+
+class SiteSettings:
+    _meta = ConfigMeta('site_settings', 'SiteSettings', 'Identidade do portal')
 
 
 def _fieldset_fields(fieldsets):
@@ -116,6 +126,14 @@ class LoginSettingsAdmin(SplitConstanceAdmin):
     config_fieldsets = get_auth_fieldsets()
 
 
+class ModuleSettingsAdmin(SplitConstanceAdmin):
+    config_fieldsets = get_module_fieldsets()
+
+
+class SiteSettingsAdmin(SplitConstanceAdmin):
+    config_fieldsets = get_site_fieldsets()
+
+
 try:
     admin.site.unregister([Config])
 except NotRegistered:
@@ -123,3 +141,5 @@ except NotRegistered:
 
 admin.site.register([ThemeSettings], ThemeSettingsAdmin)
 admin.site.register([LoginSettings], LoginSettingsAdmin)
+admin.site.register([ModuleSettings], ModuleSettingsAdmin)
+admin.site.register([SiteSettings], SiteSettingsAdmin)

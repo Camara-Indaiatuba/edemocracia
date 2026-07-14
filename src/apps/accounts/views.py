@@ -23,7 +23,12 @@ from django.views.generic import UpdateView
 from django.contrib import messages
 from apps.accounts.forms import UserProfileForm
 from django.urls import reverse
-from apps.core.auth_config import is_email_login_enabled
+from apps.core.auth_config import is_email_login_enabled, is_recaptcha_enabled
+from apps.core.module_config import (
+    is_audiencias_enabled,
+    is_discourse_enabled,
+    is_wikilegis_enabled,
+)
 import requests
 
 
@@ -61,31 +66,33 @@ class CustomRegistrationView(BaseRegistrationView):
             return JsonResponse({'data': _('Cadastro por e-mail desabilitado.')},
                                 status=403)
 
-        captcha_token = form.data.get('g-recaptcha-response')
-        if not captcha_token:
-            return JsonResponse({'data': captcha.ERRORS['missing-input-response']},
-                                status=401)
+        if is_recaptcha_enabled():
+            captcha_token = form.data.get('g-recaptcha-response')
+            if not captcha_token:
+                return JsonResponse(
+                    {'data': captcha.ERRORS['missing-input-response']},
+                    status=401)
 
-        captcha_response = captcha.verify(
-            captcha_token, remote_ip=get_client_ip(self.request))
-        if captcha_response.get('success'):
-            super().form_valid(form)
-            if settings.REGISTRATION_AUTO_ACTIVATE:
-                message = _("Cadastro realizado. Você já pode entrar.")
-            else:
-                message = _("Please check your email to complete the"
-                            " registration process.")
-            data = {'data': message}
-            return JsonResponse(data, status=200)
+            captcha_response = captcha.verify(
+                captcha_token, remote_ip=get_client_ip(self.request))
+            if not captcha_response.get('success'):
+                message = ' '.join(
+                    map(lambda x: captcha.ERRORS.get(x, x),
+                        captcha_response.get('error-codes', ['bad-request']))
+                )
+                data = {
+                    'data': message,
+                }
+                return JsonResponse(data, status=401)
+
+        super().form_valid(form)
+        if settings.REGISTRATION_AUTO_ACTIVATE:
+            message = _("Cadastro realizado. Você já pode entrar.")
         else:
-            message = ' '.join(
-                map(lambda x: captcha.ERRORS.get(x, x),
-                    captcha_response.get('error-codes', ['bad-request']))
-            )
-            data = {
-                'data': message,
-            }
-            return JsonResponse(data, status=401)
+            message = _("Please check your email to complete the"
+                        " registration process.")
+        data = {'data': message}
+        return JsonResponse(data, status=200)
 
     def register(self, form):
         site = get_current_site(self.request)
@@ -171,19 +178,19 @@ def ajax_sync_sessions(request):
         return JsonResponse({'synced': []}, status=401)
 
     synced = []
-    if (settings.AUDIENCIAS_ENABLED and
+    if (is_audiencias_enabled() and
             AudienciasConfig.cookie_name not in request.COOKIES):
         default_login(request.user, request, AudienciasConfig)
         if AudienciasConfig.cookie_name in request.set_cookies:
             synced.append('audiencias')
 
-    if (settings.WIKILEGIS_ENABLED and
+    if (is_wikilegis_enabled() and
             WikilegisConfig.cookie_name not in request.COOKIES):
         default_login(request.user, request, WikilegisConfig)
         if WikilegisConfig.cookie_name in request.set_cookies:
             synced.append('wikilegis')
 
-    if settings.DISCOURSE_ENABLED and '_t' not in request.COOKIES:
+    if is_discourse_enabled() and '_t' not in request.COOKIES:
         discourse_login(sender=None, user=request.user, request=request)
         if '_t' in request.set_cookies:
             synced.append('discourse')

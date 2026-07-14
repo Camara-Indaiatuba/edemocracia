@@ -58,6 +58,21 @@ def get_auth_config(defaults):
             'Remetente padrao dos e-mails do sistema.',
             str,
         )),
+        ('LOGIN_RECAPTCHA_ENABLED', (
+            defaults['recaptcha_enabled'],
+            'Exige reCAPTCHA no cadastro por e-mail.',
+            bool,
+        )),
+        ('LOGIN_RECAPTCHA_SITE_KEY', (
+            defaults['recaptcha_site_key'],
+            'Chave publica do reCAPTCHA v2.',
+            str,
+        )),
+        ('LOGIN_RECAPTCHA_PRIVATE_KEY', (
+            defaults['recaptcha_private_key'],
+            'Chave secreta do reCAPTCHA v2.',
+            'secret_text',
+        )),
     ))
 
 
@@ -79,6 +94,11 @@ def get_auth_fieldsets():
             'LOGIN_EMAIL_USE_TLS',
             'LOGIN_EMAIL_USE_SSL',
             'LOGIN_DEFAULT_FROM_EMAIL',
+        )),
+        ('Login por e-mail - reCAPTCHA', (
+            'LOGIN_RECAPTCHA_ENABLED',
+            'LOGIN_RECAPTCHA_SITE_KEY',
+            'LOGIN_RECAPTCHA_PRIVATE_KEY',
         )),
     ))
 
@@ -106,6 +126,19 @@ def is_google_login_enabled():
     enabled = bool(_get_config_value('LOGIN_GOOGLE_ENABLED', False))
     key, secret = get_google_credentials()
     return bool(enabled and key and secret)
+
+
+def get_recaptcha_keys():
+    return (
+        _get_config_value('LOGIN_RECAPTCHA_SITE_KEY', '') or '',
+        _get_config_value('LOGIN_RECAPTCHA_PRIVATE_KEY', '') or '',
+    )
+
+
+def is_recaptcha_enabled():
+    enabled = bool(_get_config_value('LOGIN_RECAPTCHA_ENABLED', False))
+    site_key, private_key = get_recaptcha_keys()
+    return bool(enabled and site_key and private_key)
 
 
 def get_smtp_config():

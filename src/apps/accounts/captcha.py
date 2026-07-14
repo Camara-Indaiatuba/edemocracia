@@ -1,6 +1,7 @@
 from django.utils.translation import gettext_lazy as _
-from django.conf import settings
 import requests
+
+from apps.core.auth_config import get_recaptcha_keys
 
 
 ERRORS = {
@@ -16,9 +17,10 @@ ERRORS = {
 
 
 def verify(captcha_response, remote_ip=None):
+    _, private_key = get_recaptcha_keys()
     url = "https://www.google.com/recaptcha/api/siteverify"
     params = {
-        'secret': settings.RECAPTCHA_PRIVATE_KEY,
+        'secret': private_key,
         'response': captcha_response,
     }
 
