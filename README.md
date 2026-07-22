@@ -1,6 +1,6 @@
 # e-Democracia Municipal
 
-Esta é uma versão municipal do e-Democracia, preparada para câmaras que querem disponibilizar participação social pela web com login centralizado, confirmação de e-mail, reCAPTCHA e integração opcional com Google.
+Esta é uma versão municipal do e-Democracia, preparada para câmaras que querem disponibilizar participação social pela web com login centralizado, confirmação de e-mail, reCAPTCHA e integrações opcionais com Google e Gov.br.
 
 O projeto é uma obra derivada do e-Democracia original, mantido sob a licença GPLv3. Ele não é um sistema feito do zero: mantém a base e o histórico do projeto original, com atualizações, correções e adaptações para uso municipal.
 
@@ -53,11 +53,22 @@ O `.env` é o lugar para domínio, porta, segredos de boot e infraestrutura, com
 
 ## Instalação
 
-Clone o repositório:
+Escolha o diretório de instalação. Em um servidor dedicado ao portal, recomendamos usar `/opt/edemocracia`:
 
 ```bash
-git clone URL_DO_REPOSITORIO edemocracia
-cd edemocracia
+sudo mkdir -p /opt/edemocracia
+sudo chown "$USER" /opt/edemocracia
+git clone https://github.com/Camara-Indaiatuba/edemocracia.git /opt/edemocracia
+cd /opt/edemocracia
+```
+
+Se quiser produção e homologação no mesmo servidor, use diretórios separados:
+
+```bash
+sudo mkdir -p /opt/edemocracia-prod /opt/edemocracia-homologa
+sudo chown "$USER" /opt/edemocracia-prod /opt/edemocracia-homologa
+git clone https://github.com/Camara-Indaiatuba/edemocracia.git /opt/edemocracia-prod
+git clone https://github.com/Camara-Indaiatuba/edemocracia.git /opt/edemocracia-homologa
 ```
 
 Crie o arquivo de ambiente:
@@ -130,7 +141,7 @@ Configure no painel:
 - `/admin/core/site_settings/`: nome da Câmara, brasão e texto ao lado do brasão.
 - `/admin/core/module_settings/`: exibir ou ocultar Audiências, Wikilegis e Expressão.
 - `/admin/core/theme_settings/`: tema visual e cores.
-- `/admin/core/login_settings/`: login por e-mail, SMTP, Google e reCAPTCHA.
+- `/admin/core/login_settings/`: login por e-mail, SMTP, Google, Gov.br e reCAPTCHA.
 
 O compose continua subindo todos os serviços. A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado.
 
@@ -230,15 +241,37 @@ Depois do primeiro boot, habilite/desabilite o login com Google e informe Client
 
 O login Google segue o comportamento padrão do Google: se o usuário já autorizou o app e está com sessão Google válida, ele pode entrar direto.
 
+## Login com Gov.br
+
+O login Gov.br usa o Login Único por OpenID Connect. Ele fica desligado por padrão e deve ser configurado em `/admin/core/login_settings/`, no item `Formas de login`, seção `Login com Gov.br`.
+
+Para homologação/teste, solicite credenciais do Login Único no serviço oficial de integração do ecossistema de Identidade Digital Gov.br.
+
+Informe estes dados na solicitação:
+
+- Nome da aplicação: nome público do portal.
+- Ambiente: homologação/teste.
+- URL inicial: `https://SEU_DOMINIO/`.
+- URL de retorno/callback:
+
+```text
+https://SEU_DOMINIO/accounts/complete/govbr/
+```
+
+- URL de logout/retorno após sair: `https://SEU_DOMINIO/`.
+- Escopos pretendidos: `openid email profile govbr_confiabilidades govbr_confiabilidades_idtoken`.
+
+O ambiente de homologação usa os endpoints `https://sso.staging.acesso.gov.br/`. Quando a câmara tiver domínio oficial de governo e credencial de produção, altere o campo `Ambiente Gov.br` para `Producao` e substitua o Client ID/secret no admin.
+
+Para produção, o roteiro oficial do Login Único exige sistema hospedado em domínio oficial de governo, por exemplo `gov.br`, `leg.br`, `jus.br`, `edu.br`, entre outros, preferencialmente com HTTPS. Para desenvolvimento local, o próprio roteiro recomenda usar um domínio de desenvolvimento em vez de callback fixo por IP.
+
 ## Formas de login no admin
 
-Em `/admin/core/login_settings/`, o item `Formas de login` permite habilitar login por e-mail e login com Google.
+Em `/admin/core/login_settings/`, o item `Formas de login` permite habilitar login por e-mail, login com Google e login com Gov.br.
 
-O sistema exige pelo menos uma forma de login ativa. Se o login por e-mail estiver ativo, configure SMTP. Se o login com Google estiver ativo, configure Client ID e Client secret.
+O sistema exige pelo menos uma forma de login ativa. Se o login por e-mail estiver ativo, configure SMTP. Se o login com Google estiver ativo, configure Client ID e Client secret. Se o login com Gov.br estiver ativo, configure ambiente, Client ID e Client secret.
 
-Os campos sensíveis, como Client secret do Google, senha SMTP e chave secreta do reCAPTCHA, ficam mascarados no admin. Ao editar `Formas de login`, deixe esses campos em branco para preservar o valor atual, ou preencha um novo valor para trocar o segredo.
-
-O Gov.br ainda não está implementado nesta versão. Quando a integração for adicionada, ela deve entrar nessa mesma área de configuração.
+Os campos sensíveis, como Client secrets, senha SMTP e chave secreta do reCAPTCHA, ficam mascarados no admin. Ao editar `Formas de login`, deixe esses campos em branco para preservar o valor atual, ou preencha um novo valor para trocar o segredo.
 
 ## Publicação no GitHub e GHCR
 

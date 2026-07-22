@@ -3,6 +3,7 @@ from django.conf import settings
 from .auth_config import (
     get_recaptcha_keys,
     is_email_login_enabled,
+    is_govbr_login_enabled,
     is_google_login_enabled,
     is_recaptcha_enabled,
 )
@@ -29,6 +30,7 @@ def settings_variables(request):
         'AUDIENCIAS_ENABLED': is_audiencias_enabled(),
         'EMAIL_LOGIN_ENABLED': is_email_login_enabled(),
         'GOOGLE_LOGIN_ENABLED': is_google_login_enabled(),
+        'GOVBR_LOGIN_ENABLED': is_govbr_login_enabled(),
         'FACEBOOK_LOGIN_ENABLED': bool(settings.SOCIAL_AUTH_FACEBOOK_KEY
                                        and settings.SOCIAL_AUTH_FACEBOOK_SECRET),
     }

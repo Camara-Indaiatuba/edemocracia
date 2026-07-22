@@ -15,6 +15,125 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-22 - Fundo da Audiencias nos temas visuais
+
+### Objetivo
+
+Remover a sobra do verde original no fim da pagina inicial da Audiencias quando um dos temas 2 a 5 estiver ativo.
+
+### Arquivos alterados
+
+- `src/templates/components/theme-overrides.css`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- O fundo raiz da pagina passa a usar a cor primaria escura do tema ativo.
+- O tema original permanece inalterado porque o override so e emitido para os temas 2 a 5.
+- A correcao cobre paginas curtas da Audiencias em todos os temas alternativos.
+
+### Validacao
+
+- Template de tema renderizado e configuracao Django verificada.
+
+### Pendencias ou observacoes
+
+- A correcao ainda precisa ser publicada e aplicada no ambiente de producao.
+
+## 2026-07-20 - Clareza no diretorio de instalacao
+
+### Objetivo
+
+Deixar explicito no README onde clonar o projeto em uma instalacao nova.
+
+### Arquivos alterados
+
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- README passou a recomendar `/opt/edemocracia` para uma instalacao unica.
+- README passou a mostrar exemplos de diretorios separados para producao e homologacao no mesmo servidor.
+- Exemplos de clone passaram a usar a URL publica real do repositorio.
+- CHANGELOG recebeu nota em `Nao Lancado`.
+
+### Validacao
+
+- Alteracao revisada visualmente no trecho de instalacao.
+
+### Pendencias ou observacoes
+
+- Nenhuma.
+
+## 2026-07-14 - Login com Gov.br
+
+### Objetivo
+
+Adicionar a opcao de login/cadastro com Gov.br ao painel administrativo e ao menu publico, preparando o projeto para homologacao do Login Unico.
+
+### Arquivos alterados
+
+- `README.md`
+- `CHANGELOG.md`
+- `src/edemocracia/settings.py`
+- `src/apps/accounts/backends.py`
+- `src/apps/accounts/forms.py`
+- `src/apps/accounts/pipeline.py`
+- `src/apps/accounts/tests.py`
+- `src/apps/accounts/urls.py`
+- `src/apps/accounts/utils.py`
+- `src/apps/accounts/views.py`
+- `src/apps/core/auth_config.py`
+- `src/apps/core/constance_forms.py`
+- `src/apps/core/processors.py`
+- `src/templates/admin/constance/change_list.html`
+- `src/templates/registration/profile.html`
+- `src/templates/components/edem-navigation.html`
+- `src/templates/components/theme-overrides.css`
+- `src/templates/edem-navigation/edem-navigation.html`
+- `src/templates/edem-navigation/static/edem-navigation/scss/components/_edem-button.scss`
+
+### Resumo tecnico
+
+- Criado backend `govbr` baseado em OpenID Connect com PKCE.
+- Gov.br fica desligado por padrao e passa a ser habilitado em `/admin/core/login_settings/`.
+- Admin permite escolher ambiente `Homologacao/Teste` ou `Producao`.
+- Client ID e Client secret do Gov.br ficam em campos administrativos, com secret mascarado.
+- Associacao automatica por e-mail passa por `associate_by_verified_email`; no Gov.br, uma conta existente so e associada por e-mail se `email_verified=True`.
+- Validacao do admin passa a exigir pelo menos uma forma de login ativa entre e-mail, Google e Gov.br.
+- Botao `Entrar com Gov.br` aparece em login e cadastro quando a integracao Gov.br estiver ativa e com credenciais preenchidas.
+- Botao de login Gov.br foi ajustado para ficar mais proximo do componente Sign-in do Design System Gov.br: rótulo `Entrar com Gov.br`, fundo branco, texto azul e icone de usuario.
+- README documenta solicitacao de credenciais, URL de callback e diferenca entre homologacao e producao.
+- Contas vinculadas a Gov.br ou Google mantem nome e sobrenome bloqueados para edicao local.
+- Contas vinculadas a Gov.br ou Google deixam de exibir o botao de troca de senha local.
+- A URL direta `/accounts/password/change/` redireciona contas externas de volta para o perfil.
+- Tela de perfil passa a receber overrides do tema visual ativo, evitando sobras verdes nos temas 2 a 5.
+- Links `Entrar` e `Cadastrar` do topo passam a ter cores especificas para o estado selecionado nos temas 2 a 5, evitando texto invisivel.
+- Testes automatizados protegem a exigencia de e-mail verificado para associacao de conta Gov.br, a geracao segura do nome de usuario e a configuracao minima da integracao.
+
+### Validacao
+
+- `docker compose config --quiet` retornou sem problemas.
+- `git diff --check` retornou sem problemas.
+- `python manage.py check` retornou sem problemas.
+- Gov.br desligado nao aparece na home e o acesso direto a `/accounts/login/govbr/` redireciona para `/`.
+- Com credenciais falsas temporarias, a home exibiu `Entrar com Gov.br` em login e cadastro.
+- Com credenciais falsas temporarias, `/accounts/login/govbr/?next=/` redirecionou para `https://sso.staging.acesso.gov.br/authorize` com `state`, `nonce`, `code_challenge_method=S256`, `code_challenge` e escopos esperados.
+- As credenciais falsas foram removidas e o Gov.br voltou a ficar desligado ao fim do teste.
+- Em usuario real vinculado a Gov.br, `UserProfileForm` marcou `first_name` e `last_name` como desabilitados.
+- Em usuario real vinculado a Gov.br, `LocalPasswordChangeView` redirecionou `/accounts/password/change/` para `/accounts/profile/`.
+- Conferido que o CSS de tema define contraste proprio para `Entrar` e `Cadastrar` no estado selecionado.
+- Cinco testes automatizados do Gov.br passaram.
+- A imagem principal foi reconstruida por completo, incluindo `npm ci`, `collectstatic` e compilacao das traducoes.
+
+### Pendencias ou observacoes
+
+- Login real depende de `client_id` e `client_secret` emitidos pelo Gov.br para homologacao/teste.
+- Producao exige dominio oficial de governo e HTTPS, conforme roteiro oficial do Login Unico.
+
 ## 2026-07-13 - Separacao entre .env e configuracao administrativa
 
 ### Objetivo

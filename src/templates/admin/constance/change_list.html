@@ -39,6 +39,7 @@
     var selector = document.querySelector('select[name="TEMA_VISUAL"], #id_TEMA_VISUAL');
     var emailLoginCheckbox = document.querySelector('input[name="LOGIN_EMAIL_ENABLED"], #id_LOGIN_EMAIL_ENABLED');
     var googleLoginCheckbox = document.querySelector('input[name="LOGIN_GOOGLE_ENABLED"], #id_LOGIN_GOOGLE_ENABLED');
+    var govbrLoginCheckbox = document.querySelector('input[name="LOGIN_GOVBR_ENABLED"], #id_LOGIN_GOVBR_ENABLED');
     var recaptchaCheckbox = document.querySelector('input[name="LOGIN_RECAPTCHA_ENABLED"], #id_LOGIN_RECAPTCHA_ENABLED');
 
     function getFieldsetTitle(fieldset) {
@@ -97,11 +98,16 @@
 
     function updateLoginConfigFields() {
       var googleFieldset = getFieldsetByTitle('Login com Google');
+      var govbrFieldset = getFieldsetByTitle('Login com Gov.br');
       var emailFieldset = getFieldsetByTitle('Login por e-mail - SMTP');
       var recaptchaFieldset = getFieldsetByTitle('Login por e-mail - reCAPTCHA');
 
       if (googleFieldset && googleLoginCheckbox) {
         googleFieldset.hidden = !googleLoginCheckbox.checked;
+      }
+
+      if (govbrFieldset && govbrLoginCheckbox) {
+        govbrFieldset.hidden = !govbrLoginCheckbox.checked;
       }
 
       if (emailFieldset && emailLoginCheckbox) {
@@ -160,6 +166,9 @@
     }
     if (googleLoginCheckbox) {
       googleLoginCheckbox.addEventListener('change', updateLoginConfigFields);
+    }
+    if (govbrLoginCheckbox) {
+      govbrLoginCheckbox.addEventListener('change', updateLoginConfigFields);
     }
     if (recaptchaCheckbox) {
       recaptchaCheckbox.addEventListener('change', updateLoginConfigFields);

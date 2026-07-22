@@ -1,6 +1,7 @@
 from django.urls import path, include, re_path
 from apps.accounts.views import (
     CustomRegistrationView,
+    LocalPasswordChangeView,
     ProfileView,
     ajax_csrf,
     ajax_login,
@@ -33,8 +34,7 @@ urlpatterns += [
                 template_name='registration/logout.html'),
             name='auth_logout'),
     re_path(r'^password/change/$',
-            auth_views.PasswordChangeView.as_view(
-                success_url=reverse_lazy('auth_password_change_done')),
+            LocalPasswordChangeView.as_view(),
             name='auth_password_change'),
     re_path(r'^password/change/done/$',
             auth_views.PasswordChangeDoneView.as_view(),

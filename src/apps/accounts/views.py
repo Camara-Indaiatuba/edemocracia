@@ -2,12 +2,17 @@ from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from apps.accounts.models import UserProfile
+from apps.accounts.utils import (
+    get_external_identity_providers,
+    user_uses_external_identity,
+)
 from apps.audiencias.apps import AudienciasConfig
 from registration.views import RegistrationView as BaseRegistrationView
 from registration.models import RegistrationProfile
 from registration.users import UserModel
 from registration import signals
 from django.contrib.auth import login, logout
+from django.contrib.auth import views as auth_views
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.forms import AuthenticationForm
 from django.middleware.csrf import get_token
@@ -22,7 +27,7 @@ from apps.accounts import captcha
 from django.views.generic import UpdateView
 from django.contrib import messages
 from apps.accounts.forms import UserProfileForm
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from apps.core.auth_config import is_email_login_enabled, is_recaptcha_enabled
 from apps.core.module_config import (
     is_audiencias_enabled,
@@ -228,3 +233,39 @@ class ProfileView(UpdateView):
     def get_success_url(self):
         messages.success(self.request, 'Perfil modificado com sucesso!')
         return reverse('profile')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        providers = get_external_identity_providers(self.request.user)
+        context.update({
+            'external_identity_providers': providers,
+            'uses_external_identity': bool(providers),
+            'can_change_password': (
+                self.request.user.has_usable_password() and not providers
+            ),
+        })
+        return context
+
+
+class LocalPasswordChangeView(auth_views.PasswordChangeView):
+    success_url = reverse_lazy('auth_password_change_done')
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+
+        if user_uses_external_identity(request.user):
+            messages.info(
+                request,
+                'Esta conta usa login externo. Altere a senha no provedor de identidade.',
+            )
+            return redirect('profile')
+
+        if not request.user.has_usable_password():
+            messages.info(
+                request,
+                'Esta conta nao possui senha local no e-Democracia.',
+            )
+            return redirect('profile')
+
+        return super().dispatch(request, *args, **kwargs)

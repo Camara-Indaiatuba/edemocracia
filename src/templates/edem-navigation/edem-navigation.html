@@ -3,6 +3,7 @@
 {# Whitespace is added when calling these macros, so DO NOT ident them! #}
 {% macro facebook_url %}{% block edem_facebook_url %}{% endblock %}{% endmacro %}
 {% macro google_url %}{% block edem_google_url %}{% endblock %}{% endmacro %}
+{% macro govbr_url %}{% block edem_govbr_url %}{% endblock %}{% endmacro %}
 {% macro profile_url %}{% block edem_profile_url %}{% endblock %}{% endmacro %}
 {% macro logout_url %}{% block edem_logout_url %}{% endblock %}{% endmacro %}
 {% macro root_url %}{% block edem_root_url %}{% endblock %}{% endmacro %}
@@ -58,8 +59,16 @@
       <div class="content JS-sidebarContent JS-signinContent">
         <h1 class="header">Entrar</h1>
 
-        {% if FACEBOOK_LOGIN_ENABLED or GOOGLE_LOGIN_ENABLED %}
+        {% if FACEBOOK_LOGIN_ENABLED or GOOGLE_LOGIN_ENABLED or GOVBR_LOGIN_ENABLED %}
         <div class="social">
+          {% if GOVBR_LOGIN_ENABLED %}
+            <a class="edem-button -social -govbr" href="{% use_macro govbr_url %}">
+              <span class="govbr-signin__icon" aria-hidden="true">
+                <i class="icon icon-user"></i>
+              </span>
+              <span class="govbr-signin__label">Entrar com Gov.br</span>
+            </a>
+          {% endif %}
           {% if FACEBOOK_LOGIN_ENABLED %}
             <a class="edem-button -social -facebook" href="{% use_macro facebook_url %}">
               Continuar com Facebook
@@ -108,8 +117,16 @@
           Ao se cadastrar no e-Democracia você concorda com nossos <a class="link" href="{% use_macro tos_url %}">Termos de Serviço</a>
         </p>
 
-        {% if FACEBOOK_LOGIN_ENABLED or GOOGLE_LOGIN_ENABLED %}
+        {% if FACEBOOK_LOGIN_ENABLED or GOOGLE_LOGIN_ENABLED or GOVBR_LOGIN_ENABLED %}
         <div class="social">
+          {% if GOVBR_LOGIN_ENABLED %}
+            <a class="edem-button -social -govbr" href="{% use_macro govbr_url %}">
+              <span class="govbr-signin__icon" aria-hidden="true">
+                <i class="icon icon-user"></i>
+              </span>
+              <span class="govbr-signin__label">Entrar com Gov.br</span>
+            </a>
+          {% endif %}
           {% if FACEBOOK_LOGIN_ENABLED %}
             <a class="edem-button -social -facebook" href="{% use_macro facebook_url %}">
               Continuar com Facebook

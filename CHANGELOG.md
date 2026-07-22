@@ -6,17 +6,36 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+## v1.0.0-rc6 - 2026-07-22
+
+Sexto release candidate com login Gov.br, protecao de contas externas e ajustes visuais dos temas.
+
 ### Adicionado
 
 - Admin passa a ter `Identidade do portal`, para editar nome da Camara, brasao e texto ao lado do brasao sem mexer no `.env`.
 - Admin passa a ter `Modulos`, para exibir/ocultar Audiencias, Wikilegis e Expressao.
 - `Formas de login` passa a configurar e ligar/desligar reCAPTCHA do cadastro por e-mail.
+- `Formas de login` passa a configurar login com Gov.br por OpenID Connect, com ambiente de homologacao/teste ou producao.
+- Botao `Entrar com GOV.BR` passa a aparecer no login e cadastro quando a integracao estiver habilitada.
+- Testes automatizados cobrem associacao por e-mail verificado, identificador local e configuracao minima do Gov.br.
 
 ### Alterado
 
 - `.env.example` passa a conter apenas dominio, porta, segredos, conta admin inicial e seguranca de boot.
 - `.env` local foi limpo para manter apenas configuracao tecnica/infraestrutura, com valores operacionais migrados para o admin.
 - README separa o que deve ser configurado no `.env` e o que deve ser configurado pelo admin.
+- README documenta solicitacao de credenciais Gov.br, URL de callback e troca entre homologacao e producao.
+- README informa o diretorio recomendado de instalacao em `/opt/edemocracia` e exemplos para producao/homologacao no mesmo servidor.
+- Comandos de instalacao do README passam a usar a URL publica real do repositorio.
+
+### Corrigido
+
+- Temas 2 a 5 passam a substituir tambem o fundo raiz da pagina de Audiencias, evitando a sobra do verde original quando a pagina tem pouco conteudo.
+- Perfil passa a respeitar as cores do tema visual ativo.
+- Contas vinculadas a Gov.br ou Google nao exibem nem acessam a troca de senha local do e-Democracia.
+- Nome e sobrenome de contas vinculadas a Gov.br ou Google ficam preservados pelo provedor de identidade.
+- Botao de login Gov.br passa a seguir melhor o componente Sign-in do Design System Gov.br, com rótulo `Entrar com Gov.br`, fundo branco, texto azul e icone de usuario.
+- Links `Entrar` e `Cadastrar` do topo mantem contraste quando ficam selecionados nos temas 2 a 5.
 
 ## v1.0.0-rc5 - 2026-07-13
 

@@ -41,7 +41,11 @@
                 <i class="icon icon-lock" aria-hidden="true"></i>
               </div>
             </div>
-            <a class="button" href="{% url 'auth_password_change' %}">{% trans "Change password" %}</a>
+            {% if can_change_password %}
+              <a class="button" href="{% url 'auth_password_change' %}">{% trans "Change password" %}</a>
+            {% elif external_identity_providers %}
+              <span class="section__note">Senha gerenciada pelo {{ external_identity_providers|join:", " }}.</span>
+            {% endif %}
           </div>
 
           <div class="section__block section__block--profile-form e-columns small-12 medium-9">

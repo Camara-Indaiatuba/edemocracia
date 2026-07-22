@@ -1,6 +1,32 @@
 from collections import OrderedDict
 
 
+GOVBR_STAGING = 'staging'
+GOVBR_PRODUCTION = 'production'
+
+GOVBR_ENVIRONMENT_CHOICES = (
+    (GOVBR_STAGING, 'Homologacao/Teste'),
+    (GOVBR_PRODUCTION, 'Producao'),
+)
+
+GOVBR_ENVIRONMENTS = {
+    GOVBR_STAGING: {
+        'issuer': 'https://sso.staging.acesso.gov.br/',
+        'authorization_url': 'https://sso.staging.acesso.gov.br/authorize',
+        'access_token_url': 'https://sso.staging.acesso.gov.br/token',
+        'userinfo_url': 'https://sso.staging.acesso.gov.br/userinfo',
+        'jwks_uri': 'https://sso.staging.acesso.gov.br/jwk',
+    },
+    GOVBR_PRODUCTION: {
+        'issuer': 'https://sso.acesso.gov.br/',
+        'authorization_url': 'https://sso.acesso.gov.br/authorize',
+        'access_token_url': 'https://sso.acesso.gov.br/token',
+        'userinfo_url': 'https://sso.acesso.gov.br/userinfo',
+        'jwks_uri': 'https://sso.acesso.gov.br/jwk',
+    },
+}
+
+
 def get_auth_config(defaults):
     return OrderedDict((
         ('LOGIN_EMAIL_ENABLED', (
@@ -21,6 +47,26 @@ def get_auth_config(defaults):
         ('LOGIN_GOOGLE_OAUTH2_SECRET', (
             defaults['google_secret'],
             'Client secret do OAuth Google.',
+            'secret_text',
+        )),
+        ('LOGIN_GOVBR_ENABLED', (
+            defaults['govbr_enabled'],
+            'Permite login e cadastro com conta Gov.br.',
+            bool,
+        )),
+        ('LOGIN_GOVBR_ENVIRONMENT', (
+            defaults['govbr_environment'],
+            'Ambiente Gov.br usado na autenticacao.',
+            'govbr_environment_choice',
+        )),
+        ('LOGIN_GOVBR_CLIENT_ID', (
+            defaults['govbr_client_id'],
+            'Client ID emitido pelo Login Unico Gov.br.',
+            str,
+        )),
+        ('LOGIN_GOVBR_CLIENT_SECRET', (
+            defaults['govbr_client_secret'],
+            'Client secret emitido pelo Login Unico Gov.br.',
             'secret_text',
         )),
         ('LOGIN_EMAIL_HOST', (
@@ -81,10 +127,16 @@ def get_auth_fieldsets():
         ('Login - Formas de acesso', (
             'LOGIN_EMAIL_ENABLED',
             'LOGIN_GOOGLE_ENABLED',
+            'LOGIN_GOVBR_ENABLED',
         )),
         ('Login com Google', (
             'LOGIN_GOOGLE_OAUTH2_KEY',
             'LOGIN_GOOGLE_OAUTH2_SECRET',
+        )),
+        ('Login com Gov.br', (
+            'LOGIN_GOVBR_ENVIRONMENT',
+            'LOGIN_GOVBR_CLIENT_ID',
+            'LOGIN_GOVBR_CLIENT_SECRET',
         )),
         ('Login por e-mail - SMTP', (
             'LOGIN_EMAIL_HOST',
@@ -126,6 +178,30 @@ def is_google_login_enabled():
     enabled = bool(_get_config_value('LOGIN_GOOGLE_ENABLED', False))
     key, secret = get_google_credentials()
     return bool(enabled and key and secret)
+
+
+def get_govbr_environment_name():
+    environment = _get_config_value('LOGIN_GOVBR_ENVIRONMENT', GOVBR_STAGING)
+    if environment not in GOVBR_ENVIRONMENTS:
+        return GOVBR_STAGING
+    return environment
+
+
+def get_govbr_environment():
+    return GOVBR_ENVIRONMENTS[get_govbr_environment_name()]
+
+
+def get_govbr_credentials():
+    return (
+        _get_config_value('LOGIN_GOVBR_CLIENT_ID', '') or '',
+        _get_config_value('LOGIN_GOVBR_CLIENT_SECRET', '') or '',
+    )
+
+
+def is_govbr_login_enabled():
+    enabled = bool(_get_config_value('LOGIN_GOVBR_ENABLED', False))
+    client_id, client_secret = get_govbr_credentials()
+    return bool(enabled and client_id and client_secret)
 
 
 def get_recaptcha_keys():

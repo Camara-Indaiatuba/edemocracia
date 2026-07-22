@@ -13,6 +13,11 @@
   --edem-theme-soft-highlight: color-mix(in srgb, var(--edem-theme-link) 82%, white);
 }
 
+html {
+  background-color: var(--edem-theme-primary-dark) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
 .edem-topbar > .stick,
 .footer {
   background: linear-gradient(90deg, var(--edem-theme-primary) 0%, var(--edem-theme-primary-dark) 100%) !important;
@@ -47,6 +52,22 @@
   background-color: var(--edem-theme-accent) !important;
 }
 
+.edem-topbar > .stick > .actions > .menu > .link.-active {
+  color: var(--edem-theme-text) !important;
+}
+
+.edem-topbar > .stick > .actions > .menu > .link.-active::after {
+  background-color: var(--edem-theme-surface) !important;
+}
+
+.edem-topbar > .stick > .actions > .menu > .link.-highlight.-active {
+  color: var(--edem-theme-text) !important;
+}
+
+.edem-topbar > .stick > .actions > .menu > .link.-highlight.-active::after {
+  background-color: var(--edem-theme-surface) !important;
+}
+
 .login-box__options,
 .edem-sidebar > .stick > .content > .header {
   border-color: var(--edem-theme-accent) !important;
@@ -70,6 +91,63 @@
 
 .edem-access .login-box__choice-text {
   color: var(--edem-theme-accent) !important;
+}
+
+.section--user-profile {
+  background-color: var(--edem-theme-primary) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.section--user-profile .section__title,
+.section--user-profile .section__caption,
+.section--user-profile .section__note {
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.section--user-profile .section__title::before {
+  background-color: var(--edem-theme-accent) !important;
+}
+
+.section--user-profile .user-profile {
+  background-color: var(--edem-theme-primary-dark) !important;
+  border-color: var(--edem-theme-primary-dark) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.section--user-profile .form__icon,
+.section--user-profile .input-group-label {
+  background-color: var(--edem-theme-surface-alt) !important;
+  color: var(--edem-theme-text) !important;
+}
+
+.section--user-profile .form__input,
+.section--user-profile .input-group-field {
+  background-color: var(--edem-theme-surface) !important;
+  color: var(--edem-theme-text) !important;
+}
+
+.section--user-profile .form__input:disabled,
+.section--user-profile .form__input[readonly],
+.section--user-profile .input-group-field:disabled,
+.section--user-profile .input-group-field[readonly] {
+  background-color: color-mix(in srgb, var(--edem-theme-surface-alt) 88%, white) !important;
+  color: color-mix(in srgb, var(--edem-theme-text) 74%, white) !important;
+  cursor: not-allowed !important;
+}
+
+.section--user-profile .button {
+  background-color: var(--edem-theme-primary-dark) !important;
+  color: var(--edem-theme-on-primary) !important;
+}
+
+.section--user-profile .button.alert {
+  background-color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-on-secondary) !important;
+}
+
+.section--user-profile .button--expanded {
+  background-color: var(--edem-theme-primary-dark) !important;
+  color: var(--edem-theme-on-primary) !important;
 }
 
 .owner-section > .firsthalf {

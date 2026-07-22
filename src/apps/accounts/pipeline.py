@@ -1,6 +1,25 @@
 from datetime import datetime
 from requests import request, RequestException
 from django.core.files.base import ContentFile
+from social_core.pipeline.social_auth import associate_by_email
+
+
+def associate_by_verified_email(backend, details, user=None, response=None,
+                                *args, **kwargs):
+    if backend.name == 'govbr':
+        email_verified = bool(
+            response and response.get('email_verified') is True
+        )
+        if not email_verified:
+            id_token = getattr(backend, 'id_token', None) or {}
+            email_verified = id_token.get('email_verified') is True
+
+        if not email_verified:
+            return None
+
+    return associate_by_email(
+        backend, details, user=user, response=response, *args, **kwargs
+    )
 
 
 def save_avatar(user, url, suffix):
@@ -43,3 +62,6 @@ def save_profile(backend, user, response, *args, **kwargs):
         else:
             url = url.replace('?sz=50', '?sz=200')
             save_avatar(user, url, 'g')
+
+    if backend.name == 'govbr':
+        user.profile.save()

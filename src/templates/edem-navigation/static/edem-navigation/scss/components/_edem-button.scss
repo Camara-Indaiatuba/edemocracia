@@ -68,6 +68,49 @@
         z-index: 1;
       }
     }
+
+    &.-govbr {
+      align-items: center;
+      background-color: #fff;
+      border: 1px solid transparent;
+      border-radius: 100em;
+      color: #1351b4;
+      display: flex;
+      font-size: 1rem;
+      font-weight: 600;
+      justify-content: center;
+      min-height: 2.5 * $base-unit;
+      padding-left: 1 * $base-unit;
+      padding-right: 1 * $base-unit;
+      white-space: nowrap;
+
+      &::before {
+        content: none;
+        display: none;
+      }
+
+      &:hover {
+        background-image: linear-gradient(rgba(19, 81, 180, 0.16), rgba(19, 81, 180, 0.16));
+      }
+
+      &:focus {
+        outline: 4px dashed #c2850c;
+        outline-offset: 4px;
+      }
+
+      .govbr-signin__icon {
+        align-items: center;
+        display: inline-flex;
+        flex: 0 0 auto;
+        font-size: 1rem;
+        justify-content: center;
+        margin-right: 0.5 * $base-unit;
+      }
+
+      .govbr-signin__label {
+        display: inline-block;
+      }
+    }
   }
 
   &.-loading {

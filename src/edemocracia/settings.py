@@ -4,7 +4,12 @@ import django.conf.global_settings as default
 import mimetypes
 import os
 
-from apps.core.auth_config import get_auth_config, get_auth_fieldsets
+from apps.core.auth_config import (
+    GOVBR_ENVIRONMENT_CHOICES,
+    GOVBR_STAGING,
+    get_auth_config,
+    get_auth_fieldsets,
+)
 from apps.core.module_config import get_module_config, get_module_fieldsets
 from apps.core.site_config import get_site_config, get_site_fieldsets
 from apps.core.themes import (
@@ -147,6 +152,7 @@ REGISTRATION_USE_RDSTATION = config('REGISTRATION_USE_RDSTATION',
 
 # AUTHENTICATION
 AUTHENTICATION_BACKENDS = (
+    'apps.accounts.backends.ConfigurableGovBrOpenIDConnect',
     'apps.accounts.backends.ConfigurableGoogleOAuth2',
     'social_core.backends.facebook.FacebookOAuth2',
     'apps.accounts.backends.AuthenticationEmailBackend',
@@ -163,7 +169,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
-    'social_core.pipeline.social_auth.associate_by_email',
+    'apps.accounts.pipeline.associate_by_verified_email',
     'social_core.pipeline.user.get_username',
     'social_core.pipeline.user.create_user',
     'apps.accounts.pipeline.save_profile',
@@ -343,6 +349,12 @@ CONSTANCE_ADDITIONAL_FIELDS = {
         'apps.core.forms.ThemeColorField',
         {},
     ],
+    'govbr_environment_choice': [
+        'django.forms.fields.ChoiceField',
+        {
+            'choices': GOVBR_ENVIRONMENT_CHOICES,
+        },
+    ],
     'secret_text': [
         'apps.core.forms.SecretTextField',
         {},
@@ -365,6 +377,10 @@ CONSTANCE_CONFIG.update(get_auth_config({
     'google_enabled': GOOGLE_LOGIN_DEFAULT,
     'google_key': SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
     'google_secret': SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
+    'govbr_enabled': False,
+    'govbr_environment': GOVBR_STAGING,
+    'govbr_client_id': '',
+    'govbr_client_secret': '',
     'email_host': EMAIL_HOST,
     'email_port': EMAIL_PORT,
     'email_host_user': EMAIL_HOST_USER,

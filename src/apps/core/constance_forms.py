@@ -9,6 +9,7 @@ class ThemeConstanceForm(ConstanceForm):
 class LoginConstanceForm(ConstanceForm):
     secret_fields = (
         'LOGIN_GOOGLE_OAUTH2_SECRET',
+        'LOGIN_GOVBR_CLIENT_SECRET',
         'LOGIN_EMAIL_HOST_PASSWORD',
         'LOGIN_RECAPTCHA_PRIVATE_KEY',
     )
@@ -22,8 +23,9 @@ class LoginConstanceForm(ConstanceForm):
 
         email_enabled = cleaned_data.get('LOGIN_EMAIL_ENABLED')
         google_enabled = cleaned_data.get('LOGIN_GOOGLE_ENABLED')
+        govbr_enabled = cleaned_data.get('LOGIN_GOVBR_ENABLED')
 
-        if not email_enabled and not google_enabled:
+        if not email_enabled and not google_enabled and not govbr_enabled:
             raise forms.ValidationError(
                 'Mantenha pelo menos uma forma de login habilitada.'
             )
@@ -38,6 +40,18 @@ class LoginConstanceForm(ConstanceForm):
                 self.add_error(
                     'LOGIN_GOOGLE_OAUTH2_SECRET',
                     'Informe o Client secret para habilitar login com Google.',
+                )
+
+        if govbr_enabled:
+            if not cleaned_data.get('LOGIN_GOVBR_CLIENT_ID'):
+                self.add_error(
+                    'LOGIN_GOVBR_CLIENT_ID',
+                    'Informe o Client ID para habilitar login com Gov.br.',
+                )
+            if not cleaned_data.get('LOGIN_GOVBR_CLIENT_SECRET'):
+                self.add_error(
+                    'LOGIN_GOVBR_CLIENT_SECRET',
+                    'Informe o Client secret para habilitar login com Gov.br.',
                 )
 
         if email_enabled:

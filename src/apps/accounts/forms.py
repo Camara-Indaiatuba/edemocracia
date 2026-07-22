@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from apps.accounts.models import UserProfile
+from apps.accounts.utils import user_uses_external_identity
 import requests
 
 
@@ -89,8 +90,15 @@ class UserProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(UserProfileForm, self).__init__(*args, **kwargs)
-        self.fields['first_name'].initial = kwargs['instance'].user.first_name
-        self.fields['last_name'].initial = kwargs['instance'].user.last_name
+        user = kwargs['instance'].user
+        self.external_identity_locked = user_uses_external_identity(user)
+        self.fields['first_name'].initial = user.first_name
+        self.fields['last_name'].initial = user.last_name
+
+        if self.external_identity_locked:
+            self.fields['first_name'].disabled = True
+            self.fields['last_name'].disabled = True
+
         for field_name in self.fields:
             field = self.fields.get(field_name)
             if field and isinstance(field, forms.TypedChoiceField):
@@ -104,8 +112,9 @@ class UserProfileForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super(UserProfileForm, self).save(commit=False)
         instance.save()
-        instance.user.first_name = self.cleaned_data['first_name']
-        instance.user.last_name = self.cleaned_data['last_name']
+        if not self.external_identity_locked:
+            instance.user.first_name = self.cleaned_data['first_name']
+            instance.user.last_name = self.cleaned_data['last_name']
         if commit:
             instance.user.save()
         return instance
