@@ -41,6 +41,8 @@ Impedir que reiniciar Audiências ou Wikilegis desfaça uma troca de senha feita
 - Configuracao Compose validada com as duas sobreposicoes somente leitura.
 - Containers locais de Audiencias e Wikilegis foram recriados usando as sobreposicoes.
 - Contas temporarias confirmaram a criacao com a senha inicial e a preservacao de uma senha alterada em uma segunda execucao; as contas de teste foram removidas ao final.
+- Aplicado em producao depois de backup completo dos bancos; os hashes das senhas administrativas do portal, Audiencias e Wikilegis permaneceram identicos antes e depois da recriacao.
+- Checks dos tres sistemas passaram e home, Audiencias e Wikilegis responderam com HTTP 200.
 
 ### Pendencias ou observacoes
 
@@ -68,6 +70,7 @@ Preencher corretamente nome e sobrenome quando o Gov.br envia apenas o nome comp
 ### Validacao
 
 - Testes automatizados cobrem claims separados e o fallback pelo nome completo.
+- Sete testes de integracao Gov.br passaram no desenvolvimento e em producao.
 
 ### Pendencias ou observacoes
 
