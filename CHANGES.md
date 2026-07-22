@@ -45,7 +45,8 @@ Permitir que uma instalacao sem Expressao/Discourse pare seus containers e banco
 - Compose validado com `DISCOURSE_REPLICAS=0` nos dois servicos do forum.
 - Teste automatizado confirmou que o login nao abre conexao com o Discourse desabilitado.
 - Checks do Django e conjunto direcionado de seis testes passaram.
-- Aplicacao em producao pendente.
+- Aplicado em producao: containers do Discourse e de seu PostgreSQL exclusivo foram removidos, com os tres volumes preservados.
+- Home, Audiencias e Wikilegis responderam com HTTP 200; o Expressao desabilitado respondeu com HTTP 404.
 
 ### Pendencias ou observacoes
 
