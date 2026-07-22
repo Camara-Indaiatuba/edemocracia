@@ -6,6 +6,15 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+## v1.0.0-rc9 - 2026-07-22
+
+Nono release candidate com correcao de formularios HTTPS no admin da Audiencias.
+
+### Corrigido
+
+- Admin da Audiências passa a aceitar formularios HTTPS do dominio configurado em `CSRF_TRUSTED_ORIGINS`.
+- Cookies de sessao e CSRF da Audiências passam a respeitar as configuracoes seguras do `.env`.
+
 ## v1.0.0-rc8 - 2026-07-22
 
 Oitavo release candidate com preservacao das senhas administrativas dos modulos e preenchimento mais robusto do nome Gov.br.

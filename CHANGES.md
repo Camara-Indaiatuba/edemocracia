@@ -15,6 +15,35 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-22 - Formularios HTTPS no admin da Audiencias
+
+### Objetivo
+
+Corrigir HTTP 403 ao salvar grupos e outros formularios administrativos da Audiencias em producao HTTPS.
+
+### Arquivos alterados
+
+- `config/module-overrides/audiencias/deployment_settings.py`
+- `docker-compose.yml`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- O modulo legado passa a ler `CSRF_TRUSTED_ORIGINS`, que ja era enviado pelo Compose mas era ignorado pelas configuracoes originais.
+- A Audiencias passa a reconhecer `X-Forwarded-Proto` do proxy reverso.
+- Cookies de sessao e CSRF passam a respeitar `SESSION_COOKIE_SECURE` e `CSRF_COOKIE_SECURE`.
+- A configuracao complementar e montada pelo Compose sem editar o volume persistente do modulo.
+
+### Validacao
+
+- Containers web e worker da Audiencias foram recriados com o modulo complementar.
+- Teste com `Client(enforce_csrf_checks=True)` enviou um POST com a origem HTTPS configurada e recebeu HTTP 200 em vez de 403.
+
+### Pendencias ou observacoes
+
+- A correcao deve ser aplicada tambem ao worker para manter os dois processos com o mesmo modulo de configuracoes.
+
 ## 2026-07-22 - Preservacao da senha administrativa nos modulos
 
 ### Objetivo

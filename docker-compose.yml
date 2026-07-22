@@ -196,7 +196,9 @@ services:
       - audiencias_django52:/var/labhacker/audiencias
       - ./config/etc/cron.d/audiencias-local:/etc/cron.d/audiencias:ro
       - ./config/module-overrides/audiencias/create_admin.py:/var/labhacker/audiencias/create_admin.py:ro
+      - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
     environment:
+      DJANGO_SETTINGS_MODULE: audiencias_publicas.deployment_settings
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
@@ -218,6 +220,8 @@ services:
       LOGOUT_REDIRECT_URL: /home
       ALLOWED_HOSTS: ${AUDIENCIAS_ALLOWED_HOSTS:-${PUBLIC_HOST},localhost,127.0.0.1,nginx,audienciasweb,audienciasworker${EXTRA_ALLOWED_HOSTS:+,${EXTRA_ALLOWED_HOSTS}}}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://${PUBLIC_HOST},http://localhost:${PUBLIC_HTTP_PORT:-8000},http://127.0.0.1:${PUBLIC_HTTP_PORT:-8000}}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-True}
+      CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-True}
       SITE_DOMAIN: ${SITE_DOMAIN:-${PUBLIC_HOST}}
       SITE_NAME: ${AUDIENCIAS_SITE_NAME:-Democracia}
       YOUTUBE_API_KEY: ''
@@ -253,6 +257,7 @@ services:
       - redis
       - db
     environment:
+      DJANGO_SETTINGS_MODULE: audiencias_publicas.deployment_settings
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
@@ -274,6 +279,8 @@ services:
       LOGOUT_REDIRECT_URL: /home
       ALLOWED_HOSTS: ${AUDIENCIAS_ALLOWED_HOSTS:-${PUBLIC_HOST},localhost,127.0.0.1,nginx,audienciasweb,audienciasworker${EXTRA_ALLOWED_HOSTS:+,${EXTRA_ALLOWED_HOSTS}}}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://${PUBLIC_HOST},http://localhost:${PUBLIC_HTTP_PORT:-8000},http://127.0.0.1:${PUBLIC_HTTP_PORT:-8000}}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-True}
+      CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-True}
       SITE_DOMAIN: ${SITE_DOMAIN:-${PUBLIC_HOST}}
       SITE_NAME: ${AUDIENCIAS_SITE_NAME:-Audiencias Publicas Interativas}
       YOUTUBE_API_KEY: ''
@@ -297,6 +304,7 @@ services:
       GOOGLE_LOGIN_ENABLED: ${GOOGLE_LOGIN_ENABLED:-False}
     volumes:
       - audiencias_django52:/var/labhacker/audiencias
+      - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
     depends_on:
       - 'audienciasweb'
 
