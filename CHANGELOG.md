@@ -17,6 +17,7 @@ Setimo release candidate com desligamento persistente da infraestrutura opcional
 ### Corrigido
 
 - Login deixa de tentar criar sessao SSO no Discourse quando o modulo esta desabilitado.
+- Nginx deixa de exigir a resolucao do container Discourse durante a inicializacao quando o forum esta parado.
 - README diferencia desativacao publica no admin e desligamento da infraestrutura Docker.
 
 ## v1.0.0-rc6 - 2026-07-22

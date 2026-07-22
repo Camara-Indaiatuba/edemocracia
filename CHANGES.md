@@ -30,12 +30,14 @@ Permitir que uma instalacao sem Expressao/Discourse pare seus containers e banco
 - `CHANGES.md`
 - `src/apps/discourse/tasks.py`
 - `src/apps/discourse/tests.py`
+- `config/etc/nginx/conf.d/default.conf`
 
 ### Resumo tecnico
 
 - `DISCOURSE_REPLICAS=0` escala para zero o Discourse e seu PostgreSQL exclusivo.
 - `DISCOURSE_ENABLED=False` impede que o e-Democracia espere o Discourse durante a inicializacao.
 - O sinal de login deixa de chamar o SSO do Discourse quando o modulo estiver desativado.
+- O Nginx resolve o endereco do Discourse somente quando recebe uma requisicao de arquivo do forum, permitindo iniciar sem o container opcional.
 - Os volumes persistentes ficam preservados para uma eventual reativacao.
 
 ### Validacao
