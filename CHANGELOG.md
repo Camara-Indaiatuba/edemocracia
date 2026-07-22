@@ -6,6 +6,15 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+## v1.0.0-rc8 - 2026-07-22
+
+Oitavo release candidate com preservacao das senhas administrativas dos modulos e preenchimento mais robusto do nome Gov.br.
+
+### Corrigido
+
+- Login Gov.br passa a preencher o sobrenome a partir do nome completo quando o provedor nao envia `family_name` separadamente.
+- Reiniciar Audiências ou Wikilegis deixa de redefinir a senha do administrador existente para `ADMIN_PASSWORD` do `.env`.
+
 ## v1.0.0-rc7 - 2026-07-22
 
 Setimo release candidate com desligamento persistente da infraestrutura opcional do Expressao/Discourse.

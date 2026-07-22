@@ -88,6 +88,7 @@ Preencha pelo menos:
 - `IMAGE_REGISTRY`: registry das imagens dos módulos, por exemplo `ghcr.io/camara-indaiatuba`.
 - `IMAGE_TAG`: versão das imagens auxiliares de Wikilegis, Audiências e Discourse. O release `v1.0.0-rc5` continua usando `1.0.0-rc1` enquanto essas imagens auxiliares não forem republicadas com uma tag nova.
 - `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`: conta administrativa inicial.
+- `ADMIN_PASSWORD` e usado somente na criacao inicial das contas administrativas; reiniciar os containers nao substitui senhas alteradas posteriormente nos paineis.
 - `POSTGRES_PASSWORD`: senha do banco.
 - `EDEMOCRACIA_SECRET_KEY`, `WIKILEGIS_SECRET_KEY`, `AUDIENCIAS_SECRET_KEY`, `DISCOURSE_SSO_SECRET` e `INTERNAL_API_KEY`.
 - `WIKILEGIS_API_KEY` e `AUDIENCIAS_API_KEY`.

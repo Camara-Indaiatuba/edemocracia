@@ -15,6 +15,64 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-22 - Preservacao da senha administrativa nos modulos
+
+### Objetivo
+
+Impedir que reiniciar Audiências ou Wikilegis desfaça uma troca de senha feita pelo administrador.
+
+### Arquivos alterados
+
+- `config/module-overrides/audiencias/create_admin.py`
+- `config/module-overrides/wikilegis/create_admin.py`
+- `docker-compose.yml`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- `ADMIN_PASSWORD` passa a ser aplicado somente quando a conta administrativa inicial ainda nao existe.
+- Reinicializacoes continuam conferindo se a conta esta ativa e possui permissoes administrativas, mas preservam seu hash de senha.
+- Os scripts corrigidos sao montados pelo Compose sobre os scripts legados presentes nas imagens auxiliares.
+
+### Validacao
+
+- Configuracao Compose validada com as duas sobreposicoes somente leitura.
+- Containers locais de Audiencias e Wikilegis foram recriados usando as sobreposicoes.
+- Contas temporarias confirmaram a criacao com a senha inicial e a preservacao de uma senha alterada em uma segunda execucao; as contas de teste foram removidas ao final.
+
+### Pendencias ou observacoes
+
+- A correcao nao altera senhas existentes nem modifica `ADMIN_PASSWORD` no `.env`.
+
+## 2026-07-22 - Sobrenome de usuarios Gov.br
+
+### Objetivo
+
+Preencher corretamente nome e sobrenome quando o Gov.br envia apenas o nome completo do usuario.
+
+### Arquivos alterados
+
+- `src/apps/accounts/backends.py`
+- `src/apps/accounts/tests.py`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Claims separados `given_name` e `family_name` continuam tendo prioridade.
+- Quando o sobrenome separado estiver ausente, a primeira palavra do nome completo vira o nome e o restante vira o sobrenome.
+- O identificador local protegido do Gov.br permanece inalterado.
+
+### Validacao
+
+- Testes automatizados cobrem claims separados e o fallback pelo nome completo.
+
+### Pendencias ou observacoes
+
+- Usuarios Gov.br existentes recebem o sobrenome atualizado no proximo login somente se o provedor disponibilizar um nome completo com mais de uma palavra.
+
 ## 2026-07-22 - Desligamento persistente do Expressao
 
 ### Objetivo

@@ -74,9 +74,15 @@ class ConfigurableGovBrOpenIDConnect(OpenIdConnectAuth):
         identifier = details.get('username') or response.get('sub') or ''
         email = details.get('email') or ''
         fullname = details.get('fullname') or response.get('name') or ''
+        name_parts = fullname.split(None, 1)
+
         details['username'] = self._build_username(identifier, email, fullname)
         details['fullname'] = fullname
-        details['first_name'] = fullname.split(' ', 1)[0] if fullname else ''
+        if not details.get('first_name'):
+            details['first_name'] = name_parts[0] if name_parts else ''
+        if not details.get('last_name'):
+            details['last_name'] = name_parts[1] if len(name_parts) > 1 else ''
+
         return details
 
     @staticmethod

@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.test import SimpleTestCase
+from social_core.backends.open_id_connect import OpenIdConnectAuth
 
 from apps.accounts.backends import ConfigurableGovBrOpenIDConnect
 from apps.accounts.pipeline import associate_by_verified_email
@@ -13,6 +14,39 @@ from apps.core.auth_config import (
 
 
 class GovBrBackendTests(SimpleTestCase):
+    @patch.object(OpenIdConnectAuth, 'get_user_details')
+    def test_name_falls_back_to_fullname_when_separate_claims_are_missing(
+            self, get_user_details):
+        get_user_details.return_value = {
+            'username': 'govbr-identifier',
+            'email': 'cidadao@example.org',
+            'fullname': 'Maria da Silva',
+            'first_name': None,
+            'last_name': None,
+        }
+
+        backend = ConfigurableGovBrOpenIDConnect()
+        details = backend.get_user_details({})
+
+        self.assertEqual(details['first_name'], 'Maria')
+        self.assertEqual(details['last_name'], 'da Silva')
+
+    @patch.object(OpenIdConnectAuth, 'get_user_details')
+    def test_separate_name_claims_are_preserved(self, get_user_details):
+        get_user_details.return_value = {
+            'username': 'govbr-identifier',
+            'email': 'cidadao@example.org',
+            'fullname': 'Maria da Silva',
+            'first_name': 'Maria',
+            'last_name': 'Silva',
+        }
+
+        backend = ConfigurableGovBrOpenIDConnect()
+        details = backend.get_user_details({})
+
+        self.assertEqual(details['first_name'], 'Maria')
+        self.assertEqual(details['last_name'], 'Silva')
+
     def test_username_is_deterministic_without_exposing_identifier(self):
         identifier = '12345678900'
 
