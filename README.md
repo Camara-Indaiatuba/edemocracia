@@ -143,7 +143,22 @@ Configure no painel:
 - `/admin/core/theme_settings/`: tema visual e cores.
 - `/admin/core/login_settings/`: login por e-mail, SMTP, Google, Gov.br e reCAPTCHA.
 
-O compose continua subindo todos os serviços. A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado.
+A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado. Essa configuração não controla o Docker.
+
+Para também parar os containers e o banco exclusivo do Expressão/Discourse, preserve a opção desabilitada no admin e ajuste no `.env`:
+
+```dotenv
+DISCOURSE_ENABLED=False
+DISCOURSE_REPLICAS=0
+```
+
+Depois aplique a configuração:
+
+```bash
+docker compose up -d --remove-orphans
+```
+
+Os volumes com os dados do Discourse são preservados. Para reativar o módulo, use `DISCOURSE_ENABLED=True`, `DISCOURSE_REPLICAS=1`, execute novamente o Compose e habilite o Expressão no admin.
 
 ## Proxy HTTPS
 

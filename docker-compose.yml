@@ -48,6 +48,8 @@ services:
   discourse_modern_db:
     image: edemocracia-postgres:16-pgvector
     restart: unless-stopped
+    deploy:
+      replicas: ${DISCOURSE_REPLICAS:-1}
     build:
       context: ./config/docker/postgres16-pgvector
     volumes:
@@ -300,6 +302,8 @@ services:
     image: ${IMAGE_REGISTRY:-ghcr.io/camara-indaiatuba}/edemocracia-discourse:${IMAGE_TAG:-1.0.0-rc1}
     command: /sbin/boot
     restart: always
+    deploy:
+      replicas: ${DISCOURSE_REPLICAS:-1}
     shm_size: '512m'
     volumes:
       - discourse_modern_shared:/shared

@@ -6,9 +6,14 @@ from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 from pydiscourse.sso import sso_validate, sso_redirect_url
 
+from apps.core.module_config import is_discourse_enabled
+
 
 @receiver(user_logged_in)
 def discourse_login(sender, user, request, **kwargs):
+    if not is_discourse_enabled():
+        return
+
     upstream = settings.DISCOURSE_UPSTREAM
     upstream = upstream[:-1] if upstream[-1] == '/' else upstream
 

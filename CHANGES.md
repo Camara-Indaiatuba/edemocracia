@@ -15,6 +15,40 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-22 - Desligamento persistente do Expressao
+
+### Objetivo
+
+Permitir que uma instalacao sem Expressao/Discourse pare seus containers e banco exclusivo sem perder dados nem prejudicar o login central.
+
+### Arquivos alterados
+
+- `.env.example`
+- `docker-compose.yml`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+- `src/apps/discourse/tasks.py`
+- `src/apps/discourse/tests.py`
+
+### Resumo tecnico
+
+- `DISCOURSE_REPLICAS=0` escala para zero o Discourse e seu PostgreSQL exclusivo.
+- `DISCOURSE_ENABLED=False` impede que o e-Democracia espere o Discourse durante a inicializacao.
+- O sinal de login deixa de chamar o SSO do Discourse quando o modulo estiver desativado.
+- Os volumes persistentes ficam preservados para uma eventual reativacao.
+
+### Validacao
+
+- Compose validado com `DISCOURSE_REPLICAS=0` nos dois servicos do forum.
+- Teste automatizado confirmou que o login nao abre conexao com o Discourse desabilitado.
+- Checks do Django e conjunto direcionado de seis testes passaram.
+- Aplicacao em producao pendente.
+
+### Pendencias ou observacoes
+
+- A opcao do admin deve permanecer desabilitada enquanto a infraestrutura estiver em escala zero.
+
 ## 2026-07-22 - Fundo da Audiencias nos temas visuais
 
 ### Objetivo

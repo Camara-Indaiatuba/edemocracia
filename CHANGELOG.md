@@ -6,6 +6,19 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+## v1.0.0-rc7 - 2026-07-22
+
+Setimo release candidate com desligamento persistente da infraestrutura opcional do Expressao/Discourse.
+
+### Adicionado
+
+- `DISCOURSE_REPLICAS` permite manter o Expressao e seu PostgreSQL parados de forma persistente, sem remover os volumes.
+
+### Corrigido
+
+- Login deixa de tentar criar sessao SSO no Discourse quando o modulo esta desabilitado.
+- README diferencia desativacao publica no admin e desligamento da infraestrutura Docker.
+
 ## v1.0.0-rc6 - 2026-07-22
 
 Sexto release candidate com login Gov.br, protecao de contas externas e ajustes visuais dos temas.
