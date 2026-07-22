@@ -39,6 +39,7 @@ Corrigir HTTP 403 ao salvar grupos e outros formularios administrativos da Audie
 
 - Containers web e worker da Audiencias foram recriados com o modulo complementar.
 - Teste com `Client(enforce_csrf_checks=True)` enviou um POST com a origem HTTPS configurada e recebeu HTTP 200 em vez de 403.
+- Aplicado em producao: a origem oficial foi reconhecida, o POST protegido recebeu HTTP 200, os checks do web e worker passaram e a pagina da Audiencias respondeu com HTTP 200.
 
 ### Pendencias ou observacoes
 
