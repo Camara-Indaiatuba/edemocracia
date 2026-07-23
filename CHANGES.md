@@ -15,6 +15,54 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-23 - Implantacao da v1.0.0-rc10 na VM08
+
+### Objetivo
+
+Publicar em producao as correcoes acumuladas de traducao, permissoes locais da Audiencias, Tema 2 e sincronizacao de sessoes.
+
+### Versao implantada
+
+- Branch: `main`.
+- Commit funcional: `e98904b`.
+- Versao: `v1.0.0-rc10`.
+
+### Backup
+
+- Diretorio: `/home/filipiadm@camaraindaia.local/backups/edemocracia-pre-rc10-20260723-101448`.
+- Dumps em formato custom do PostgreSQL:
+  - `edemocracia.dump`;
+  - `audiencias.dump`;
+  - `wikilegis.dump`.
+- Os tres dumps foram validados com `pg_restore --list` e possuem checksums SHA-256 no mesmo diretorio.
+
+### Resumo da implantacao
+
+- Repositorio da VM08 atualizado por `fast-forward`.
+- Imagem principal reconstruida e containers necessarios recriados pelo Compose.
+- Audiencias recebeu o override que preserva grupos e permissoes administrativas locais.
+- Configuracao persistida do Tema 2 recebeu:
+  - vermelho institucional `#ce2a29`;
+  - branco de destaque `#ffffff`;
+  - verde do rodape `#7eb232`;
+  - amarelo da Audiencias `#f2c526`.
+- Uma falha transitoria observada na primeira recriacao levou ao tratamento resiliente e sanitizado das chamadas entre modulos; o complemento foi publicado e reaplicado antes da conclusao.
+
+### Validacao
+
+- Checks do Django passaram em e-Democracia, Audiencias web, Audiencias worker e Wikilegis.
+- 14 testes automatizados passaram dentro da VM08.
+- Pagina inicial, admin, Audiencias, Wikilegis e CSS do tema responderam HTTP 200 interna e publicamente por HTTPS.
+- Reinicializacao final ocorreu sem `Traceback`.
+- Catalogo `pt_BR` retornou `Meu Perfil`.
+- Override de autenticacao da Audiencias foi confirmado nas configuracoes carregadas.
+- Ensaio integrado confirmou recuperacao de um cookie vencido e navegacao autenticada na Audiencias.
+- Usuario e sessoes temporarios do ensaio foram removidos.
+
+### Pendencias ou observacoes
+
+- Expressao/Discourse permanece desabilitado em producao conforme configuracao anterior.
+
 ## 2026-07-23 - Sincronizacao resiliente durante a inicializacao
 
 ### Objetivo
