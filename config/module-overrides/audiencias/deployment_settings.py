@@ -19,3 +19,23 @@ CSRF_COOKIE_SECURE = config(
     cast=bool,
 )
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+MIDDLEWARE = [
+    (
+        'audiencias_publicas.permission_preserving_auth.'
+        'PermissionPreservingAudienciasRemoteUser'
+        if middleware == 'apps.accounts.middlewares.AudienciasRemoteUser'
+        else middleware
+    )
+    for middleware in MIDDLEWARE  # noqa: F405
+]
+
+AUTHENTICATION_BACKENDS = [
+    (
+        'audiencias_publicas.permission_preserving_auth.'
+        'PermissionPreservingAudienciasAuthBackend'
+        if backend == 'apps.accounts.backends.AudienciasAuthBackend'
+        else backend
+    )
+    for backend in AUTHENTICATION_BACKENDS  # noqa: F405
+]

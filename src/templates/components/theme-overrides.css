@@ -5,6 +5,7 @@
   --edem-theme-secondary: {{ active_theme.colors.secondary }};
   --edem-theme-accent: {{ active_theme.colors.accent }};
   --edem-theme-link: {{ active_theme.colors.link }};
+  --edem-theme-audiencias: {{ active_theme.colors.audiencias }};
   --edem-theme-surface: {{ active_theme.colors.surface }};
   --edem-theme-surface-alt: {{ active_theme.colors.surface_alt }};
   --edem-theme-text: {{ active_theme.colors.text }};
@@ -211,7 +212,7 @@ html {
 }
 
 .owner-section > .secondhalf > .briefing > .owner {
-  color: var(--edem-theme-soft-highlight) !important;
+  color: var(--edem-theme-secondary) !important;
   text-shadow: 0 1px 1px color-mix(in srgb, var(--edem-theme-primary-dark) 70%, transparent) !important;
 }
 
@@ -353,8 +354,6 @@ html {
 .amendments__form .button,
 .actions__link:hover,
 .amendments__suggest-button,
-.action-footer .action,
-.action-footer .button,
 .aud-button,
 .preview__floating-header,
 .show-all__button {
@@ -406,14 +405,17 @@ body.room-questions-body {
 .questions-section .vote-block__upvote-button.voted:not(.disabled),
 .questions-section .vote-block__total-votes.voted,
 .question-box .button,
+.action-footer .action,
+.action-footer .button {
+  background-color: var(--edem-theme-audiencias) !important;
+  border-color: var(--edem-theme-audiencias) !important;
+  color: var(--edem-theme-text) !important;
+}
+
 .preview--calendar .button,
 .preview--calendar .button:hover {
   background-color: var(--edem-theme-secondary) !important;
   color: var(--edem-theme-on-secondary) !important;
-}
-
-.question-box .button {
-  border-color: var(--edem-theme-secondary) !important;
 }
 
 .room-main .alert {
@@ -423,11 +425,11 @@ body.room-questions-body {
 
 .room-tabs {
   background-color: color-mix(in srgb, var(--edem-theme-primary) 55%, transparent) !important;
-  border-bottom-color: color-mix(in srgb, var(--edem-theme-secondary) 55%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--edem-theme-audiencias) 55%, transparent) !important;
 }
 
 .room-tabs .marker {
-  border-bottom-color: var(--edem-theme-secondary) !important;
+  border-bottom-color: var(--edem-theme-audiencias) !important;
 }
 
 .room-tabs a,
@@ -438,7 +440,7 @@ body.room-questions-body {
 .calendar-table__month,
 .room-questions .link,
 .room-info .link {
-  color: var(--edem-theme-secondary) !important;
+  color: var(--edem-theme-audiencias) !important;
 }
 
 .preview--live-videos .preview__floating-header,

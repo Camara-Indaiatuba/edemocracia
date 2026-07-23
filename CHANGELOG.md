@@ -6,6 +6,21 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+## v1.0.0-rc10 - 2026-07-23
+
+Decimo release candidate com sincronizacao de sessoes, permissoes administrativas locais, traducao do perfil e refinamento do Tema 2.
+
+### Adicionado
+
+- Tema 2 passa a ter uma cor editavel exclusiva para os elementos participativos da Audiências.
+
+### Corrigido
+
+- Textos da pagina de perfil passam a ser exibidos em portugues em instalacoes novas, com o catalogo `pt_BR` recompilado depois da montagem do codigo pelo Docker.
+- Login central na Audiências deixa de remover o acesso de equipe e as permissoes locais atribuidas aos grupos do modulo.
+- Tema 2 passa a usar amarelo nos elementos participativos da Audiências, verde nos destaques do rodape e vermelho no texto institucional da apresentacao.
+- Sincronizacao entre modulos passa a renovar sessoes vencidas da Audiências e do Wikilegis mesmo quando o navegador ainda possui o cookie antigo.
+
 ## v1.0.0-rc9 - 2026-07-22
 
 Nono release candidate com correcao de formularios HTTPS no admin da Audiencias.

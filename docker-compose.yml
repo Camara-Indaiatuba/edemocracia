@@ -197,6 +197,7 @@ services:
       - ./config/etc/cron.d/audiencias-local:/etc/cron.d/audiencias:ro
       - ./config/module-overrides/audiencias/create_admin.py:/var/labhacker/audiencias/create_admin.py:ro
       - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
+      - ./config/module-overrides/audiencias/permission_preserving_auth.py:/var/labhacker/audiencias/audiencias_publicas/permission_preserving_auth.py:ro
     environment:
       DJANGO_SETTINGS_MODULE: audiencias_publicas.deployment_settings
       EMAIL_HOST: ${EMAIL_HOST:-}
@@ -305,6 +306,7 @@ services:
     volumes:
       - audiencias_django52:/var/labhacker/audiencias
       - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
+      - ./config/module-overrides/audiencias/permission_preserving_auth.py:/var/labhacker/audiencias/audiencias_publicas/permission_preserving_auth.py:ro
     depends_on:
       - 'audienciasweb'
 

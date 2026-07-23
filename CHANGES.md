@@ -15,6 +15,172 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-23 - Renovar sessoes vencidas dos modulos
+
+### Objetivo
+
+Corrigir o caso em que o usuario permanecia autenticado no e-Democracia, mas aparecia como desconectado na Audiencias ou no Wikilegis porque o navegador ainda guardava um cookie de sessao invalido.
+
+### Arquivos alterados
+
+- `src/apps/core/tasks.py`
+- `src/apps/core/tests.py`
+- `src/apps/accounts/views.py`
+- `src/apps/accounts/tests.py`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- O login interno passa a reaproveitar o cookie atual do modulo quando a sessao ainda e valida.
+- O sincronizador deixa de considerar somente a existencia do cookie e consulta o modulo para valida-lo.
+- Cookies vencidos ou associados a outro usuario sao substituidos por uma sessao nova.
+- A pagina so e recarregada quando o valor da sessao realmente muda.
+- O mesmo comportamento foi aplicado a Audiencias e Wikilegis.
+
+### Validacao
+
+- 12 testes automatizados de contas e sincronizacao passaram.
+- Ensaio integrado na VM110 confirmou a troca de um `audiencias_session` propositalmente invalido.
+- A nova sessao foi decodificada na Audiencias e apontou para o usuario central esperado.
+- A navegacao da Audiencias foi renderizada como autenticada depois da renovacao.
+- Usuario e sessoes temporarios do ensaio foram removidos.
+
+### Pendencias ou observacoes
+
+- Alteracao mantida apenas na VM110 para ser publicada junto com as demais correcoes acumuladas.
+
+## 2026-07-23 - Paleta do Tema 2 na Audiencias e pagina inicial
+
+### Objetivo
+
+Melhorar contraste e coerencia visual do Tema 2 nas salas de audiencia, na apresentacao institucional e no rodape.
+
+### Arquivos alterados
+
+- `src/apps/core/themes.py`
+- `src/templates/components/theme-overrides.css`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Cor secundaria do Tema 2 ajustada para vermelho `#ce2a29`.
+- Adicionada uma cor editavel especifica para os destaques da Audiencias, definida como amarelo `#f2c526` no Tema 2.
+- Cor de links e destaques do rodape ajustada para verde `#7eb232`.
+- Titulos e links internos das salas de audiencia passam a usar a cor de destaque.
+- O botao `Fazer uma pergunta` e os controles de voto ativos passam a usar fundo amarelo com texto escuro.
+- O nome da instituicao no texto de apresentacao passa a usar a cor secundaria vermelha.
+- O arco decorativo do Tema 2 permanece vermelho, branco e azul.
+
+### Validacao
+
+- `python manage.py check` concluido sem erros.
+- Auditoria automatizada com Playwright confirmou as cores calculadas:
+  - apresentacao institucional em `rgb(206, 42, 41)`;
+  - destaques do rodape em `rgb(126, 178, 50)`;
+  - titulos da sala e fundo do botao de pergunta em `rgb(242, 197, 38)`;
+  - texto do botao de pergunta em azul-escuro `rgb(36, 70, 95)`.
+- Capturas da pagina inicial e de uma sala de audiencia foram revisadas na VM110.
+
+### Pendencias ou observacoes
+
+- Alteracao mantida apenas na VM110 para ser publicada junto com as demais correcoes acumuladas.
+
+## 2026-07-22 - Importacao das audiencias historicas na VM08
+
+### Objetivo
+
+Reproduzir na instalacao de producao as audiencias publicadas no antigo e-Camara da Camara Municipal de Indaiatuba.
+
+### Fonte
+
+- `https://edemocracia.camaraindaiatuba.sp.gov.br/`
+- API publica do WordPress usada para conferir IDs, titulos, datas e links dos 21 posts.
+
+### Dados importados
+
+- 21 audiencias identificadas pelos codigos `wp-...`.
+- 21 videos do YouTube.
+- 28 anexos e links de referencia.
+- Perguntas, mensagens, votos, usuarios e as audiencias manuais de teste da VM110 nao foram copiados.
+
+### Seguranca e recuperacao
+
+- A base de producao estava vazia antes da importacao.
+- Backup anterior a importacao salvo na VM08 em `/home/informatica/backups/audiencias-before-wordpress-import-20260722-164315.dump`.
+- O backup foi validado com `pg_restore --list` antes da carga dos dados.
+
+### Validacao
+
+- A VM08 ficou com 21 audiencias, 21 videos e 28 anexos importados.
+- Todas as 21 paginas de sala responderam HTTP 200 e continham o identificador esperado do respectivo video.
+- A pagina `/audiencias/fechadas/` respondeu HTTP 200 e exibiu registros de 2023, 2024, 2025 e 2026.
+
+### Pendencias ou observacoes
+
+- O site antigo foi tratado como fonte de verdade; os dois registros manuais de teste existentes na VM110 foram ignorados.
+
+## 2026-07-22 - Preservar permissoes locais da Audiencias
+
+### Objetivo
+
+Permitir que usuarios autenticados pelo Gov.br participem de grupos administrativos da Audiencias sem receber acesso aos demais modulos.
+
+### Arquivos alterados
+
+- `config/module-overrides/audiencias/permission_preserving_auth.py`
+- `config/module-overrides/audiencias/deployment_settings.py`
+- `docker-compose.yml`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- O login central continua sincronizando identidade e estado ativo do usuario.
+- Os campos locais `is_staff` e `is_superuser` deixam de ser sobrescritos pelos valores do e-Democracia.
+- O usuario local e identificado primeiro pelo `username` central; o e-mail fica apenas como compatibilidade com registros legados.
+- Os grupos e suas permissoes continuam administrados exclusivamente no painel da Audiencias.
+- Usuarios novos permanecem sem acesso administrativo ate que um administrador marque `is_staff` e atribua um grupo local.
+
+### Validacao
+
+- Checks do Django passaram nos containers web e worker da Audiencias.
+- Teste de SSO confirmou que `is_staff` e o grupo local sao preservados quando o login central envia `is_staff=False`.
+- Teste inverso confirmou que o SSO nao concede administracao local automaticamente a um usuario comum.
+- Teste adicional confirmou que o `username` prevalece sobre um e-mail divergente ao localizar as permissoes locais.
+
+### Pendencias ou observacoes
+
+- Alteracao mantida apenas na VM110 para ser publicada junto com as proximas correcoes.
+
+## 2026-07-22 - Traducoes da pagina de perfil
+
+### Objetivo
+
+Garantir que os rotulos da pagina de perfil sejam exibidos em portugues do Brasil tambem em instalacoes novas.
+
+### Arquivos alterados
+
+- `runserver`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Confirmado que o catalogo `pt_BR` ja traduz `My Profile`, `Profile picture`, `My password`, `My data`, `Gender` e `Update data`.
+- Identificado que o volume do Compose pode ocultar o arquivo `.mo` compilado durante a construcao da imagem.
+- A inicializacao do e-Democracia agora recompila o catalogo `pt_BR` depois que o codigo do host ja esta montado no container.
+
+### Validacao
+
+- Catalogo recompilado na VM110.
+- Traducoes consultadas pelo Django retornaram `Meu Perfil`, `Foto do perfil`, `Minha senha`, `Meus dados`, `Sexo` e `Atualizar dados`.
+
+### Pendencias ou observacoes
+
+- Alteracao mantida apenas na VM110 para ser publicada junto com as proximas correcoes.
+
 ## 2026-07-22 - Formularios HTTPS no admin da Audiencias
 
 ### Objetivo

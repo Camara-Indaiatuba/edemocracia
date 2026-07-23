@@ -183,16 +183,18 @@ def ajax_sync_sessions(request):
         return JsonResponse({'synced': []}, status=401)
 
     synced = []
-    if (is_audiencias_enabled() and
-            AudienciasConfig.cookie_name not in request.COOKIES):
-        default_login(request.user, request, AudienciasConfig)
-        if AudienciasConfig.cookie_name in request.set_cookies:
+    if is_audiencias_enabled():
+        current_cookie = request.COOKIES.get(AudienciasConfig.cookie_name)
+        synced_cookie = default_login(
+            request.user, request, AudienciasConfig)
+        if synced_cookie and synced_cookie != current_cookie:
             synced.append('audiencias')
 
-    if (is_wikilegis_enabled() and
-            WikilegisConfig.cookie_name not in request.COOKIES):
-        default_login(request.user, request, WikilegisConfig)
-        if WikilegisConfig.cookie_name in request.set_cookies:
+    if is_wikilegis_enabled():
+        current_cookie = request.COOKIES.get(WikilegisConfig.cookie_name)
+        synced_cookie = default_login(
+            request.user, request, WikilegisConfig)
+        if synced_cookie and synced_cookie != current_cookie:
             synced.append('wikilegis')
 
     if is_discourse_enabled() and '_t' not in request.COOKIES:
