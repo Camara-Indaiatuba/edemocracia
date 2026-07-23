@@ -15,6 +15,37 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-23 - Sincronizacao resiliente durante a inicializacao
+
+### Objetivo
+
+Evitar que uma indisponibilidade temporaria da Audiencias ou do Wikilegis interrompa comandos do e-Democracia durante a recriacao simultanea dos containers.
+
+### Arquivos alterados
+
+- `src/apps/core/tasks.py`
+- `src/apps/core/tests.py`
+- `src/apps/audiencias/tasks.py`
+- `src/apps/wikilegis/tasks.py`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- Chamadas de sincronizacao de usuarios agora possuem tempo limite de 10 segundos.
+- Falhas de conexao sao tratadas sem interromper o salvamento do usuario ou a inicializacao.
+- Mensagens de erro deixam de incluir a URL da API, evitando registrar a chave interna presente na query string.
+- Criacao, atualizacao e exclusao de usuarios usam o mesmo tratamento em Audiencias e Wikilegis.
+
+### Validacao
+
+- Teste automatizado confirmou que uma falha de conexao retorna de forma controlada.
+- O teste tambem confirmou que nem a chave interna nem a mensagem da biblioteca HTTP aparecem no log sanitizado.
+
+### Pendencias ou observacoes
+
+- Correcao identificada durante a primeira implantacao do codigo da `v1.0.0-rc10` na VM08.
+
 ## 2026-07-23 - Renovar sessoes vencidas dos modulos
 
 ### Objetivo

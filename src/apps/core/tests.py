@@ -2,9 +2,10 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase
+from requests import RequestException
 from requests.cookies import RequestsCookieJar
 
-from apps.core.tasks import default_login
+from apps.core.tasks import default_login, module_api_request
 
 
 class DefaultLoginTests(SimpleTestCase):
@@ -67,4 +68,27 @@ class DefaultLoginTests(SimpleTestCase):
         self.assertEqual(
             request.set_cookies[cookie_name],
             'fresh-session',
+        )
+
+
+class ModuleApiRequestTests(SimpleTestCase):
+    @patch(
+        'apps.core.tasks.requests.request',
+        side_effect=RequestException('secret-url-must-not-be-logged'),
+    )
+    def test_connection_failure_is_sanitized(self, request):
+        with self.assertLogs('apps.core.tasks', level='WARNING') as logs:
+            response = module_api_request(
+                'put',
+                'http://module/api/?api_key=internal-secret',
+                'Modulo',
+            )
+
+        self.assertIsNone(response)
+        self.assertNotIn('internal-secret', ' '.join(logs.output))
+        self.assertNotIn('secret-url-must-not-be-logged', ' '.join(logs.output))
+        request.assert_called_once_with(
+            'put',
+            'http://module/api/?api_key=internal-secret',
+            timeout=10,
         )

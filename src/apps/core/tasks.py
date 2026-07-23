@@ -1,6 +1,21 @@
 from apps.core.utils import get_user_data
+import logging
 import requests
 import json
+
+
+logger = logging.getLogger(__name__)
+
+
+def module_api_request(method, url, module_name, **kwargs):
+    try:
+        return requests.request(method, url, timeout=10, **kwargs)
+    except requests.RequestException:
+        logger.warning(
+            'Could not synchronize data with %s; module unavailable.',
+            module_name,
+        )
+        return None
 
 
 def default_login(user, request, app_config):

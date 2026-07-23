@@ -20,6 +20,7 @@ Decimo release candidate com sincronizacao de sessoes, permissoes administrativa
 - Login central na Audiências deixa de remover o acesso de equipe e as permissoes locais atribuidas aos grupos do modulo.
 - Tema 2 passa a usar amarelo nos elementos participativos da Audiências, verde nos destaques do rodape e vermelho no texto institucional da apresentacao.
 - Sincronizacao entre modulos passa a renovar sessoes vencidas da Audiências e do Wikilegis mesmo quando o navegador ainda possui o cookie antigo.
+- Sincronizacao de usuarios deixa de interromper a inicializacao quando um modulo ainda esta indisponivel e nao expoe a chave interna em rastros de excecao.
 
 ## v1.0.0-rc9 - 2026-07-22
 
