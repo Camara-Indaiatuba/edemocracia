@@ -6,6 +6,16 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+## v1.0.0-rc11 - 2026-07-24
+
+Decimo primeiro release candidate com compartilhamento atualizado e refinamentos do cabecalho das salas da Audiencias.
+
+### Corrigido
+
+- Compartilhamento da Audiencias passa a identificar o X no lugar do antigo Twitter, usando o endereco atual de publicacao e o novo simbolo visual.
+- Faixa do titulo das salas da Audiencias passa a continuar a cor do triangulo e do fundo da pagina nos temas 2 a 5.
+- Cabecalho e conteudo das salas no Tema 4 passam a preservar o contraste do logotipo e das informacoes da audiencia, inclusive no celular.
+
 ## v1.0.0-rc10 - 2026-07-23
 
 Decimo release candidate com sincronizacao de sessoes, permissoes administrativas locais, traducao do perfil e refinamento do Tema 2.

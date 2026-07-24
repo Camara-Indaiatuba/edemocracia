@@ -1,11 +1,13 @@
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from django.test import SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase
 from requests import RequestException
 from requests.cookies import RequestsCookieJar
 
 from apps.core.tasks import default_login, module_api_request
+from apps.core.themes import THEME_PRESETS
+from apps.core.views import theme_css
 
 
 class DefaultLoginTests(SimpleTestCase):
@@ -92,3 +94,44 @@ class ModuleApiRequestTests(SimpleTestCase):
             'http://module/api/?api_key=internal-secret',
             timeout=10,
         )
+
+
+class ThemeCssTests(SimpleTestCase):
+    def setUp(self):
+        self.request = RequestFactory().get('/theme.css')
+
+    @patch('apps.core.processors.get_active_theme')
+    @patch('apps.core.views.get_active_theme')
+    def test_white_red_audiencias_header_and_x_share_styles(
+            self, view_get_active_theme, processor_get_active_theme):
+        active_theme = {
+            'enabled': True,
+            'slug': 'white_red',
+            'label': 'Tema 4 - Branco e vermelho',
+            'colors': THEME_PRESETS['white_red'].copy(),
+            'assets': {
+                'left_leak': '',
+                'top_leak': '',
+            },
+        }
+        view_get_active_theme.return_value = active_theme
+        processor_get_active_theme.return_value = active_theme
+
+        response = theme_css(self.request)
+        css = response.content.decode()
+
+        self.assertIn(
+            '.room-header {\n'
+            '  background: var(--edem-theme-primary-dark) !important;',
+            css,
+        )
+        self.assertIn(
+            '.room-header > .logo {\n'
+            '  background-color: var(--edem-theme-secondary) !important;',
+            css,
+        )
+        self.assertIn(
+            '.social-share > .button.-twitter::before,',
+            css,
+        )
+        self.assertIn('content: "X" !important;', css)

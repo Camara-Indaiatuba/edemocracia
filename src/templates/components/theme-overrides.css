@@ -376,6 +376,16 @@ body.room-questions-body {
   color: var(--edem-theme-on-primary) !important;
 }
 
+.room-header {
+  background: var(--edem-theme-primary-dark) !important;
+}
+
+.room-header > .room-title > .info,
+.room-video > .room-title > .info,
+.room-info > p {
+  color: color-mix(in srgb, var(--edem-theme-on-primary) 80%, transparent) !important;
+}
+
 .room-header > .logo {
   background-color: var(--edem-theme-primary) !important;
 }
@@ -383,6 +393,16 @@ body.room-questions-body {
 .room-header > .logo::after {
   background: linear-gradient(-45deg, var(--edem-theme-primary-dark) calc(50% - 1px), var(--edem-theme-primary) 50%) !important;
 }
+
+{% if active_theme.slug == 'white_red' %}
+.room-header > .logo {
+  background-color: var(--edem-theme-secondary) !important;
+}
+
+.room-header > .logo::after {
+  background: linear-gradient(-45deg, var(--edem-theme-primary-dark) calc(50% - 1px), var(--edem-theme-secondary) 50%) !important;
+}
+{% endif %}
 
 .room-main::before,
 .room-info::before {
@@ -454,3 +474,17 @@ body.room-questions-body {
   color: var(--edem-theme-on-secondary) !important;
 }
 {% endif %}
+
+.social-share > .button.-twitter,
+.question-actions .share-list__item--twitter {
+  background-color: #000 !important;
+}
+
+.social-share > .button.-twitter::before,
+.question-actions .share-list__item--twitter .item__icon::before {
+  content: "X" !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 0.625rem !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+}

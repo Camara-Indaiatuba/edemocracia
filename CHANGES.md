@@ -15,6 +15,45 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-23 - Compartilhamento no X e continuidade visual da Audiencias
+
+### Objetivo
+
+Atualizar a identidade do antigo Twitter e integrar visualmente o titulo da sala ao fundo da Audiencias em todos os temas.
+
+### Versao
+
+- `v1.0.0-rc11`.
+
+### Arquivos alterados
+
+- `config/etc/nginx/conf.d/default.conf`
+- `src/apps/core/tests.py`
+- `src/templates/components/theme-overrides.css`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- O link de compartilhamento do antigo Twitter passa a usar o fluxo de publicacao do X.
+- Rotulos acessiveis passam de Twitter para X.
+- Os icones do compartilhamento da sala e das perguntas passam a exibir X em fundo preto.
+- Nos temas editaveis, a faixa do titulo da sala passa a usar a mesma cor principal escura do triangulo e do fundo abaixo dela.
+- O Tema 4 passa a usar vermelho no bloco do logotipo da Audiencias e melhora o contraste das informacoes do titulo e da pauta sobre o fundo claro, inclusive no celular.
+- Facebook, X e WhatsApp continuam sendo links de compartilhamento e nao exigem chaves ou contas configuradas no portal.
+
+### Validacao feita
+
+- Configuracao do Nginx validada com `nginx -t`.
+- Os 15 testes automatizados do e-Democracia passaram.
+- HTML da sala e JavaScript compilado foram verificados sem referencias ao endpoint antigo de compartilhamento.
+- Playwright confirmou link, rotulo, simbolo e cores calculadas nos cinco temas.
+- Capturas em desktop e celular confirmaram continuidade do cabecalho, contraste e ausencia de rolagem horizontal.
+
+### Pendencias ou observacoes
+
+- A alteracao ainda nao foi publicada no GitHub nem aplicada na VM08.
+
 ## 2026-07-23 - Implantacao da v1.0.0-rc10 na VM08
 
 ### Objetivo
