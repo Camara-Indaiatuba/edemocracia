@@ -15,6 +15,49 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-24 - Implantacao da v1.0.0-rc11 na VM08
+
+### Objetivo
+
+Publicar em producao a atualizacao do compartilhamento no X e os refinamentos visuais do cabecalho das salas da Audiencias.
+
+### Versao implantada
+
+- Branch: `main`.
+- Commit funcional: `f6e538f`.
+- Versao: `v1.0.0-rc11`.
+
+### Backup
+
+- Diretorio: `/home/filipiadm@camaraindaia.local/backups/edemocracia-pre-rc11-20260724-110635`.
+- Dumps em formato custom do PostgreSQL:
+  - `edemocracia.dump`;
+  - `audiencias.dump`;
+  - `wikilegis.dump`.
+- Os tres dumps foram validados com `pg_restore --list` e possuem checksums SHA-256 conferidos.
+
+### Resumo da implantacao
+
+- Repositorio da VM08 atualizado por `fast-forward`.
+- Aplicacao principal reconstruida e Nginx recriado pelo Compose.
+- PostgreSQL, Redis, Audiencias e Wikilegis permaneceram em execucao durante a atualizacao.
+- Expressao/Discourse permaneceu desabilitado conforme a configuracao de producao.
+
+### Validacao
+
+- Checks do Django passaram em e-Democracia, Audiencias e Wikilegis.
+- Os 15 testes automatizados do e-Democracia passaram dentro da VM08.
+- Configuracao do Nginx passou em `nginx -t`.
+- Logs recentes da aplicacao principal nao apresentaram `Traceback`, excecao ou erro.
+- Pagina inicial, admin, Audiencias, sala 35, Wikilegis e CSS do tema responderam HTTP 200 por HTTPS.
+- Certificado TLS do dominio de producao foi validado.
+- HTML e JavaScript publicados nao possuem referencias ao endpoint antigo de compartilhamento do Twitter.
+- Playwright confirmou o X, o popup de compartilhamento, a continuidade do cabecalho e a ausencia de rolagem horizontal em desktop e celular.
+
+### Pendencias ou observacoes
+
+- Nenhuma pendencia identificada nesta implantacao.
+
 ## 2026-07-23 - Compartilhamento no X e continuidade visual da Audiencias
 
 ### Objetivo
@@ -52,7 +95,7 @@ Atualizar a identidade do antigo Twitter e integrar visualmente o titulo da sala
 
 ### Pendencias ou observacoes
 
-- A alteracao ainda nao foi publicada no GitHub nem aplicada na VM08.
+- Alteracao publicada no GitHub e aplicada na VM08 como `v1.0.0-rc11`.
 
 ## 2026-07-23 - Implantacao da v1.0.0-rc10 na VM08
 
