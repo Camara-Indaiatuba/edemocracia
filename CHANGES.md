@@ -40,6 +40,7 @@ Corrigir os dois defeitos encontrados pela execucao automatizada em homologacao:
 - O Nginx passa a servir corretamente imagens do Discourse solicitadas na raiz `/images/`.
 - O Discourse moderno passa a receber porta publica HTTPS e configuracao atual de Discourse Connect, evitando URLs externas com a porta interna `8000`.
 - A chave de API da Audiencias passa a ser explicita e a autenticacao remota preserva corretamente as permissoes administrativas locais.
+- Duas referencias legadas e sem uso da Audiencias (`ua-parser.min.js` e `reverse.js`) passam a receber uma resposta vazia HTTP 204, evitando requisicoes 404.
 
 ### Validacao feita
 

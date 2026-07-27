@@ -27,6 +27,7 @@ Decimo segundo release candidate com login central refletido na Audiencias, asse
 - Expressão/Discourse deixa de gerar a URL externa do logotipo com a porta interna `8000`.
 - Nginx passa a encaminhar corretamente imagens do Discourse publicadas na raiz `/images/`.
 - Sincronização administrativa da Audiências passa a usar a chave de API configurada e preserva grupos e permissões locais.
+- Nginx responde sem conteúdo para dois scripts legados ausentes e não utilizados da Audiências, eliminando respostas 404 no carregamento público.
 
 ## v1.0.0-rc11 - 2026-07-24
 
