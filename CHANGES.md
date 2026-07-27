@@ -50,10 +50,13 @@ Corrigir os dois defeitos encontrados pela execucao automatizada em homologacao:
 - A imagem publica do logotipo do Discourse respondeu HTTP 200 com tipo `image/png`.
 - A configuracao foi restaurada para `LOGIN_EMAIL_ENABLED=False` e `LOGIN_GOVBR_ENABLED=True`.
 - O conteudo volatil criado pelos testes foi removido e a base E2E foi restaurada.
+- A producao foi atualizada na VM08 e o teste Playwright de login somente Gov.br passou no dominio oficial.
+- O Nginx de homologacao e producao validou a sintaxe; os dois scripts legados respondem HTTP 204.
+- Antes da implantacao foram validados backups dos tres bancos em `/home/informatica/backups/edemocracia-pre-rc12-20260727-094447`.
 
 ### Pendencias ou observacoes
 
-- Alteracoes preparadas para a versao `v1.0.0-rc12`.
+- Versao `v1.0.0-rc12` validada em homologacao e implantada em producao; testes manuais amplos permanecem com a equipe.
 
 ## 2026-07-24 - Orientacoes operacionais e aviso de infraestrutura
 
