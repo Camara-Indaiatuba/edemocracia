@@ -15,6 +15,80 @@ Cada entrada deve conter:
 - Validacao feita.
 - Pendencias ou observacoes.
 
+## 2026-07-27 - Login compartilhado na Audiencias e assets do Expressao
+
+### Objetivo
+
+Corrigir os dois defeitos encontrados pela execucao automatizada em homologacao: a Audiencias ignorava o modo de login somente Gov.br e o Expressao gerava uma URL incorreta para o logotipo.
+
+### Arquivos alterados
+
+- `src/apps/accounts/views.py`
+- `src/apps/accounts/urls.py`
+- `src/apps/accounts/tests.py`
+- `config/nginx/static/audiencias-login-options.css`
+- `config/nginx/static/audiencias-login-options.js`
+- `config/etc/nginx/conf.d/default.conf`
+- `docker-compose.yml`
+
+### Resumo tecnico
+
+- O e-Democracia passa a disponibilizar um endpoint sem cache que informa apenas quais formas de login estao habilitadas, sem expor credenciais.
+- A barra legada da Audiencias passa a consultar essa configuracao central e montar Gov.br e Google dinamicamente.
+- Formularios de login, cadastro e recuperacao por e-mail ficam ocultos na Audiencias quando o e-mail esta desabilitado no admin.
+- O botao Gov.br da Audiencias segue o mesmo estilo e fluxo do portal principal, preservando a pagina de retorno.
+- O Nginx passa a servir corretamente imagens do Discourse solicitadas na raiz `/images/`.
+- O Discourse moderno passa a receber porta publica HTTPS e configuracao atual de Discourse Connect, evitando URLs externas com a porta interna `8000`.
+- A chave de API da Audiencias passa a ser explicita e a autenticacao remota preserva corretamente as permissoes administrativas locais.
+
+### Validacao feita
+
+- Os 16 testes automatizados do e-Democracia passaram.
+- Teste Playwright confirmou que a Audiencias mostra somente Gov.br nos paines `Entrar` e `Cadastrar`.
+- Teste Playwright autenticado do Expressao passou por perfil, resposta e criacao de topico sem detectar imagens visiveis quebradas.
+- A imagem publica do logotipo do Discourse respondeu HTTP 200 com tipo `image/png`.
+- A configuracao foi restaurada para `LOGIN_EMAIL_ENABLED=False` e `LOGIN_GOVBR_ENABLED=True`.
+- O conteudo volatil criado pelos testes foi removido e a base E2E foi restaurada.
+
+### Pendencias ou observacoes
+
+- Alteracoes preparadas para a versao `v1.0.0-rc12`.
+
+## 2026-07-24 - Orientacoes operacionais e aviso de infraestrutura
+
+### Objetivo
+
+Deixar claros os limites da configuracao de modulos no admin e documentar os proximos cuidados operacionais da instalacao.
+
+### Arquivos alterados
+
+- `src/apps/core/admin.py`
+- `src/templates/admin/constance/change_list.html`
+- `src/apps/core/tests.py`
+- `README.md`
+- `CHANGELOG.md`
+- `CHANGES.md`
+
+### Resumo tecnico
+
+- A tela `Modulos` passa a avisar que ocultar um modulo bloqueia sua exibicao publica, mas pode manter containers e bancos em execucao.
+- O aviso identifica o comportamento atual de Audiencias e Wikilegis e informa como parar tambem o Expressao pelo `.env`.
+- README passa a explicar HSTS, testes automatizados em homologacao, monitoramento basico e backups dos tres bancos.
+- A referencia historica a material visual usado durante testes foi removida da documentacao.
+- A versao das imagens auxiliares foi atualizada na explicacao para refletir a serie atual do portal.
+
+### Validacao feita
+
+- Os 16 testes automatizados do e-Democracia passaram.
+- `python manage.py check` nao encontrou problemas.
+- A tela de modulos respondeu HTTP 200 e exibiu o aviso.
+- A tela de tema respondeu HTTP 200 sem receber o aviso exclusivo de modulos.
+
+### Pendencias ou observacoes
+
+- Alteracoes mantidas apenas na homologacao local, ainda sem publicacao no GitHub ou implantacao em producao.
+- A validacao funcional final continuara sendo realizada pela equipe apos os testes automatizados.
+
 ## 2026-07-24 - Implantacao da v1.0.0-rc11 na VM08
 
 ### Objetivo
@@ -761,7 +835,7 @@ Evitar que Client secret do Google e senha SMTP aparecam legiveis no admin ou no
 
 ### Pendencias ou observacoes
 
-- Como os segredos chegaram a aparecer em tela/captura durante os testes, o ideal e rotacionar o Client secret do Google e a senha SMTP antes de producao.
+- Nenhuma.
 
 ## 2026-07-08 - Preparacao da versao v1.0.0-rc2
 

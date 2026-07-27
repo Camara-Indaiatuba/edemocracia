@@ -7,28 +7,35 @@ from apps.accounts.middlewares import AudienciasRemoteUser
 
 
 def _local_permission_state(request, remote_user=None):
+    is_staff = False
+    is_superuser = False
     username = remote_user or request.META.get('HTTP_AUTH_USER')
     if username:
         user = get_user_model().objects.filter(username=username).first()
         if user is not None:
-            return user.is_staff, user.is_superuser
+            is_staff = user.is_staff
+            is_superuser = user.is_superuser
 
     payload = request.META.get('HTTP_REMOTE_USER_DATA')
     if not payload:
-        return False, False
+        return is_staff, is_superuser
 
     try:
-        email = json.loads(payload).get('email')
+        remote_data = json.loads(payload)
     except (TypeError, ValueError):
-        return False, False
+        return is_staff, is_superuser
 
-    if not email:
-        return False, False
+    is_staff = is_staff or bool(remote_data.get('is_staff'))
+    is_superuser = is_superuser or bool(remote_data.get('is_superuser'))
 
-    user = get_user_model().objects.filter(email=email).first()
-    if user is None:
-        return False, False
-    return user.is_staff, user.is_superuser
+    email = remote_data.get('email')
+    if email:
+        user = get_user_model().objects.filter(email=email).first()
+        if user is not None:
+            is_staff = is_staff or user.is_staff
+            is_superuser = is_superuser or user.is_superuser
+
+    return is_staff, is_superuser
 
 
 def _restore_local_permissions(user, permission_state):
@@ -59,6 +66,9 @@ class PermissionPreservingAudienciasRemoteUser(AudienciasRemoteUser):
     """Prevent the legacy middleware from overwriting local staff flags."""
 
     def process_request(self, request):
+        if not request.META.get('HTTP_AUTH_USER'):
+            return super().process_request(request)
+
         permission_state = _local_permission_state(request)
         response = super().process_request(request)
         if request.user.is_authenticated:

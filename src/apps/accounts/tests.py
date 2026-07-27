@@ -8,7 +8,7 @@ from social_core.backends.open_id_connect import OpenIdConnectAuth
 
 from apps.accounts.backends import ConfigurableGovBrOpenIDConnect
 from apps.accounts.pipeline import associate_by_verified_email
-from apps.accounts.views import ajax_sync_sessions
+from apps.accounts.views import ajax_sync_sessions, login_options
 from apps.audiencias.apps import AudienciasConfig
 from apps.core.auth_config import (
     GOVBR_STAGING,
@@ -101,6 +101,25 @@ class GovBrConfigurationTests(SimpleTestCase):
     @patch('apps.core.auth_config._get_config_value', return_value=True)
     def test_login_requires_credentials(self, _config, _credentials):
         self.assertFalse(is_govbr_login_enabled())
+
+
+class LoginOptionsTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch('apps.accounts.views.is_govbr_login_enabled', return_value=True)
+    @patch('apps.accounts.views.is_google_login_enabled', return_value=False)
+    @patch('apps.accounts.views.is_email_login_enabled', return_value=False)
+    def test_returns_only_enabled_login_modes(
+            self, _email, _google, _govbr):
+        response = login_options(
+            self.factory.get('/accounts/login-options/'))
+
+        self.assertJSONEqual(
+            response.content,
+            {'email': False, 'google': False, 'govbr': True},
+        )
+        self.assertEqual(response['Cache-Control'], 'no-store')
 
 
 class ExternalSessionSyncTests(SimpleTestCase):

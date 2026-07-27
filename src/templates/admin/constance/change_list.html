@@ -15,6 +15,16 @@
     .constance .edem-theme-note {
       margin: 0.75rem 0 0;
     }
+
+    .constance .edem-module-notice {
+      border-left: 4px solid var(--message-warning-bg, #f5dd5d);
+      margin: 0 0 1rem;
+      padding: 0.8rem 1rem;
+    }
+
+    .constance .edem-module-notice p {
+      margin: 0.35rem 0;
+    }
   </style>
 {% endblock %}
 
@@ -182,6 +192,23 @@
 
 {% block content %}
   <div id="content-main" class="constance">
+    {% if module_settings_notice %}
+      <div class="module edem-module-notice" role="note">
+        <h2>Visibilidade no portal e containers</h2>
+        <p>
+          Desativar um módulo nesta tela o oculta da navegação e bloqueia sua
+          rota pública, mas não necessariamente encerra seus containers ou
+          libera os recursos usados no servidor.
+        </p>
+        <p>
+          Nesta versão, Audiências e Wikilegis continuam em execução mesmo
+          quando ocultos. Para parar também o Expressão, defina
+          <code>DISCOURSE_ENABLED=False</code> e
+          <code>DISCOURSE_REPLICAS=0</code> no <code>.env</code> e aplique
+          novamente o Docker Compose.
+        </p>
+      </div>
+    {% endif %}
     <div class="module" id="changelist">
         <form id="changelist-form" action="" method="post" enctype="multipart/form-data">{% csrf_token %}
             {% if form.non_field_errors %}

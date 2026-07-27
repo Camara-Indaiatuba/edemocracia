@@ -129,6 +129,14 @@ class LoginSettingsAdmin(SplitConstanceAdmin):
 class ModuleSettingsAdmin(SplitConstanceAdmin):
     config_fieldsets = get_module_fieldsets()
 
+    def changelist_view(self, request, extra_context=None):
+        page_context = dict(extra_context or {})
+        page_context['module_settings_notice'] = True
+        return super().changelist_view(
+            request,
+            extra_context=page_context,
+        )
+
 
 class SiteSettingsAdmin(SplitConstanceAdmin):
     config_fieldsets = get_site_fieldsets()

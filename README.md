@@ -86,7 +86,7 @@ Preencha pelo menos:
 - `PUBLIC_HTTP_PORT`: porta HTTP local usada pelo proxy reverso.
 - `EXTRA_ALLOWED_HOSTS`: hosts extras separados por vírgula, útil para testes por IP ou nomes internos adicionais.
 - `IMAGE_REGISTRY`: registry das imagens dos módulos, por exemplo `ghcr.io/camara-indaiatuba`.
-- `IMAGE_TAG`: versão das imagens auxiliares de Wikilegis, Audiências e Discourse. O release `v1.0.0-rc5` continua usando `1.0.0-rc1` enquanto essas imagens auxiliares não forem republicadas com uma tag nova.
+- `IMAGE_TAG`: versão das imagens auxiliares de Wikilegis, Audiências e Discourse. Atualmente o valor publicado é `1.0.0-rc1`. Essa versão é independente da versão do portal e só precisa mudar quando uma dessas três imagens for reconstruída e republicada.
 - `ADMIN_EMAIL`, `ADMIN_USERNAME` e `ADMIN_PASSWORD`: conta administrativa inicial.
 - `ADMIN_PASSWORD` e usado somente na criacao inicial das contas administrativas; reiniciar os containers nao substitui senhas alteradas posteriormente nos paineis.
 - `POSTGRES_PASSWORD`: senha do banco.
@@ -144,7 +144,9 @@ Configure no painel:
 - `/admin/core/theme_settings/`: tema visual e cores.
 - `/admin/core/login_settings/`: login por e-mail, SMTP, Google, Gov.br e reCAPTCHA.
 
-A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado. Essa configuração não controla o Docker.
+A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado. Ela não é um painel de infraestrutura: ocultar um módulo não necessariamente encerra seus containers nem libera memória e espaço no servidor.
+
+Nesta versão, Audiências e Wikilegis continuam em execução quando são ocultos no admin. Isso preserva seus dados e permite reativação imediata. O Expressão/Discourse também continua em execução, a menos que seja desligado explicitamente no `.env`.
 
 Para também parar os containers e o banco exclusivo do Expressão/Discourse, preserve a opção desabilitada no admin e ajuste no `.env`:
 
@@ -287,6 +289,8 @@ Em `/admin/core/login_settings/`, o item `Formas de login` permite habilitar log
 
 O sistema exige pelo menos uma forma de login ativa. Se o login por e-mail estiver ativo, configure SMTP. Se o login com Google estiver ativo, configure Client ID e Client secret. Se o login com Gov.br estiver ativo, configure ambiente, Client ID e Client secret.
 
+A seleção é central e também controla as opções exibidas na Audiências, no Wikilegis e no Expressão. Não é necessário repetir a configuração em cada módulo.
+
 Os campos sensíveis, como Client secrets, senha SMTP e chave secreta do reCAPTCHA, ficam mascarados no admin. Ao editar `Formas de login`, deixe esses campos em branco para preservar o valor atual, ou preencha um novo valor para trocar o segredo.
 
 ## Publicação no GitHub e GHCR
@@ -377,8 +381,49 @@ Troque a senha administrativa depois do primeiro acesso.
 - Use senhas fortes para banco, admin e chaves internas.
 - Use `DEBUG=False` em produção.
 - Use HTTPS antes de liberar o portal publicamente.
-- Faça backup regular dos volumes Docker e do banco PostgreSQL.
+- Faça backup regular dos bancos PostgreSQL, arquivos enviados e configurações necessárias para recuperação.
 - Rotacione chaves caso alguma credencial tenha sido exposta.
+
+### HSTS
+
+HSTS é uma instrução enviada pelo site ao navegador para que aquele domínio seja acessado somente por HTTPS durante um período. Isso evita que uma tentativa de acesso seja rebaixada para HTTP sem criptografia.
+
+Ative HSTS somente depois que o domínio, o certificado e o proxy HTTPS estiverem estáveis. Comece com um período curto, por exemplo:
+
+```dotenv
+SECURE_HSTS_SECONDS=86400
+SECURE_HSTS_INCLUDE_SUBDOMAINS=False
+SECURE_HSTS_PRELOAD=False
+```
+
+Depois de validar a produção por alguns dias, o período pode ser aumentado para `31536000`, equivalente a um ano. Não habilite `SECURE_HSTS_INCLUDE_SUBDOMAINS` sem confirmar que todos os subdomínios usam HTTPS. Não habilite `SECURE_HSTS_PRELOAD` sem entender o processo de inclusão e remoção da lista preload dos navegadores.
+
+## Testes antes de uma versão
+
+Antes de publicar uma versão, execute os checks e testes Django:
+
+```bash
+docker compose exec edemocracia sh -lc \
+  'cd /var/labhacker/edemocracia/src && python manage.py check'
+docker compose exec edemocracia sh -lc \
+  'cd /var/labhacker/edemocracia/src && python manage.py test'
+```
+
+Uma homologação separada também pode ser testada por uma suíte E2E com Playwright. Esse tipo de teste abre um navegador real e valida login, logout, navegação, botões, formulários e criação de conteúdo. Integrações externas como Google, Gov.br, reCAPTCHA e autenticação com segundo fator ainda precisam de uma etapa humana quando o provedor exigir interação ou credenciais pessoais.
+
+Os testes automatizados reduzem regressões, mas não substituem a validação final da equipe responsável pelo conteúdo e pelos fluxos institucionais.
+
+## Monitoramento e backups
+
+Esses recursos ainda não são instalados automaticamente pelo compose do portal. Para produção, recomendamos planejar:
+
+- Monitoramento de disponibilidade: consultar periodicamente a página inicial e os módulos e avisar quando houver falha.
+- Monitoramento de disco: avisar antes que o armazenamento fique cheio, por exemplo ao atingir 80% de uso.
+- Backup diário dos três bancos PostgreSQL: e-Democracia, Audiências e Wikilegis.
+- Cópia dos backups para outro servidor ou armazenamento. Um backup mantido somente dentro da mesma VM não protege contra perda do disco ou da própria VM.
+- Teste periódico de restauração. Um arquivo de backup só é confiável quando sua leitura e restauração já foram verificadas.
+
+Uma implementação simples pode usar Uptime Kuma para disponibilidade e alertas, um timer do `systemd` para verificar espaço em disco e outro timer para executar `pg_dump` diariamente. O backup dos bancos pode ser realizado com o portal em funcionamento. Para uma recuperação completa, preserve também arquivos enviados pelos usuários e uma cópia protegida da configuração `.env`.
 
 ## Desenvolvimento local
 

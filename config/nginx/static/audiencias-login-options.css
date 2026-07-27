@@ -1,0 +1,67 @@
+.edem-sidebar .JS-signinContent > .social,
+.edem-sidebar .JS-signupContent > .social,
+.edem-sidebar .JS-loginForm,
+.edem-sidebar .JS-signUpForm,
+.edem-sidebar .JS-signinContent > a[href*="/password/reset/"] {
+  display: none !important;
+}
+
+.edem-sidebar.auth-email-enabled .JS-loginForm,
+.edem-sidebar.auth-email-enabled .JS-signUpForm,
+.edem-sidebar.auth-email-enabled .JS-signinContent > a[href*="/password/reset/"],
+.edem-sidebar .JS-signinContent > .audiencias-auth-social,
+.edem-sidebar .JS-signupContent > .audiencias-auth-social {
+  display: block !important;
+}
+
+.edem-sidebar .edem-button.-social.-govbr {
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid transparent;
+  border-radius: 100em;
+  color: #1351b4;
+  display: flex;
+  font-size: 1rem;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.edem-sidebar .edem-button.-social.-govbr::before {
+  content: none;
+  display: none;
+}
+
+.edem-sidebar .edem-button.-social.-govbr:hover {
+  background-image: linear-gradient(
+    rgba(19, 81, 180, 0.16),
+    rgba(19, 81, 180, 0.16)
+  );
+}
+
+.edem-sidebar .edem-button.-social.-govbr:focus {
+  outline: 4px dashed #c2850c;
+  outline-offset: 4px;
+}
+
+.edem-sidebar .govbr-signin__icon {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 1rem;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.edem-sidebar .audiencias-auth-error {
+  color: #fff;
+  margin: 24px 0;
+  text-align: center;
+}
+
+.edem-sidebar .audiencias-auth-error a {
+  color: inherit;
+  text-decoration: underline;
+}

@@ -18,7 +18,13 @@ CSRF_COOKIE_SECURE = config(
     default=False,
     cast=bool,
 )
+API_KEY = config('API_KEY')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+REST_FRAMEWORK = REST_FRAMEWORK.copy()  # noqa: F405
+REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = (
+    'audiencias_publicas.api_key_permission.ApiKeyPermission',
+)
 
 MIDDLEWARE = [
     (

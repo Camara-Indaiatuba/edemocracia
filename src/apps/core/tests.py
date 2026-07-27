@@ -1,10 +1,12 @@
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from django.contrib import admin
 from django.test import RequestFactory, SimpleTestCase
 from requests import RequestException
 from requests.cookies import RequestsCookieJar
 
+from apps.core.admin import ModuleSettings, SplitConstanceAdmin
 from apps.core.tasks import default_login, module_api_request
 from apps.core.themes import THEME_PRESETS
 from apps.core.views import theme_css
@@ -94,6 +96,27 @@ class ModuleApiRequestTests(SimpleTestCase):
             'http://module/api/?api_key=internal-secret',
             timeout=10,
         )
+
+
+class ModuleSettingsAdminTests(SimpleTestCase):
+    @patch.object(
+        SplitConstanceAdmin,
+        'changelist_view',
+        return_value='module-settings-response',
+    )
+    def test_module_page_receives_container_warning(self, changelist_view):
+        request = RequestFactory().get('/admin/core/module_settings/')
+        model_admin = admin.site._registry[ModuleSettings]
+
+        response = model_admin.changelist_view(
+            request,
+            extra_context={'existing_context': True},
+        )
+
+        self.assertEqual(response, 'module-settings-response')
+        page_context = changelist_view.call_args.kwargs['extra_context']
+        self.assertTrue(page_context['existing_context'])
+        self.assertTrue(page_context['module_settings_notice'])
 
 
 class ThemeCssTests(SimpleTestCase):

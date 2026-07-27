@@ -6,6 +6,28 @@ Formato baseado em "Keep a Changelog", com versoes seguindo SemVer quando a prim
 
 ## Nao Lancado
 
+## v1.0.0-rc12 - 2026-07-27
+
+Decimo segundo release candidate com login central refletido na Audiencias, assets corrigidos do Expressao e orientacoes operacionais no admin.
+
+### Adicionado
+
+- Tela de configuração de módulos passa a explicar que ocultar um módulo no portal não necessariamente encerra seus containers.
+- README passa a orientar sobre testes em homologação, HSTS, monitoramento de disponibilidade, alerta de espaço em disco e estratégia de backups.
+- Endpoint público e sem credenciais informa aos módulos quais formas de login estão habilitadas no painel central.
+
+### Alterado
+
+- Documentação esclarece o comportamento atual das imagens auxiliares e a diferença entre visibilidade administrativa e infraestrutura Docker.
+
+### Corrigido
+
+- Audiências passa a respeitar imediatamente a seleção central de formas de login, incluindo o modo somente Gov.br.
+- Formulários de e-mail da Audiências deixam de aparecer quando login e cadastro por e-mail estão desabilitados.
+- Expressão/Discourse deixa de gerar a URL externa do logotipo com a porta interna `8000`.
+- Nginx passa a encaminhar corretamente imagens do Discourse publicadas na raiz `/images/`.
+- Sincronização administrativa da Audiências passa a usar a chave de API configurada e preserva grupos e permissões locais.
+
 ## v1.0.0-rc11 - 2026-07-24
 
 Decimo primeiro release candidate com compartilhamento atualizado e refinamentos do cabecalho das salas da Audiencias.

@@ -19,7 +19,7 @@ from django.middleware.csrf import get_token
 from django.shortcuts import redirect
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods
 from apps.core.tasks import default_login
 from apps.discourse.tasks import discourse_login
 from apps.wikilegis.apps import WikilegisConfig
@@ -28,7 +28,12 @@ from django.views.generic import UpdateView
 from django.contrib import messages
 from apps.accounts.forms import UserProfileForm
 from django.urls import reverse, reverse_lazy
-from apps.core.auth_config import is_email_login_enabled, is_recaptcha_enabled
+from apps.core.auth_config import (
+    is_email_login_enabled,
+    is_google_login_enabled,
+    is_govbr_login_enabled,
+    is_recaptcha_enabled,
+)
 from apps.core.module_config import (
     is_audiencias_enabled,
     is_discourse_enabled,
@@ -203,6 +208,17 @@ def ajax_sync_sessions(request):
             synced.append('discourse')
 
     return JsonResponse({'synced': synced})
+
+
+@require_GET
+def login_options(request):
+    response = JsonResponse({
+        'email': is_email_login_enabled(),
+        'google': is_google_login_enabled(),
+        'govbr': is_govbr_login_enabled(),
+    })
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 @csrf_exempt

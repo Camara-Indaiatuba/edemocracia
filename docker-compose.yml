@@ -196,6 +196,7 @@ services:
       - audiencias_django52:/var/labhacker/audiencias
       - ./config/etc/cron.d/audiencias-local:/etc/cron.d/audiencias:ro
       - ./config/module-overrides/audiencias/create_admin.py:/var/labhacker/audiencias/create_admin.py:ro
+      - ./config/module-overrides/audiencias/api_key_permission.py:/var/labhacker/audiencias/audiencias_publicas/api_key_permission.py:ro
       - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
       - ./config/module-overrides/audiencias/permission_preserving_auth.py:/var/labhacker/audiencias/audiencias_publicas/permission_preserving_auth.py:ro
     environment:
@@ -207,6 +208,7 @@ services:
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
       EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-e-Democracia <no-reply@localhost>}
+      API_KEY: ${AUDIENCIAS_API_KEY:?Set AUDIENCIAS_API_KEY in .env}
       NOTIFICATION_EMAIL_LIST: ''
       DJANGO_SECRET_KEY: ${AUDIENCIAS_SECRET_KEY:?Set AUDIENCIAS_SECRET_KEY in .env}
       DEBUG: ${AUDIENCIAS_DEBUG:-False}
@@ -266,6 +268,7 @@ services:
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
       EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-e-Democracia <no-reply@localhost>}
+      API_KEY: ${AUDIENCIAS_API_KEY:?Set AUDIENCIAS_API_KEY in .env}
       NOTIFICATION_EMAIL_LIST: ''
       DJANGO_SECRET_KEY: ${AUDIENCIAS_SECRET_KEY:?Set AUDIENCIAS_SECRET_KEY in .env}
       DEBUG: ${AUDIENCIAS_DEBUG:-False}
@@ -305,6 +308,7 @@ services:
       GOOGLE_LOGIN_ENABLED: ${GOOGLE_LOGIN_ENABLED:-False}
     volumes:
       - audiencias_django52:/var/labhacker/audiencias
+      - ./config/module-overrides/audiencias/api_key_permission.py:/var/labhacker/audiencias/audiencias_publicas/api_key_permission.py:ro
       - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
       - ./config/module-overrides/audiencias/permission_preserving_auth.py:/var/labhacker/audiencias/audiencias_publicas/permission_preserving_auth.py:ro
     depends_on:
@@ -341,6 +345,7 @@ services:
       DISCOURSE_DB_USERNAME: 'root'
       DISCOURSE_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       DISCOURSE_HOSTNAME: ${PUBLIC_HOST:?Set PUBLIC_HOST in .env}
+      DISCOURSE_PORT: '443'
       DISCOURSE_DEVELOPER_EMAILS: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env}
       DISCOURSE_SKIP_EMAIL_SETUP: '1'
       DISCOURSE_SMTP_ADDRESS: ${EMAIL_HOST:-localhost}
@@ -356,6 +361,9 @@ services:
       DISCOURSE_NOTIFICATION_EMAIL: ${DISCOURSE_NOTIFICATION_EMAIL:-no-reply@localhost}
       DISCOURSE_SSO_URL: ${SITE_URL:-https://${PUBLIC_HOST}}
       DISCOURSE_SSO_SECRET: ${DISCOURSE_SSO_SECRET:?Set DISCOURSE_SSO_SECRET in .env}
+      DISCOURSE_ENABLE_DISCOURSE_CONNECT: 'true'
+      DISCOURSE_DISCOURSE_CONNECT_URL: ${SITE_URL:-https://${PUBLIC_HOST}}
+      DISCOURSE_DISCOURSE_CONNECT_SECRET: ${DISCOURSE_SSO_SECRET:?Set DISCOURSE_SSO_SECRET in .env}
       DISCOURSE_FORCE_HOSTNAME: ${PUBLIC_HOST}
 
   discourse_legacy:
