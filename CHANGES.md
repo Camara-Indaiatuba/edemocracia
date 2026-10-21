@@ -4499,3 +4499,13 @@ Impedir que salas locais de teste em Audiencias sejam sobrescritas automaticamen
   continua como `Indaiatuba`.
 - Os valores padrão do Django e do Docker Compose agora preservam o acento e a
   preposição para novas instalações.
+
+# Uniformização do nome institucional na apresentação (2026-10-21)
+
+- O nome da Câmara na mensagem de boas-vindas passa a usar a mesma cor do
+  restante do texto em todos os temas.
+- Foi removida a sombra aplicada ao destaque, evitando diferenças visuais
+  residuais entre temas.
+- A configuração de homologação foi corrigida para `Câmara Municipal de
+  Indaiatuba`, refletindo o acento também no rodapé, nos termos de serviço e
+  nos textos de acessibilidade.

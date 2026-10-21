@@ -42,8 +42,7 @@ html {
 .login-box__option.active,
 .login-box__link--forgotten-password,
 .edem-access a:not(.button),
-.edem-access .login-box__title,
-.owner-section > .secondhalf > .briefing > .owner {
+.edem-access .login-box__title {
   color: var(--edem-theme-link) !important;
 }
 
@@ -209,11 +208,6 @@ html {
   color: var(--edem-theme-on-primary) !important;
   position: relative !important;
   z-index: 1 !important;
-}
-
-.owner-section > .secondhalf > .briefing > .owner {
-  color: var(--edem-theme-secondary) !important;
-  text-shadow: 0 1px 1px color-mix(in srgb, var(--edem-theme-primary-dark) 70%, transparent) !important;
 }
 
 .section--audiencias {

@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from django.contrib import admin
+from django.template.loader import render_to_string
 from django.test import RequestFactory, SimpleTestCase
 from requests import RequestException
 from requests.cookies import RequestsCookieJar
@@ -158,3 +159,35 @@ class ThemeCssTests(SimpleTestCase):
             css,
         )
         self.assertIn('content: "X" !important;', css)
+
+    def test_owner_name_uses_the_surrounding_text_color_in_every_theme(self):
+        shared_rule = (
+            '.owner-section > .secondhalf > .briefing > .owner {\n'
+            '  color: inherit !important;\n'
+            '  text-shadow: none !important;\n'
+            '}'
+        )
+
+        original = render_to_string(
+            'components/theme-overrides.html',
+            {'active_theme': {'enabled': False}},
+        )
+        themed = render_to_string(
+            'components/theme-overrides.html',
+            {
+                'active_theme': {
+                    'enabled': True,
+                    'slug': 'blue_white_red',
+                    'colors': THEME_PRESETS['blue_white_red'].copy(),
+                    'assets': {'left_leak': '', 'top_leak': ''},
+                },
+            },
+        )
+
+        self.assertIn(shared_rule, original)
+        self.assertIn(shared_rule, themed)
+        self.assertNotIn(
+            '.owner-section > .secondhalf > .briefing > .owner {\n'
+            '  color: var(--edem-theme-link) !important;',
+            themed,
+        )
