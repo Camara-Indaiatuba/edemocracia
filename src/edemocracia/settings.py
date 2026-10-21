@@ -46,10 +46,10 @@ RECAPTCHA_ENABLED_DEFAULT = config(
     cast=bool,
 )
 
-SITE_NAME = config('SITE_NAME', default='Camara Municipal')
+SITE_NAME = config('SITE_NAME', default='Câmara Municipal')
 SITE_LOGO = config('SITE_LOGO', default='/static/img/brasao-camara.svg')
 SITE_LOGO_TEXT_LINE = config('SITE_LOGO_TEXT_LINE',
-                             default='Camara Municipal')
+                             default='Câmara Municipal de')
 SITE_LOGO_TEXT_CITY = config('SITE_LOGO_TEXT_CITY',
                              default='Nome da Cidade')
 SITE_URL = config('SITE_URL', default='http://localhost:8000')

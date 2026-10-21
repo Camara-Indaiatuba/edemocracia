@@ -77,9 +77,9 @@ services:
     depends_on:
       - db
     environment:
-      SITE_NAME: ${SITE_NAME:-Camara Municipal}
+      SITE_NAME: ${SITE_NAME:-Câmara Municipal}
       SITE_LOGO: ${SITE_LOGO:-/static/img/brasao-camara.svg}
-      SITE_LOGO_TEXT_LINE: ${SITE_LOGO_TEXT_LINE:-Camara Municipal}
+      SITE_LOGO_TEXT_LINE: ${SITE_LOGO_TEXT_LINE:-Câmara Municipal de}
       SITE_LOGO_TEXT_CITY: ${SITE_LOGO_TEXT_CITY:-Nome da Cidade}
       SITE_URL: ${SITE_URL:-https://${PUBLIC_HOST:?Set PUBLIC_HOST in .env}}
       DEBUG: ${EDEMOCRACIA_DEBUG:-False}

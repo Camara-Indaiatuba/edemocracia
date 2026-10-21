@@ -4491,3 +4491,11 @@ Impedir que salas locais de teste em Audiencias sejam sobrescritas automaticamen
 
 - Para testes locais, manter `cod_reunion` em branco.
 - Se o sync da Camara for reativado, revisar regra de conflito antes.
+# Ajuste do nome institucional no cabeçalho (2026-10-21)
+
+- A primeira linha ao lado do brasão foi corrigida de `Camara Municipal` para
+  `Câmara Municipal de`.
+- A segunda linha permanece configurável e, na instalação de Indaiatuba,
+  continua como `Indaiatuba`.
+- Os valores padrão do Django e do Docker Compose agora preservam o acento e a
+  preposição para novas instalações.
