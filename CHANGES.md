@@ -36,7 +36,8 @@ Corrigir o redirecionamento do admin do Wikilegis para o painel geral e impedir 
 
 ### Pendencias ou observacoes
 
-- Alteracao validada inicialmente na homologacao; a implantacao em producao deve ocorrer somente depois do push para o repositorio.
+- Alteracao publicada no commit `af7c9b1` e implantada na VM08 depois da validacao em homologacao.
+- Na producao, os 23 testes automatizados passaram; portal, Audiencias e Wikilegis responderam HTTP 200 e todos os servicos permaneceram ativos.
 
 ## 2026-10-22 - Grupos centralizados nos modulos
 
