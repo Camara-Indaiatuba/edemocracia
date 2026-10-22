@@ -4,6 +4,40 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-10-22 - Acesso aos admins dos modulos e fundo administrativo
+
+### Objetivo
+
+Corrigir o redirecionamento do admin do Wikilegis para o painel geral e impedir que o fundo azul do tema apareca abaixo do conteudo das telas administrativas.
+
+### Arquivos alterados
+
+- `src/apps/accounts/views.py`
+- `src/apps/accounts/urls.py`
+- `src/apps/accounts/tests.py`
+- `src/apps/core/tests.py`
+- `src/templates/components/theme-overrides.css`
+- `config/etc/nginx/conf.d/default.conf`
+
+### Resumo tecnico
+
+- Uma rota central protegida passa a preparar a sessao administrativa da Audiencias ou do Wikilegis e redirecionar para o painel do proprio modulo.
+- O acesso e permitido somente para superusuarios, membros da equipe ou integrantes do grupo central `Comunicação`.
+- Os logins administrativos interceptados pelo Nginx deixam de reaproveitar o caminho interno `/admin/` devolvido pelos modulos, que era interpretado como o admin geral.
+- As paginas do Django Admin passam a cobrir toda a altura da janela com fundo branco, independentemente da altura do conteudo e das cores do tema ativo.
+
+### Validacao feita
+
+- Os 23 testes automatizados de autenticacao e nucleo passaram.
+- A sintaxe do Compose e do Nginx foi validada.
+- Um ensaio Playwright autenticado em 1920 x 1080 abriu os admins do Wikilegis e da Audiencias usando somente a sessao central.
+- A verificacao visual confirmou fundo branco no `html` e no `body`, com o corpo cobrindo toda a altura da janela.
+- A conta temporaria usada no ensaio foi removida ao final.
+
+### Pendencias ou observacoes
+
+- Alteracao validada inicialmente na homologacao; a implantacao em producao deve ocorrer somente depois do push para o repositorio.
+
 ## 2026-10-22 - Grupos centralizados nos modulos
 
 ### Objetivo

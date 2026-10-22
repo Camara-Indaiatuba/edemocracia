@@ -13,7 +13,9 @@ from registration.users import UserModel
 from registration import signals
 from django.contrib.auth import login, logout
 from django.contrib.auth import views as auth_views
-from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
 from django.contrib.auth.forms import AuthenticationForm
 from django.middleware.csrf import get_token
 from django.shortcuts import redirect
@@ -208,6 +210,48 @@ def ajax_sync_sessions(request):
             synced.append('discourse')
 
     return JsonResponse({'synced': synced})
+
+
+@login_required
+@require_GET
+def module_admin_login(request, module):
+    modules = {
+        'audiencias': (
+            AudienciasConfig,
+            is_audiencias_enabled,
+            '/audiencias/admin/',
+        ),
+        'wikilegis': (
+            WikilegisConfig,
+            is_wikilegis_enabled,
+            '/wikilegis/admin/',
+        ),
+    }
+    module_config = modules.get(module)
+    if module_config is None:
+        return HttpResponseNotFound('Modulo desconhecido.')
+
+    app_config, is_enabled, admin_url = module_config
+    has_central_role = request.user.groups.filter(
+        name='Comunicação',
+    ).exists()
+    if not (
+        request.user.is_superuser or
+        request.user.is_staff or
+        has_central_role
+    ):
+        raise PermissionDenied
+
+    if not is_enabled():
+        return HttpResponseNotFound('Modulo desativado.')
+
+    if not default_login(request.user, request, app_config):
+        return HttpResponse(
+            'Nao foi possivel iniciar a sessao do modulo.',
+            status=503,
+        )
+
+    return redirect(admin_url)
 
 
 @require_GET

@@ -8,6 +8,7 @@ from apps.accounts.views import (
     ajax_sync_sessions,
     global_logout,
     login_options,
+    module_admin_login,
 )
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import views as auth_views
@@ -25,6 +26,8 @@ urlpatterns = [
     path('ajax/csrf/', ajax_csrf, name="ajax_csrf"),
     path('ajax/sync-sessions/', ajax_sync_sessions,
          name="ajax_sync_sessions"),
+    path('module-admin/<str:module>/', module_admin_login,
+         name='module_admin_login'),
     path('login-options/', login_options, name='login_options'),
     path('global-logout/', global_logout, name="global_logout"),
 ]

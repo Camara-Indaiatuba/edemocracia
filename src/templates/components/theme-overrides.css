@@ -19,6 +19,27 @@ html {
   color: var(--edem-theme-on-primary) !important;
 }
 
+html:has(body.dashboard),
+html:has(body.app-index),
+html:has(body.change-list),
+html:has(body.change-form),
+html:has(body.delete-confirmation),
+body.dashboard,
+body.app-index,
+body.change-list,
+body.change-form,
+body.delete-confirmation {
+  background-color: #fff !important;
+}
+
+body.dashboard,
+body.app-index,
+body.change-list,
+body.change-form,
+body.delete-confirmation {
+  min-height: 100vh !important;
+}
+
 .edem-topbar > .stick,
 .footer {
   background: linear-gradient(90deg, var(--edem-theme-primary) 0%, var(--edem-theme-primary-dark) 100%) !important;

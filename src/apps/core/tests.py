@@ -232,3 +232,23 @@ class ThemeCssTests(SimpleTestCase):
             '  color: var(--edem-theme-link) !important;',
             themed,
         )
+
+    @patch('apps.core.processors.get_active_theme')
+    @patch('apps.core.views.get_active_theme')
+    def test_admin_pages_cover_the_viewport_with_a_white_background(
+            self, view_get_active_theme, processor_get_active_theme):
+        active_theme = {
+            'enabled': True,
+            'slug': 'blue_white_red',
+            'colors': THEME_PRESETS['blue_white_red'].copy(),
+            'assets': {'left_leak': '', 'top_leak': ''},
+        }
+        view_get_active_theme.return_value = active_theme
+        processor_get_active_theme.return_value = active_theme
+
+        response = theme_css(self.request)
+        css = response.content.decode()
+
+        self.assertIn('html:has(body.dashboard),', css)
+        self.assertIn('body.delete-confirmation {\n  min-height: 100vh', css)
+        self.assertIn('background-color: #fff !important;', css)

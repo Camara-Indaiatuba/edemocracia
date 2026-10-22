@@ -2,13 +2,18 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.test import SimpleTestCase
 from social_core.backends.open_id_connect import OpenIdConnectAuth
 
 from apps.accounts.backends import ConfigurableGovBrOpenIDConnect
 from apps.accounts.pipeline import associate_by_verified_email
-from apps.accounts.views import ajax_sync_sessions, login_options
+from apps.accounts.views import (
+    ajax_sync_sessions,
+    login_options,
+    module_admin_login,
+)
 from apps.audiencias.apps import AudienciasConfig
 from apps.core.auth_config import (
     GOVBR_STAGING,
@@ -186,3 +191,50 @@ class ExternalSessionSyncTests(SimpleTestCase):
         )
         login.assert_called_once_with(
             self.user, request, AudienciasConfig)
+
+
+class ModuleAdminLoginTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = Mock(spec=get_user_model())
+        self.user.is_authenticated = True
+        self.user.is_superuser = False
+        self.user.is_staff = False
+
+    def _request(self):
+        request = self.factory.get('/accounts/module-admin/wikilegis/')
+        request.user = self.user
+        request.COOKIES = {}
+        request.set_cookies = {}
+        return request
+
+    @patch('apps.accounts.views.is_wikilegis_enabled', return_value=True)
+    @patch('apps.accounts.views.default_login', return_value='module-session')
+    def test_central_group_member_is_sent_to_wikilegis_admin(
+            self, login, _enabled):
+        self.user.groups.filter.return_value.exists.return_value = True
+        request = self._request()
+
+        response = module_admin_login(request, 'wikilegis')
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/wikilegis/admin/')
+        login.assert_called_once_with(
+            self.user, request, WikilegisConfig)
+
+    def test_user_without_administrative_role_is_denied(self):
+        self.user.groups.filter.return_value.exists.return_value = False
+
+        with self.assertRaises(PermissionDenied):
+            module_admin_login(self._request(), 'wikilegis')
+
+    @patch('apps.accounts.views.is_audiencias_enabled', return_value=True)
+    @patch('apps.accounts.views.default_login', return_value=None)
+    def test_unavailable_module_login_returns_service_unavailable(
+            self, _login, _enabled):
+        self.user.is_staff = True
+        self.user.groups.filter.return_value.exists.return_value = False
+
+        response = module_admin_login(self._request(), 'audiencias')
+
+        self.assertEqual(response.status_code, 503)
