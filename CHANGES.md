@@ -30,6 +30,7 @@ Permitir que os papeis administrativos sejam atribuidos uma unica vez no painel 
 - A Audiencias recebe apenas permissoes para publicar salas, administrar anexos e videos, responder perguntas e moderar mensagens.
 - O Wikilegis recebe apenas permissoes para publicar projetos e administrar seu conteudo e contribuicoes.
 - A associacao local e o status de membro da equipe sao atualizados durante o login central, inclusive quando ja existe uma sessao no modulo.
+- O grupo local legado `Comunicacao`, sem acentos, tem seus membros preservados no papel central e e removido para nao manter uma autorizacao paralela.
 - Grupos locais que nao sao gerenciados pelo portal central permanecem preservados.
 
 ### Validacao feita

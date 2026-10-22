@@ -7,6 +7,7 @@ from django.db.models import Q
 logger = logging.getLogger(__name__)
 
 COMMUNICATION_GROUP = 'Comunica\u00e7\u00e3o'
+LEGACY_GROUP_NAMES = ('Comunicacao',)
 
 CENTRAL_ROLES = {
     COMMUNICATION_GROUP: (
@@ -74,6 +75,13 @@ def ensure_central_groups():
                 ', '.join(missing),
             )
         group.permissions.set(permissions)
+
+        for legacy_name in LEGACY_GROUP_NAMES:
+            legacy_group = Group.objects.filter(name=legacy_name).first()
+            if legacy_group is None:
+                continue
+            group.user_set.add(*legacy_group.user_set.all())
+            legacy_group.delete()
 
 
 def sync_central_roles(user, remote_data):
