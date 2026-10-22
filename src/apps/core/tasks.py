@@ -20,8 +20,12 @@ def module_api_request(method, url, module_name, **kwargs):
 
 def default_login(user, request, app_config):
 
-    headers = {'Auth-User': user.username,
-               'Remote-User-Data': json.dumps(get_user_data(user))}
+    headers = {
+        'Auth-User': user.username,
+        'Remote-User-Data': json.dumps(
+            get_user_data(user, include_groups=True),
+        ),
+    }
     session = requests.Session()
     current_cookie = request.COOKIES.get(app_config.cookie_name)
     if current_cookie:

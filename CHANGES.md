@@ -4,6 +4,48 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-10-22 - Grupos centralizados nos modulos
+
+### Objetivo
+
+Permitir que os papeis administrativos sejam atribuidos uma unica vez no painel geral e aplicados automaticamente na Audiencias e no Wikilegis.
+
+### Arquivos alterados
+
+- `src/apps/core/utils.py`
+- `src/apps/core/tests.py`
+- `config/module-overrides/audiencias/central_roles.py`
+- `config/module-overrides/audiencias/permission_preserving_auth.py`
+- `config/module-overrides/audiencias/create_admin.py`
+- `config/module-overrides/wikilegis/central_roles.py`
+- `config/module-overrides/wikilegis/central_role_auth.py`
+- `config/module-overrides/wikilegis/settings.py`
+- `config/module-overrides/wikilegis/create_admin.py`
+- `docker-compose.yml`
+
+### Resumo tecnico
+
+- A identidade enviada pelo portal central passa a incluir os nomes dos grupos do usuario.
+- O papel central `Comunicação` cria e atualiza grupos tecnicos equivalentes nos dois modulos.
+- A Audiencias recebe apenas permissoes para publicar salas, administrar anexos e videos, responder perguntas e moderar mensagens.
+- O Wikilegis recebe apenas permissoes para publicar projetos e administrar seu conteudo e contribuicoes.
+- A associacao local e o status de membro da equipe sao atualizados durante o login central, inclusive quando ja existe uma sessao no modulo.
+- Grupos locais que nao sao gerenciados pelo portal central permanecem preservados.
+
+### Validacao feita
+
+- Os 19 testes automatizados de autenticacao e nucleo do portal central passaram.
+- `manage.py check` nao encontrou problemas na Audiencias nem no Wikilegis.
+- Os containers dos dois modulos iniciaram com os backends de autenticacao central configurados.
+- O grupo tecnico foi criado com 16 permissoes na Audiencias e 30 no Wikilegis.
+- Um ensaio integrado adicionou uma conta temporaria apenas ao grupo central, confirmou a concessao nos dois modulos e depois confirmou a revogacao completa ao retirar o grupo.
+- A conta temporaria foi removida dos tres bancos ao final do ensaio.
+
+### Pendencias ou observacoes
+
+- A alteracao ainda nao foi publicada nem implantada em producao.
+- Modulos atualizados ignoram identidades antigas sem o campo `groups`, permitindo implantacao gradual sem revogacao acidental.
+
 ## Formato usado
 
 Cada entrada deve conter:

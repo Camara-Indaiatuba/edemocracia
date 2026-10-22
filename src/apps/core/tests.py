@@ -10,7 +10,48 @@ from requests.cookies import RequestsCookieJar
 from apps.core.admin import ModuleSettings, SplitConstanceAdmin
 from apps.core.tasks import default_login, module_api_request
 from apps.core.themes import THEME_PRESETS
+from apps.core.utils import get_user_data
 from apps.core.views import theme_css
+
+
+class UserDataTests(SimpleTestCase):
+    def test_module_identity_contains_central_group_names(self):
+        groups = Mock()
+        groups.order_by.return_value.values_list.return_value = [
+            'Comunica\u00e7\u00e3o',
+        ]
+        user = SimpleNamespace(
+            get_full_name=lambda: 'Pessoa Teste',
+            first_name='Pessoa',
+            last_name='Teste',
+            groups=groups,
+            is_staff=False,
+            is_superuser=False,
+            is_active=True,
+            email='pessoa@example.test',
+        )
+
+        data = get_user_data(user, include_groups=True)
+
+        self.assertEqual(data['groups'], ['Comunica\u00e7\u00e3o'])
+
+    def test_profile_identity_keeps_legacy_api_contract(self):
+        groups = Mock()
+        user = SimpleNamespace(
+            get_full_name=lambda: 'Pessoa Teste',
+            first_name='Pessoa',
+            last_name='Teste',
+            groups=groups,
+            is_staff=False,
+            is_superuser=False,
+            is_active=True,
+            email='pessoa@example.test',
+        )
+
+        data = get_user_data(user)
+
+        self.assertNotIn('groups', data)
+        groups.order_by.assert_not_called()
 
 
 class DefaultLoginTests(SimpleTestCase):

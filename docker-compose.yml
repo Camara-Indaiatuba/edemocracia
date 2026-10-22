@@ -153,6 +153,9 @@ services:
     volumes:
       - wikilegis_py312:/var/labhacker/wikilegis
       - ./config/module-overrides/wikilegis/create_admin.py:/var/labhacker/wikilegis/wikilegis/create_admin.py:ro
+      - ./config/module-overrides/wikilegis/central_roles.py:/var/labhacker/wikilegis/wikilegis/wikilegis/central_roles.py:ro
+      - ./config/module-overrides/wikilegis/central_role_auth.py:/var/labhacker/wikilegis/wikilegis/wikilegis/central_role_auth.py:ro
+      - ./config/module-overrides/wikilegis/settings.py:/var/labhacker/wikilegis/wikilegis/wikilegis/settings/wikilegis.py:ro
     environment:
       API_KEY: ${WIKILEGIS_API_KEY:?Set WIKILEGIS_API_KEY in .env}
       SECRET_KEY: ${WIKILEGIS_SECRET_KEY:?Set WIKILEGIS_SECRET_KEY in .env}
@@ -199,6 +202,7 @@ services:
       - ./config/module-overrides/audiencias/api_key_permission.py:/var/labhacker/audiencias/audiencias_publicas/api_key_permission.py:ro
       - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
       - ./config/module-overrides/audiencias/permission_preserving_auth.py:/var/labhacker/audiencias/audiencias_publicas/permission_preserving_auth.py:ro
+      - ./config/module-overrides/audiencias/central_roles.py:/var/labhacker/audiencias/audiencias_publicas/central_roles.py:ro
     environment:
       DJANGO_SETTINGS_MODULE: audiencias_publicas.deployment_settings
       EMAIL_HOST: ${EMAIL_HOST:-}
@@ -311,6 +315,7 @@ services:
       - ./config/module-overrides/audiencias/api_key_permission.py:/var/labhacker/audiencias/audiencias_publicas/api_key_permission.py:ro
       - ./config/module-overrides/audiencias/deployment_settings.py:/var/labhacker/audiencias/audiencias_publicas/deployment_settings.py:ro
       - ./config/module-overrides/audiencias/permission_preserving_auth.py:/var/labhacker/audiencias/audiencias_publicas/permission_preserving_auth.py:ro
+      - ./config/module-overrides/audiencias/central_roles.py:/var/labhacker/audiencias/audiencias_publicas/central_roles.py:ro
     depends_on:
       - 'audienciasweb'
 

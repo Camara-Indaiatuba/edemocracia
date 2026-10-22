@@ -144,6 +144,24 @@ Configure no painel:
 - `/admin/core/theme_settings/`: tema visual e cores.
 - `/admin/core/login_settings/`: login por e-mail, SMTP, Google, Gov.br e reCAPTCHA.
 
+### Permissões da equipe de Comunicação
+
+Crie e administre o grupo `Comunicação` somente no painel geral, em
+`/admin/auth/group/`. Depois, edite o usuario no mesmo painel e associe-o a
+esse grupo.
+
+No proximo login central do usuario, o portal cria ou atualiza automaticamente
+o grupo tecnico nos modulos e sincroniza sua associacao. Na Audiencias, o papel
+permite publicar salas, administrar anexos e videos, responder perguntas e
+moderar mensagens. No Wikilegis, permite publicar projetos e administrar seu
+conteudo e contribuicoes. O papel nao concede acesso a usuarios, configuracoes,
+tokens, tarefas internas nem superusuario.
+
+Retirar o usuario do grupo central revoga as permissoes nos dois modulos no
+proximo login. Nao edite o grupo `Comunicação` diretamente nos paineis
+da Audiencias ou do Wikilegis, pois suas permissoes sao mantidas pelo portal
+central.
+
 A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado. Ela não é um painel de infraestrutura: ocultar um módulo não necessariamente encerra seus containers nem libera memória e espaço no servidor.
 
 Nesta versão, Audiências e Wikilegis continuam em execução quando são ocultos no admin. Isso preserva seus dados e permite reativação imediata. O Expressão/Discourse também continua em execução, a menos que seja desligado explicitamente no `.env`.

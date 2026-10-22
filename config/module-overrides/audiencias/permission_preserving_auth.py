@@ -4,6 +4,17 @@ from django.contrib.auth import get_user_model
 
 from apps.accounts.backends import AudienciasAuthBackend
 from apps.accounts.middlewares import AudienciasRemoteUser
+from audiencias_publicas.central_roles import sync_central_roles
+
+
+def _remote_user_data(request):
+    payload = request.META.get('HTTP_REMOTE_USER_DATA')
+    if not payload:
+        return {}
+    try:
+        return json.loads(payload)
+    except (TypeError, ValueError):
+        return {}
 
 
 def _local_permission_state(request, remote_user=None):
@@ -16,13 +27,8 @@ def _local_permission_state(request, remote_user=None):
             is_staff = user.is_staff
             is_superuser = user.is_superuser
 
-    payload = request.META.get('HTTP_REMOTE_USER_DATA')
-    if not payload:
-        return is_staff, is_superuser
-
-    try:
-        remote_data = json.loads(payload)
-    except (TypeError, ValueError):
+    remote_data = _remote_user_data(request)
+    if not remote_data:
         return is_staff, is_superuser
 
     is_staff = is_staff or bool(remote_data.get('is_staff'))
@@ -59,6 +65,9 @@ class PermissionPreservingAudienciasAuthBackend(AudienciasAuthBackend):
         user = super().authenticate(request, remote_user)
         if user is not None:
             _restore_local_permissions(user, permission_state)
+            remote_data = _remote_user_data(request)
+            if 'groups' in remote_data:
+                sync_central_roles(user, remote_data)
         return user
 
 
@@ -73,4 +82,7 @@ class PermissionPreservingAudienciasRemoteUser(AudienciasRemoteUser):
         response = super().process_request(request)
         if request.user.is_authenticated:
             _restore_local_permissions(request.user, permission_state)
+            remote_data = _remote_user_data(request)
+            if 'groups' in remote_data:
+                sync_central_roles(request.user, remote_data)
         return response

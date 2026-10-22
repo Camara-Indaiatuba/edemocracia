@@ -27,7 +27,7 @@ def str_to_date(value):
     return final_value
 
 
-def get_user_data(user):
+def get_user_data(user, include_groups=False):
     user_data = {
         'name': user.get_full_name(),
         'first_name': user.first_name,
@@ -37,6 +37,11 @@ def get_user_data(user):
         'is_active': user.is_active,
         'email': user.email,
     }
+
+    if include_groups:
+        user_data['groups'] = list(
+            user.groups.order_by('name').values_list('name', flat=True)
+        )
 
     if hasattr(user, 'profile'):
         user_data['country'] = user.profile.country

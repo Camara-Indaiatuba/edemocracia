@@ -62,7 +62,15 @@ def update_sites():
     print('Wikilegis site information updated.')
 
 
+def ensure_central_roles():
+    from wikilegis.central_roles import ensure_central_groups
+
+    ensure_central_groups()
+    print('Wikilegis central roles updated.')
+
+
 if __name__ == '__main__':
     django.setup()
     create_superuser()
     update_sites()
+    ensure_central_roles()

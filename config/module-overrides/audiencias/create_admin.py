@@ -80,7 +80,15 @@ def update_sites():
     print('Audiencias site information updated.')
 
 
+def ensure_central_roles():
+    from audiencias_publicas.central_roles import ensure_central_groups
+
+    ensure_central_groups()
+    print('Audiencias central roles updated.')
+
+
 if __name__ == '__main__':
     django.setup()
     create_superuser()
     update_sites()
+    ensure_central_roles()
