@@ -48,6 +48,7 @@ Permitir que os papeis administrativos sejam atribuidos uma unica vez no painel 
 - Alteracao publicada nos commits `55570ca` e `af9d2c6` e implantada na VM08.
 - Antes da implantacao foram criados e validados dumps dos tres bancos em `/home/filipiadm@camaraindaia.local/backups/edemocracia-pre-central-groups-20261022-095117`.
 - O grupo legado da Audiencias foi migrado sem perder seu membro; o mesmo usuario recebeu automaticamente o papel tecnico no Wikilegis a partir do grupo central.
+- O Nginx foi recriado apos os servicos para atualizar os enderecos internos do Compose; portal, Audiencias e Wikilegis voltaram a responder HTTP 200 interna e publicamente.
 - Os checks dos tres Djangos, os 19 testes automatizados e as paginas publicas passaram na producao.
 
 ## Formato usado
