@@ -4,6 +4,33 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-03 - Importacao da Audiencia Publica no 4/2026
+
+### Objetivo
+
+Adicionar a producao a audiencia publicada no antigo e-Camara depois da importacao historica de julho.
+
+### Fonte
+
+- Post WordPress `479`: `https://edemocracia.camaraindaiatuba.sp.gov.br/index.php/2026/09/29/audiencia-publica-no-4-2026/`.
+- Video principal do YouTube: `LWhv6gPWQDA`.
+
+### Dados importados
+
+- Uma sala encerrada e visivel, identificada por `wp-479`, com data original de 29/09/2026 as 18h.
+- Um video principal e um link para o post original.
+- O post nao possuia midias anexas nem comentarios na API publica do WordPress.
+
+### Seguranca e recuperacao
+
+- Backup validado antes da carga em `/home/filipiadm@camaraindaia.local/backups/audiencias-before-wp479-20261103-165447.dump`.
+- A criacao foi executada em uma transacao e recusaria um codigo `wp-479` duplicado.
+
+### Validacao
+
+- A sala foi criada com ID `37`, o video com ID `26` e o link de origem com ID `29`.
+- A pagina publica `/audiencias/sala/37/` respondeu HTTP 200 e apresentou titulo, estado e video corretos.
+
 ## 2026-10-22 - Acesso aos admins dos modulos e fundo administrativo
 
 ### Objetivo
