@@ -34,6 +34,10 @@ Atender tanto audiencias publicadas como videos gravados quanto transmissoes rea
 - Ensaio ponta a ponta confirmou HTTP 404 antes da liberacao, HTTP 200 com `Aguardando o início da transmissão` para live liberada e publicacao automatica de gravacao com estado `Publicada`.
 - O conteudo temporario do ensaio foi removido.
 - Backup anterior a migracao salvo em `/tmp/edemocracia-backups/audiencias-before-scheduling-20261104-103208.dump` na homologacao.
+- Alteracao funcional publicada no commit `e1e1eb7` e aplicada na producao.
+- Na producao, os 191 testes passaram novamente, o cron foi carregado, os servicos reiniciaram ativos e as paginas `/audiencias/` e `/audiencias/fechadas/` responderam HTTP 200.
+- As 23 salas existentes permaneceram no estado publicado/encerrado e nenhuma sala foi convertida indevidamente em agendada.
+- Backups de producao preservados em `/home/filipiadm@camaraindaia.local/backups/audiencias-before-scheduling-20261104-104532.dump` e `/home/filipiadm@camaraindaia.local/backups/audiencias-source-before-scheduling-20261104-104532.tar.gz`.
 
 ## 2026-11-04 - Sigla do orgao opcional nas salas
 
