@@ -29,6 +29,7 @@ O arquivo `src/apps/audiencias/data.py` pertence ao repositorio principal e ja f
 - `2026-11-04-audiencias-room-str.patch`: patch incremental que garante texto comum no nome de fallback de uma sala sem titulo, evitando erro 500 ao registrar a inclusao no Django Admin 5.2.
 - `2026-11-04-audiencias-room-admin-required-fields.patch`: patch incremental que exige no admin os dados essenciais da sala e apresenta erros de validacao em vez de aceitar um cadastro incompleto.
 - `2026-11-04-audiencias-room-initials-optional.patch`: patch incremental que mantem a sigla do orgao legislativo opcional no cadastro administrativo de salas.
+- `2026-11-04-audiencias-scheduling.patch`: patch incremental que separa video gravado e transmissao ao vivo, bloqueia salas antes do horario, publica gravacoes automaticamente e mantem lives aguardando inicio manual.
 
 ## Ajuste de logout 2026-05-29
 

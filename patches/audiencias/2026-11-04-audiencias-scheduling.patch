@@ -1,0 +1,806 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+index 6a77430..9557393 100644
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -22,6 +22,22 @@ class RoomAdminForm(forms.ModelForm):
+         super().__init__(*args, **kwargs)
+         for field_name in ROOM_REQUIRED_FIELDS:
+             self.fields[field_name].required = True
++        self.fields['youtube_status'].label = 'Situação'
++
++    def clean(self):
++        cleaned_data = super().clean()
++        status = cleaned_data.get('youtube_status')
++        broadcast_type = cleaned_data.get('broadcast_type')
++
++        if status == 0 and not cleaned_data.get('release_at'):
++            self.add_error(
++                'release_at',
++                'Informe quando a sala agendada deverá ser liberada.')
++        if status == 1 and broadcast_type != Room.BROADCAST_LIVE:
++            self.add_error(
++                'broadcast_type',
++                'Somente uma transmissão ao vivo pode usar a situação Ao vivo.')
++        return cleaned_data
+ 
+ 
+ class VideoInline(admin.TabularInline):
+@@ -32,7 +48,7 @@ class RoomAdmin(admin.ModelAdmin):
+     form = RoomAdminForm
+     list_display = ('reunion_type', 'title_reunion', 'date', 'is_visible',
+                     'is_active')
+-    list_filter = ['youtube_status', 'date']
++    list_filter = ['youtube_status', 'broadcast_type', 'date', 'release_at']
+     search_fields = (
+         'title_reunion', 'legislative_body_initials', 'legislative_body',
+         'location', 'cod_reunion', 'reunion_object')
+diff --git a/apps/core/consumers/room.py b/apps/core/consumers/room.py
+index af98312..5999195 100644
+--- a/apps/core/consumers/room.py
++++ b/apps/core/consumers/room.py
+@@ -96,8 +96,15 @@ class RoomConsumer(AsyncWebsocketConsumer):
+     async def connect(self):
+         room_id = self.scope['url_route']['kwargs']['room_id']
+         self.room = await database_sync_to_async(Room.objects.get)(id=room_id)
++        self.user = self.scope.get('user')
++        staff_preview = bool(
++            self.user and self.user.is_authenticated and self.user.is_staff)
++        if (not staff_preview and
++                (not self.room.is_active or not self.room.is_visible or
++                 not self.room.is_access_released)):
++            await self.close(code=4404)
++            return
+         self.group_name = self.room.group_room_name
+-        self.user = self.scope['user']
+ 
+         await self.channel_layer.group_add(self.group_name, self.channel_name)
+         await self.accept()
+diff --git a/apps/core/consumers/room_questions.py b/apps/core/consumers/room_questions.py
+index 754c437..080169b 100644
+--- a/apps/core/consumers/room_questions.py
++++ b/apps/core/consumers/room_questions.py
+@@ -1,4 +1,5 @@
+ from channels.generic.websocket import AsyncWebsocketConsumer
++from channels.db import database_sync_to_async
+ from apps.core.models import Room
+ import logging
+ 
+@@ -9,7 +10,15 @@ class QuestionsPanelConsumer(AsyncWebsocketConsumer):
+ 
+     async def connect(self):
+         room_id = self.scope['url_route']['kwargs']['room_id']
+-        room = Room.objects.get(id=room_id)
++        room = await database_sync_to_async(Room.objects.get)(id=room_id)
++        user = self.scope.get('user')
++        staff_preview = bool(
++            user and user.is_authenticated and user.is_staff)
++        if (not staff_preview and
++                (not room.is_active or not room.is_visible or
++                 not room.is_access_released)):
++            await self.close(code=4404)
++            return
+         self.group_name = room.group_room_questions_name
+         await self.channel_layer.group_add(self.group_name, self.channel_name)
+         await self.accept()
+diff --git a/apps/core/management/commands/release_scheduled_rooms.py b/apps/core/management/commands/release_scheduled_rooms.py
+new file mode 100644
+index 0000000..714c83f
+--- /dev/null
++++ b/apps/core/management/commands/release_scheduled_rooms.py
+@@ -0,0 +1,33 @@
++from django.core.management.base import BaseCommand
++from django.utils import timezone
++
++from apps.core.models import Room
++
++
++class Command(BaseCommand):
++    help = 'Publica vídeos gravados cuja liberação agendada já venceu.'
++
++    def handle(self, *args, **options):
++        now = timezone.now()
++        rooms = list(Room.objects.filter(
++            youtube_status=0,
++            broadcast_type=Room.BROADCAST_RECORDED,
++            release_at__lte=now,
++            is_active=True,
++            is_visible=True,
++        ))
++
++        if rooms:
++            room_ids = [room.id for room in rooms]
++            Room.objects.filter(id__in=room_ids).update(
++                youtube_status=2,
++                closed_time=now,
++                modified=now,
++            )
++            for room in rooms:
++                room.youtube_status = 2
++                room.closed_time = now
++                room.send_notification(is_closed=True)
++
++        self.stdout.write(
++            self.style.SUCCESS('%d sala(s) gravada(s) publicada(s).' % len(rooms)))
+diff --git a/apps/core/migrations/0014_room_scheduling.py b/apps/core/migrations/0014_room_scheduling.py
+new file mode 100644
+index 0000000..08f0c7d
+--- /dev/null
++++ b/apps/core/migrations/0014_room_scheduling.py
+@@ -0,0 +1,63 @@
++from django.db import migrations, models
++from django.db.models import F
++
++
++def prepare_existing_rooms(apps, schema_editor):
++    Room = apps.get_model('core', 'Room')
++    Room.objects.filter(youtube_status=1).update(broadcast_type='live')
++    Room.objects.filter(
++        youtube_status=0,
++        release_at__isnull=True,
++    ).update(release_at=F('date'))
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('core', '0013_fix_user_foreign_keys'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='room',
++            name='broadcast_type',
++            field=models.CharField(
++                choices=[
++                    ('recorded', 'Vídeo gravado'),
++                    ('live', 'Transmissão ao vivo'),
++                ],
++                default='recorded',
++                max_length=16,
++                verbose_name='formato da audiência',
++            ),
++        ),
++        migrations.AddField(
++            model_name='room',
++            name='release_at',
++            field=models.DateTimeField(
++                blank=True,
++                help_text=(
++                    'Data e horário em que o público poderá acessar a sala.'),
++                null=True,
++                verbose_name='liberar sala em',
++            ),
++        ),
++        migrations.AlterField(
++            model_name='room',
++            name='youtube_status',
++            field=models.IntegerField(
++                choices=[
++                    (0, 'Agendada'),
++                    (1, 'Ao vivo'),
++                    (2, 'Publicada / transmissão encerrada'),
++                    (3, 'Cancelada'),
++                ],
++                default=0,
++                verbose_name='youtube status',
++            ),
++        ),
++        migrations.RunPython(
++            prepare_existing_rooms,
++            migrations.RunPython.noop,
++        ),
++    ]
+diff --git a/apps/core/models.py b/apps/core/models.py
+index d8e14c6..77684a0 100644
+--- a/apps/core/models.py
++++ b/apps/core/models.py
+@@ -32,10 +32,16 @@ class TimestampedMixin(models.Model):
+ 
+ 
+ class Room(TimestampedMixin):
++    BROADCAST_RECORDED = 'recorded'
++    BROADCAST_LIVE = 'live'
++    BROADCAST_TYPE_CHOICES = (
++        (BROADCAST_RECORDED, 'Vídeo gravado'),
++        (BROADCAST_LIVE, 'Transmissão ao vivo'),
++    )
+     YOUTUBE_STATUS_CHOICES = (
+-        (0, 'Sem transmissão'),
+-        (1, 'Em andamento'),
+-        (2, 'Transmissão encerrada'),
++        (0, 'Agendada'),
++        (1, 'Ao vivo'),
++        (2, 'Publicada / transmissão encerrada'),
+         (3, 'Cancelada')
+     )
+     cod_reunion = models.CharField(_('code reunion'), max_length=200,
+@@ -53,6 +59,12 @@ class Room(TimestampedMixin):
+     reunion_theme = models.TextField(_('reunion theme'), null=True, blank=True)
+     location = models.CharField(_('location'), max_length=200, null=True,
+                                 blank=True)
++    broadcast_type = models.CharField(
++        'formato da audiência', max_length=16,
++        choices=BROADCAST_TYPE_CHOICES, default=BROADCAST_RECORDED)
++    release_at = models.DateTimeField(
++        'liberar sala em', null=True, blank=True,
++        help_text='Data e horário em que o público poderá acessar a sala.')
+     youtube_status = models.IntegerField(_('youtube status'),
+                                          choices=YOUTUBE_STATUS_CHOICES,
+                                          default=0)
+@@ -113,6 +125,32 @@ class Room(TimestampedMixin):
+     def get_absolute_url(self):
+         return reverse('video_room', args=[str(self.id)])
+ 
++    @property
++    def effective_release_at(self):
++        return self.release_at or self.date
++
++    @property
++    def is_access_released(self):
++        if self.youtube_status != 0:
++            return True
++        release_at = self.effective_release_at
++        return bool(release_at and release_at <= timezone.now())
++
++    @property
++    def display_status(self):
++        if self.youtube_status == 0:
++            if (self.broadcast_type == self.BROADCAST_LIVE and
++                    self.is_access_released):
++                return 'Aguardando o início da transmissão'
++            return 'Agendada'
++        if self.youtube_status == 1:
++            return 'Ao vivo'
++        if self.youtube_status == 2:
++            if self.broadcast_type == self.BROADCAST_LIVE:
++                return 'Transmissão encerrada'
++            return 'Publicada'
++        return 'Cancelada'
++
+     def html_body(self):
+         return render_to_string('includes/home_video.html', {'room': self})
+ 
+@@ -122,7 +160,8 @@ class Room(TimestampedMixin):
+     def html_room_thumbnails(self):
+         return render_to_string('includes/room_thumbs.html', {'object': self})
+ 
+-    def send_notification(self, deleted=False, is_closed=False):
++    def send_notification(
++            self, deleted=False, is_closed=False, status_changed=False):
+         notification = {
+             'id': self.id,
+             'html': self.html_body(),
+@@ -140,6 +179,17 @@ class Room(TimestampedMixin):
+                 {'type': 'room_events',
+                  'text': json.dumps(text)}
+             )
++        elif status_changed:
++            text = {
++                'status': True,
++                'youtube_status': self.youtube_status,
++                'display_status': self.display_status,
++            }
++            async_to_sync(channel_layer.group_send)(
++                self.group_room_name,
++                {'type': 'room_events',
++                 'text': json.dumps(text)}
++            )
+         async_to_sync(channel_layer.group_send)(
+             'home',
+             {'type': 'home.message',
+@@ -311,6 +361,16 @@ class RoomAttachment(TimestampedMixin):
+         return self.room.__str__()
+ 
+ 
++def room_pre_save(sender, instance, **kwargs):
++    instance._youtube_status_changed = False
++    if instance.pk:
++        previous_status = sender.objects.filter(pk=instance.pk).values_list(
++            'youtube_status', flat=True).first()
++        instance._youtube_status_changed = (
++            previous_status is not None and
++            previous_status != instance.youtube_status)
++
++
+ def room_post_save(sender, instance, created, **kwargs):
+     is_closed = False
+     user_message = config.WELCOME_MESSAGE_USER_ID
+@@ -332,7 +392,9 @@ def room_post_save(sender, instance, created, **kwargs):
+         if not instance.closed_time:
+             instance.closed_time = timezone.now()
+             instance.save()
+-    instance.send_notification(is_closed=is_closed)
++    instance.send_notification(
++        is_closed=is_closed,
++        status_changed=getattr(instance, '_youtube_status_changed', False))
+ 
+ 
+ def video_post_save(sender, instance, **kwargs):
+@@ -377,6 +439,7 @@ def question_post_save(sender, instance, **kwargs):
+ models.signals.post_save.connect(question_post_save, sender=Question)
+ models.signals.post_save.connect(vote_post_save, sender=UpDownVote)
+ models.signals.post_delete.connect(vote_post_delete, sender=UpDownVote)
++models.signals.pre_save.connect(room_pre_save, sender=Room)
+ models.signals.post_save.connect(room_post_save, sender=Room)
+ models.signals.post_save.connect(video_post_save, sender=Video)
+ models.signals.post_delete.connect(video_post_delete, sender=Video)
+diff --git a/apps/core/tests/test_admin.py b/apps/core/tests/test_admin.py
+index eb1635a..72f2a23 100644
+--- a/apps/core/tests/test_admin.py
++++ b/apps/core/tests/test_admin.py
+@@ -1,4 +1,5 @@
+ from django.utils.translation import gettext
++from django.utils import timezone
+ 
+ from apps.core.admin import ROOM_REQUIRED_FIELDS, RoomAdminForm
+ 
+@@ -31,3 +32,23 @@ def test_room_admin_keeps_advance_fields_optional():
+     )
+     for field_name in optional_fields:
+         assert form.fields[field_name].required is False
++
++
++def test_scheduled_room_requires_release_date():
++    form = RoomAdminForm(data={'youtube_status': 0})
++
++    assert form.is_valid() is False
++    assert list(form.errors['release_at']) == [
++        'Informe quando a sala agendada deverá ser liberada.']
++
++
++def test_recorded_room_cannot_be_marked_live():
++    form = RoomAdminForm(data={
++        'youtube_status': 1,
++        'broadcast_type': 'recorded',
++        'release_at': timezone.now(),
++    })
++
++    assert form.is_valid() is False
++    assert list(form.errors['broadcast_type']) == [
++        'Somente uma transmissão ao vivo pode usar a situação Ao vivo.']
+diff --git a/apps/core/tests/test_commands.py b/apps/core/tests/test_commands.py
+new file mode 100644
+index 0000000..f6c4ce1
+--- /dev/null
++++ b/apps/core/tests/test_commands.py
+@@ -0,0 +1,51 @@
++from datetime import timedelta
++from unittest.mock import patch
++
++import pytest
++from django.core.management import call_command
++from django.utils import timezone
++from model_bakery import baker
++
++from apps.core.models import Room
++
++
++@pytest.mark.django_db
++@patch('apps.core.models.Room.send_notification')
++def test_release_scheduled_recording(send_notification):
++    room = baker.make(
++        Room,
++        youtube_status=0,
++        broadcast_type=Room.BROADCAST_RECORDED,
++        release_at=timezone.now() - timedelta(minutes=1),
++        is_active=True,
++        is_visible=True,
++    )
++    send_notification.reset_mock()
++
++    call_command('release_scheduled_rooms')
++    room.refresh_from_db()
++
++    assert room.youtube_status == 2
++    assert room.closed_time is not None
++    send_notification.assert_called_once_with(is_closed=True)
++
++
++@pytest.mark.django_db
++@patch('apps.core.models.Room.send_notification')
++def test_release_command_keeps_live_room_waiting(send_notification):
++    room = baker.make(
++        Room,
++        youtube_status=0,
++        broadcast_type=Room.BROADCAST_LIVE,
++        release_at=timezone.now() - timedelta(minutes=1),
++        is_active=True,
++        is_visible=True,
++    )
++    send_notification.reset_mock()
++
++    call_command('release_scheduled_rooms')
++    room.refresh_from_db()
++
++    assert room.youtube_status == 0
++    assert room.display_status == 'Aguardando o início da transmissão'
++    send_notification.assert_not_called()
+diff --git a/apps/core/tests/test_consumers.py b/apps/core/tests/test_consumers.py
+index 25252d4..70329aa 100644
+--- a/apps/core/tests/test_consumers.py
++++ b/apps/core/tests/test_consumers.py
+@@ -13,6 +13,8 @@ from apps.accounts.models import User
+ from model_bakery import baker
+ from asgiref.sync import sync_to_async
+ import os
++from datetime import timedelta
++from django.utils import timezone
+ 
+ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+ 
+@@ -123,6 +125,56 @@ async def test_question_panel_consumer(settings):
+     await communicator.disconnect()
+ 
+ 
++@pytest.mark.asyncio
++@pytest.mark.django_db
++async def test_scheduled_question_panel_rejects_public_connection(settings):
++    settings.CHANNEL_LAYERS = TEST_CHANNEL_LAYERS
++    room = await sync_to_async(baker.make)(
++        Room,
++        is_active=True,
++        is_visible=True,
++        youtube_status=0,
++        release_at=timezone.now() + timedelta(hours=1),
++    )
++    user = await sync_to_async(baker.make)(User, is_active=True)
++    application = URLRouter([
++        path('sala/<int:room_id>/perguntas/stream/',
++             QuestionsPanelConsumer.as_asgi()),
++    ])
++    communicator = WebsocketCommunicator(
++        application, '/sala/%s/perguntas/stream/' % room.id)
++    communicator.scope['user'] = user
++
++    connected, code = await communicator.connect()
++
++    assert connected is False
++    assert code == 4404
++
++
++@pytest.mark.asyncio
++@pytest.mark.django_db
++async def test_scheduled_room_rejects_public_connection():
++    room = await sync_to_async(baker.make)(
++        Room,
++        is_active=True,
++        is_visible=True,
++        youtube_status=0,
++        release_at=timezone.now() + timedelta(hours=1),
++    )
++    user = await sync_to_async(baker.make)(User, is_active=True)
++    application = URLRouter([
++        path('sala/<int:room_id>/stream/', RoomConsumer.as_asgi()),
++    ])
++    communicator = WebsocketCommunicator(
++        application, '/sala/%s/stream/' % room.id)
++    communicator.scope['user'] = user
++
++    connected, code = await communicator.connect()
++
++    assert connected is False
++    assert code == 4404
++
++
+ @pytest.mark.asyncio
+ @pytest.mark.django_db
+ async def test_room_consumer():
+diff --git a/apps/core/tests/test_models.py b/apps/core/tests/test_models.py
+index 4eca24a..5aa2087 100644
+--- a/apps/core/tests/test_models.py
++++ b/apps/core/tests/test_models.py
+@@ -82,6 +82,42 @@ def test_room_get_absolute_url():
+         'video_room', kwargs={'pk': room.id})
+ 
+ 
++@pytest.mark.django_db
++def test_scheduled_room_is_locked_before_release():
++    room = baker.make(
++        Room,
++        youtube_status=0,
++        release_at=timezone.now() + timedelta(hours=1),
++    )
++
++    assert room.is_access_released is False
++    assert room.display_status == 'Agendada'
++
++
++@pytest.mark.django_db
++def test_live_room_waits_after_scheduled_release():
++    room = baker.make(
++        Room,
++        youtube_status=0,
++        broadcast_type=Room.BROADCAST_LIVE,
++        release_at=timezone.now() - timedelta(minutes=1),
++    )
++
++    assert room.is_access_released is True
++    assert room.display_status == 'Aguardando o início da transmissão'
++
++
++@pytest.mark.django_db
++def test_closed_status_depends_on_broadcast_type():
++    recorded = baker.make(
++        Room, youtube_status=2, broadcast_type=Room.BROADCAST_RECORDED)
++    live = baker.make(
++        Room, youtube_status=2, broadcast_type=Room.BROADCAST_LIVE)
++
++    assert recorded.display_status == 'Publicada'
++    assert live.display_status == 'Transmissão encerrada'
++
++
+ @pytest.mark.django_db
+ def test_room_properties(test_user):
+     room = baker.make(Room)
+diff --git a/apps/core/tests/test_views.py b/apps/core/tests/test_views.py
+index 332ccbf..f280f03 100644
+--- a/apps/core/tests/test_views.py
++++ b/apps/core/tests/test_views.py
+@@ -5,6 +5,8 @@ from model_bakery import baker
+ from django.urls import reverse
+ from django.test import RequestFactory
+ import json
++from datetime import timedelta
++from django.utils import timezone
+ 
+ 
+ @pytest.fixture
+@@ -37,6 +39,56 @@ def test_redirect_to_room_not_exists(client):
+     assert response.status_code == 404
+ 
+ 
++@pytest.mark.django_db
++def test_scheduled_room_cannot_be_opened_before_release(client):
++    room = baker.make(
++        Room,
++        is_active=True,
++        is_visible=True,
++        youtube_status=0,
++        release_at=timezone.now() + timedelta(hours=1),
++    )
++
++    response = client.get(reverse('video_room', kwargs={'pk': room.id}))
++
++    assert response.status_code == 404
++
++
++@pytest.mark.django_db
++def test_scheduled_live_room_opens_waiting_after_release(client):
++    room = baker.make(
++        Room,
++        is_active=True,
++        is_visible=True,
++        youtube_status=0,
++        broadcast_type=Room.BROADCAST_LIVE,
++        release_at=timezone.now() - timedelta(minutes=1),
++    )
++
++    response = client.get(reverse('video_room', kwargs={'pk': room.id}))
++
++    assert response.status_code == 200
++    assert 'Aguardando o início da transmissão' in response.content.decode()
++
++
++@pytest.mark.django_db
++def test_staff_can_preview_room_before_release(client, django_user_model):
++    staff = django_user_model.objects.create_user(
++        username='staff-preview', is_staff=True)
++    room = baker.make(
++        Room,
++        is_active=True,
++        is_visible=True,
++        youtube_status=0,
++        release_at=timezone.now() + timedelta(hours=1),
++    )
++    client.force_login(staff)
++
++    response = client.get(reverse('video_room', kwargs={'pk': room.id}))
++
++    assert response.status_code == 200
++
++
+ @pytest.mark.django_db
+ def test_set_answer_time_with_time(client, test_user):
+     baker.make(UserProfile, is_admin=True, user=test_user)
+@@ -521,7 +573,8 @@ def test_order_videos_unauthenticated(client):
+ 
+ @pytest.mark.django_db
+ def test_video_detail(client, test_user):
+-    room = baker.make(Room, is_active=True)
++    room = baker.make(
++        Room, is_active=True, is_visible=True, youtube_status=2)
+ 
+     url = reverse('video_room',
+                   kwargs={'pk': room.id})
+@@ -547,7 +600,8 @@ def test_video_detail_inactive(client, test_user):
+ 
+ @pytest.mark.django_db
+ def test_widget(client, test_user):
+-    room = baker.make(Room, is_active=True)
++    room = baker.make(
++        Room, is_active=True, is_visible=True, youtube_status=2)
+ 
+     url = reverse('widget_index',
+                   kwargs={'pk': room.id})
+diff --git a/apps/core/views.py b/apps/core/views.py
+index 30de93c..fbb9172 100644
+--- a/apps/core/views.py
++++ b/apps/core/views.py
+@@ -2,6 +2,7 @@ from django.conf import settings
+ from django.http import (Http404, HttpResponseForbidden, HttpResponseRedirect,
+                          HttpResponseBadRequest, HttpResponse, JsonResponse)
+ from django.utils.translation import gettext_lazy as _
++from django.utils import timezone
+ from django.contrib.sites.models import Site
+ from apps.core.models import Question, Room, RoomAttachment, Video
+ from apps.core.utils import encrypt
+@@ -208,8 +209,7 @@ def index(request):
+         agendas=Room.objects.filter(
+             is_active=True,
+             is_visible=True,
+-            youtube_status=0,
+-            date__gte=date.today()).order_by('date'),
++            youtube_status=0).order_by('release_at', 'date'),
+     ))
+ 
+ 
+@@ -349,7 +349,10 @@ class VideoDetail(DetailView):
+ 
+     def get_object(self, queryset=None):
+         room = super(VideoDetail, self).get_object(queryset=queryset)
+-        if room.is_active:
++        staff_preview = self.request.user.is_staff
++        if (room.is_active and
++                (staff_preview or
++                 (room.is_visible and room.is_access_released))):
+             room.views += 1
+             room.save()
+             return room
+@@ -376,7 +379,10 @@ class WidgetVideoDetail(DetailView):
+ 
+     def get_object(self, queryset=None):
+         obj = super(WidgetVideoDetail, self).get_object(queryset=queryset)
+-        if obj.is_active:
++        staff_preview = self.request.user.is_staff
++        if (obj.is_active and
++                (staff_preview or
++                 (obj.is_visible and obj.is_access_released))):
+             return obj
+         else:
+             raise Http404()
+diff --git a/static/js/components/room.js b/static/js/components/room.js
+index 74660e7..2e62597 100644
+--- a/static/js/components/room.js
++++ b/static/js/components/room.js
+@@ -177,6 +177,10 @@ function roomComponent(socket) {
+   }
+ 
+   function openRoom() {
++    if (!$('.JS-closedChatMessage').length) {
++      $('.JS-roomStatus').text('Ao vivo');
++      return;
++    }
+     if (HANDLER === '') {
+       $('.JS-closedQuestionMessage').parent().removeClass('-closed').prepend('<span><a class="link JS-openSidebar" data-sidebar-content="signin">Faça Login</a> para enviar uma pergunta!</span>');
+       $('.JS-closedChatMessage').parent().removeClass('-closed').prepend('<p class="info JS-openSidebar" data-sidebar-content="signin">Faça Login</a> para participar no chat!</p>');
+@@ -187,7 +191,7 @@ function roomComponent(socket) {
+     $('.JS-closedQuestionMessage').remove();
+     $('.JS-closedChatMessage').remove();
+     $('.JS-countdown').removeClass('-show');
+-    $('.JS-roomStatus').text('Em andamento');
++    $('.JS-roomStatus').text('Ao vivo');
+     $('.JS-shareListOpenBtn').removeClass('hide');
+     $('.JS-voteBtn').each(function() {
+       if($(this).text() !== 'Sua Pergunta'){
+@@ -198,9 +202,6 @@ function roomComponent(socket) {
+     });
+     sendChatForm = sendChatFormHelper($('.JS-wrapperChat'));
+     sendChatForm.bindEvents();
+-    $(document).on("click", ".JS-openQuestionForm",function() {
+-      events.openQuestionFormClick();
+-    });
+     $(document).on("submit", ".JS-formChat",function(event) {
+       events.sendMessage(event);
+     });
+@@ -209,6 +210,12 @@ function roomComponent(socket) {
+   function evaluateSocketMessage(message) {
+     const data = JSON.parse(message.data);
+ 
++    if (data.status) {
++      $('.JS-roomStatus').text(data.display_status);
++      if (data.youtube_status === 1) openRoom();
++      return;
++    }
++
+     if (data.closed) {
+       const roomWasCancelled = data.youtube_status === 3;
+       sendChatForm.close(data.time_to_close);
+diff --git a/templates/index.html b/templates/index.html
+index 5b8fdcd..c29eee9 100644
+--- a/templates/index.html
++++ b/templates/index.html
+@@ -42,25 +42,20 @@
+           <table class="calendar-table">
+             <tbody class="calendar-table__body">
+               {% for agenda in agendas %}
++                {% with release_at=agenda.effective_release_at %}
+                 <tr class="calendar-table__row calendar-rooms" data-calendar-id="{{agenda.id}}">
+                   <td class="calendar-table__column">
+                     <div class="calendar-table__date-wrapper">
+ 
+-                      {% if agenda.is_today %}
+-                        <span class="calendar-table__weekday calendar-table__weekday--today">Hoje</span>
+-                      {% elif agenda.is_tomorrow %}
+-                        <span class="calendar-table__weekday calendar-table__weekday--tomorrow">Amanhã</span>
+-                      {% else %}
+-                        <span class="calendar-table__weekday">{{ agenda.date|date:"D" }}</span>
+-                      {% endif %}
++                      <span class="calendar-table__weekday">{{ release_at|date:"D" }}</span>
+ 
+-                      <span class="calendar-table__day">{{ agenda.date|date:"d" }}</span>
+-                      <span class="calendar-table__month">{{ agenda.date|date:"M" }}</span>
++                      <span class="calendar-table__day">{{ release_at|date:"d" }}</span>
++                      <span class="calendar-table__month">{{ release_at|date:"M" }}</span>
+                     </div>
+                   </td>
+ 
+                   <td class="calendar-table__column">
+-                    <div class="calendar-table__event-title">{% if agenda.date|date:"H" == "00" %}Horário não informado{% else %}{{ agenda.date|date:"H"}}h{{ agenda.date|date:"i"}}{% endif %} - {{ agenda.reunion_type }} - {{ agenda.title_reunion }}</div>
++                    <div class="calendar-table__event-title">{% if release_at|date:"H" == "00" %}Horário não informado{% else %}{{ release_at|date:"H"}}h{{ release_at|date:"i"}}{% endif %} - {{ agenda.reunion_type }} - {{ agenda.title_reunion }}</div>
+                     <div class="calendar-table__description">
+                       {% if agenda.reunion_theme %}
+                       <div class="content-truncate">{{ agenda.reunion_theme|truncatechars:150 }}</div>  
+@@ -74,9 +69,18 @@
+                     </div>
+                   </td>
+                   <td class="calendar-table__column">
+-                    <div class="calendar-table__event-title"><a class="button" href="{{agenda.get_absolute_url}}">Participar</a></div>
++                    <div class="calendar-table__event-title">
++                      {% if agenda.is_access_released %}
++                        <a class="button" href="{{agenda.get_absolute_url}}">
++                          {% if agenda.broadcast_type == 'live' %}Aguardar início{% else %}Assistir{% endif %}
++                        </a>
++                      {% else %}
++                        <span class="button" aria-disabled="true">Disponível em {{ release_at|date:"d/m/Y" }} às {{ release_at|date:"H:i" }}</span>
++                      {% endif %}
++                    </div>
+                   </td>
+                 </tr>
++                {% endwith %}
+               {% endfor %}
+             </tbody>
+           </table>
+diff --git a/templates/room.html b/templates/room.html
+index 5047823..71f30f4 100644
+--- a/templates/room.html
++++ b/templates/room.html
+@@ -40,7 +40,7 @@
+       <div class="info">
+         <span>{{object.reunion_type}}</span>
+         <span>{{object.date}}</span>
+-        <span class="JS-roomStatus">{{object.get_youtube_status_display}}</span>
++        <span class="JS-roomStatus">{{object.display_status}}</span>
+       </div>
+     </div>
+ 
+@@ -132,7 +132,7 @@
+           <div class="info">
+             <span>{{object.reunion_type}}</span>
+             <span>{{object.date}}</span>
+-            <span>{{object.get_youtube_status_display}}</span>
++            <span>{{object.display_status}}</span>
+           </div>
+         </div>
+ 
+@@ -144,8 +144,10 @@
+               <span class="status JS-videoStatus">
+                   {% if object.latest_video and object.youtube_status == 1 %}
+                     <span class="live-icon JS-liveIcon"></span> Parte {{ object.get_main_videos|length }}
++                  {% elif object.youtube_status == 0 and object.broadcast_type == 'live' %}
++                    Aguardando o início da transmissão
+                   {% elif object.youtube_status == 0 %}
+-                    Transmissão Prevista
++                    Publicação agendada
+                   {% endif %}
+               </span>
+ 

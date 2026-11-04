@@ -4,6 +4,37 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-04 - Agendamento de gravacoes e transmissoes ao vivo
+
+### Objetivo
+
+Atender tanto audiencias publicadas como videos gravados quanto transmissoes realmente realizadas ao vivo, sem liberar antecipadamente o video agendado.
+
+### Arquivos alterados
+
+- `patches/audiencias/2026-11-04-audiencias-scheduling.patch`
+- `config/etc/cron.d/audiencias-local`
+- `README.md`
+- `patches/audiencias/README.md`
+
+### Resumo tecnico
+
+- A sala passa a registrar separadamente o formato `Vídeo gravado` ou `Transmissão ao vivo` e o horario `Liberar sala em`.
+- O estado antigo `Sem transmissão` passa a ser apresentado como `Agendada`.
+- O acesso publico pela pagina, widget e WebSockets fica bloqueado antes da liberacao; membros da equipe ainda podem pre-visualizar pelo admin.
+- Gravacoes visiveis sao publicadas automaticamente por um comando executado a cada minuto e passam a ser exibidas como `Publicada`.
+- Lives abrem no horario como `Aguardando o início da transmissão`; o administrador altera manualmente para `Ao vivo` e depois para `Publicada / transmissão encerrada`.
+- A mudanca manual para `Ao vivo` e enviada pelo WebSocket aos visitantes que ja aguardam na sala, habilitando o bate-papo sem recarregar a pagina.
+- A migracao `0014_room_scheduling` preserva os dados existentes, usa a data da sala como liberacao das agendas antigas e identifica como live o que ja estava em andamento.
+
+### Validacao feita
+
+- Os 191 testes automatizados da Audiencias passaram.
+- `manage.py check` nao encontrou problemas e `makemigrations --check --dry-run` nao encontrou alteracoes pendentes.
+- Ensaio ponta a ponta confirmou HTTP 404 antes da liberacao, HTTP 200 com `Aguardando o início da transmissão` para live liberada e publicacao automatica de gravacao com estado `Publicada`.
+- O conteudo temporario do ensaio foi removido.
+- Backup anterior a migracao salvo em `/tmp/edemocracia-backups/audiencias-before-scheduling-20261104-103208.dump` na homologacao.
+
 ## 2026-11-04 - Sigla do orgao opcional nas salas
 
 ### Objetivo
@@ -34,7 +65,7 @@ Impedir que o formulario administrativo da Audiencias tente cadastrar uma sala s
 
 ### Resumo tecnico
 
-- O formulario de sala do Django Admin passa a exigir titulo, sigla e nome do orgao legislativo, tipo, objeto e data da reuniao.
+- O formulario de sala do Django Admin passa a exigir titulo, nome do orgao legislativo, tipo, objeto e data da reuniao.
 - Ao tentar salvar sem esses dados, o formulario permanece aberto e apresenta `Este campo e obrigatorio.` nos campos correspondentes, sem erro HTTP 500.
 - Codigo da reuniao, tema, local e link externo permanecem opcionais.
 - A validacao foi aplicada ao admin, sem alterar o banco, para manter compatibilidade com importacoes e integracoes legadas.

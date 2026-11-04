@@ -3,3 +3,4 @@
 # overwrite manually created test rooms that reuse external cod_reunion values.
 * * * * * python3 /var/labhacker/audiencias/manage.py prune_rooms
 * * * * * python3 /var/labhacker/audiencias/manage.py prune_presences
+* * * * * python3 /var/labhacker/audiencias/manage.py release_scheduled_rooms

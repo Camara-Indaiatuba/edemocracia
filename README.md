@@ -162,6 +162,29 @@ proximo login. Nao edite o grupo `Comunicação` diretamente nos paineis
 da Audiencias ou do Wikilegis, pois suas permissoes sao mantidas pelo portal
 central.
 
+### Agendamento de audiências
+
+Ao cadastrar uma sala no admin da Audiências, use os campos de publicação da
+seguinte forma:
+
+- `Data`: data de realização da audiência.
+- `Formato da audiência`: escolha `Vídeo gravado` ou `Transmissão ao vivo`.
+- `Liberar sala em`: data e horário em que o público poderá entrar na sala.
+- `Situação`: mantenha `Agendada` até a liberação.
+
+Uma gravação agendada fica visível na agenda, mas o botão não abre a sala antes
+do horário. A tarefa automática executada a cada minuto libera a sala e altera
+sua situação para `Publicada / transmissão encerrada`.
+
+Uma transmissão ao vivo também abre a sala no horário programado, inicialmente
+com o aviso `Aguardando o início da transmissão`. Quando a transmissão começar,
+altere manualmente a situação para `Ao vivo`; isso atualiza os usuários que já
+estão na sala e habilita o bate-papo. Ao terminar, altere para
+`Publicada / transmissão encerrada`.
+
+Usuários da equipe podem pré-visualizar a sala antes da liberação. O público não
+recebe o player nem consegue acessar a sala diretamente antes do horário.
+
 A tela `Módulos` controla o que aparece no portal e bloqueia o acesso público direto ao caminho do módulo desativado. Ela não é um painel de infraestrutura: ocultar um módulo não necessariamente encerra seus containers nem libera memória e espaço no servidor.
 
 Nesta versão, Audiências e Wikilegis continuam em execução quando são ocultos no admin. Isso preserva seus dados e permite reativação imediata. O Expressão/Discourse também continua em execução, a menos que seja desligado explicitamente no `.env`.
