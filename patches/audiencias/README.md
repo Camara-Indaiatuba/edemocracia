@@ -32,6 +32,7 @@ O arquivo `src/apps/audiencias/data.py` pertence ao repositorio principal e ja f
 - `2026-11-04-audiencias-scheduling.patch`: patch incremental que separa video gravado e transmissao ao vivo, bloqueia salas antes do horario, publica gravacoes automaticamente e mantem lives aguardando inicio manual.
 - `2026-11-04-audiencias-scheduling-test-isolation-ui.patch`: patch incremental que isola os eventos WebSocket da suite de testes e corrige a apresentacao do horario de liberacao na agenda.
 - `2026-11-04-audiencias-scheduled-access-ux.patch`: patch incremental que informa ao portal central se a sala foi liberada e redireciona acessos publicos antecipados para a agenda.
+- `2026-11-04-audiencias-room-list-no-cache.patch`: patch incremental que remove o cache da listagem de salas para refletir imediatamente mudancas de status e visibilidade no portal central.
 
 ## Ajuste de logout 2026-05-29
 

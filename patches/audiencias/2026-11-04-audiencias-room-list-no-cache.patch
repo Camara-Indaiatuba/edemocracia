@@ -1,0 +1,14 @@
+diff --git a/apps/core/api.py b/apps/core/api.py
+--- a/apps/core/api.py
++++ b/apps/core/api.py
+@@ -159,10 +159,6 @@ class RoomViewSet(viewsets.ModelViewSet):
+         'location')
+     ordering_fields = '__all__'
+ 
+-    @method_decorator(cache_page(60 * 1))  # 1 minute
+-    def list(self, request, *args, **kwargs): # pragma: no cover
+-        return super().list(request, *args, **kwargs)
+-
+ 
+ @api_view(['GET'])
+ def api_root(request, format=None):
