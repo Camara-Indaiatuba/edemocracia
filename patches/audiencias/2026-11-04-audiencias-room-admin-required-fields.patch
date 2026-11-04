@@ -1,0 +1,71 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -1 +1,2 @@
++from django import forms
+ from django.contrib import admin
+@@ -6,2 +7,23 @@
++ROOM_REQUIRED_FIELDS = (
++    'title_reunion',
++    'legislative_body_initials',
++    'legislative_body',
++    'reunion_type',
++    'reunion_object',
++    'date',
++)
++
++
++class RoomAdminForm(forms.ModelForm):
++    class Meta:
++        model = Room
++        fields = '__all__'
++
++    def __init__(self, *args, **kwargs):
++        super().__init__(*args, **kwargs)
++        for field_name in ROOM_REQUIRED_FIELDS:
++            self.fields[field_name].required = True
++
++
+ class VideoInline(admin.TabularInline):
+     model = Video
+@@ -10,2 +32,3 @@
+ class RoomAdmin(admin.ModelAdmin):
++    form = RoomAdminForm
+     list_display = ('reunion_type', 'title_reunion', 'date', 'is_visible',
+diff --git a/apps/core/tests/test_admin.py b/apps/core/tests/test_admin.py
+new file mode 100644
+--- /dev/null
++++ b/apps/core/tests/test_admin.py
+@@ -0,0 +1,32 @@
++from django.utils.translation import gettext
++
++from apps.core.admin import ROOM_REQUIRED_FIELDS, RoomAdminForm
++
++
++def test_room_admin_marks_essential_fields_as_required():
++    form = RoomAdminForm()
++
++    for field_name in ROOM_REQUIRED_FIELDS:
++        assert form.fields[field_name].required is True
++
++
++def test_room_admin_shows_required_errors_instead_of_saving():
++    form = RoomAdminForm(data={})
++
++    assert form.is_valid() is False
++    required_message = gettext('This field is required.')
++    for field_name in ROOM_REQUIRED_FIELDS:
++        assert list(form.errors[field_name]) == [required_message]
++
++
++def test_room_admin_keeps_advance_fields_optional():
++    form = RoomAdminForm()
++
++    optional_fields = (
++        'cod_reunion',
++        'reunion_theme',
++        'location',
++        'external_link',
++    )
++    for field_name in optional_fields:
++        assert form.fields[field_name].required is False

@@ -4,6 +4,30 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-04 - Campos obrigatorios no cadastro de salas
+
+### Objetivo
+
+Impedir que o formulario administrativo da Audiencias tente cadastrar uma sala sem os dados essenciais e orientar o usuario diretamente na tela.
+
+### Arquivos alterados
+
+- `patches/audiencias/2026-11-04-audiencias-room-admin-required-fields.patch`
+- `patches/audiencias/README.md`
+
+### Resumo tecnico
+
+- O formulario de sala do Django Admin passa a exigir titulo, sigla e nome do orgao legislativo, tipo, objeto e data da reuniao.
+- Ao tentar salvar sem esses dados, o formulario permanece aberto e apresenta `Este campo e obrigatorio.` nos campos correspondentes, sem erro HTTP 500.
+- Codigo da reuniao, tema, local e link externo permanecem opcionais.
+- A validacao foi aplicada ao admin, sem alterar o banco, para manter compatibilidade com importacoes e integracoes legadas.
+
+### Validacao feita
+
+- Os 179 testes automatizados da Audiencias passaram na homologacao.
+- `manage.py check` nao encontrou problemas.
+- A validacao direta confirmou as seis mensagens obrigatorias em portugues e os campos avancados opcionais.
+
 ## 2026-11-04 - Cadastro de sala sem titulo no admin da Audiencias
 
 ### Objetivo
