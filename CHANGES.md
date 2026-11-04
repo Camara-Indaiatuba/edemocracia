@@ -30,7 +30,9 @@ Corrigir o erro HTTP 500 ao salvar pelo Django Admin uma sala cujo titulo da reu
 
 ### Pendencias ou observacoes
 
-- O patch foi aplicado inicialmente apenas no volume da homologacao e deve ser publicado antes da implantacao em producao.
+- Alteracao publicada no commit `5e7ce30` e aplicada nos volumes da homologacao e da producao.
+- Na producao, os 17 testes do modelo e o `manage.py check` passaram; a pagina publica respondeu HTTP 200.
+- O arquivo anterior foi preservado em `/home/filipiadm@camaraindaia.local/backups/audiencias-models-before-room-str-20261104-084040.py`.
 
 ## 2026-11-03 - Importacao da Audiencia Publica no 4/2026
 
