@@ -4,6 +4,23 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-04 - Sigla do orgao opcional nas salas
+
+### Objetivo
+
+Permitir o cadastro administrativo de uma audiencia sem informar a sigla do orgao legislativo.
+
+### Resumo tecnico
+
+- A sigla deixa de integrar a lista de campos essenciais do formulario de sala.
+- O nome do orgao legislativo continua obrigatorio.
+- O teste do formulario passa a verificar explicitamente que a sigla e opcional.
+
+### Validacao feita
+
+- Os 179 testes automatizados da Audiencias passaram na homologacao.
+- A validacao direta confirmou que a sigla nao gera erro quando vazia e que os outros cinco campos essenciais continuam obrigatorios.
+
 ## 2026-11-04 - Campos obrigatorios no cadastro de salas
 
 ### Objetivo

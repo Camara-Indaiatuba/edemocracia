@@ -1,0 +1,18 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -8,5 +8,4 @@ ROOM_REQUIRED_FIELDS = (
+     'title_reunion',
+-    'legislative_body_initials',
+     'legislative_body',
+     'reunion_type',
+     'reunion_object',
+diff --git a/apps/core/tests/test_admin.py b/apps/core/tests/test_admin.py
+--- a/apps/core/tests/test_admin.py
++++ b/apps/core/tests/test_admin.py
+@@ -25,4 +25,5 @@ def test_room_admin_keeps_advance_fields_optional():
+     optional_fields = (
++        'legislative_body_initials',
+         'cod_reunion',
+         'reunion_theme',
+         'location',
