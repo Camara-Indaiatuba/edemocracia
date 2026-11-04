@@ -30,6 +30,7 @@ O arquivo `src/apps/audiencias/data.py` pertence ao repositorio principal e ja f
 - `2026-11-04-audiencias-room-admin-required-fields.patch`: patch incremental que exige no admin os dados essenciais da sala e apresenta erros de validacao em vez de aceitar um cadastro incompleto.
 - `2026-11-04-audiencias-room-initials-optional.patch`: patch incremental que mantem a sigla do orgao legislativo opcional no cadastro administrativo de salas.
 - `2026-11-04-audiencias-scheduling.patch`: patch incremental que separa video gravado e transmissao ao vivo, bloqueia salas antes do horario, publica gravacoes automaticamente e mantem lives aguardando inicio manual.
+- `2026-11-04-audiencias-scheduling-test-isolation-ui.patch`: patch incremental que isola os eventos WebSocket da suite de testes e corrige a apresentacao do horario de liberacao na agenda.
 
 ## Ajuste de logout 2026-05-29
 

@@ -4,6 +4,26 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-04 - Isolamento dos testes e horario da agenda
+
+### Objetivo
+
+Impedir que dados artificiais da suite automatizada aparecam por WebSocket para usuarios da homologacao e corrigir a sobreposicao do horario de liberacao na agenda.
+
+### Resumo tecnico
+
+- Um fixture automatico substitui o Redis ativo por um canal em memoria durante todos os testes e isola os canais globais usados pelos modelos e pelas views.
+- A pergunta aleatoria observada na sala 35 nao existia no banco: ela foi criada pelo `model_bakery` no banco de testes e enviada ao Redis compartilhado por coincidencia do ID da sala.
+- O botao comprido da audiencia agendada foi substituido por um bloco de disponibilidade com dimensoes estaveis e quebra de layout responsiva.
+- A pre-visualizacao antes do horario continua permitida para a equipe; usuarios comuns e anonimos permanecem bloqueados.
+
+### Validacao feita
+
+- Os 192 testes automatizados da Audiencias passaram na homologacao.
+- A sala 40 retornou HTTP 404 sem autenticacao e a sala 35 permaneceu com zero perguntas no banco real.
+- Capturas Playwright em 1280 x 720 e 390 x 844 confirmaram que o horario nao se sobrepoe ao conteudo.
+- Alteracao aplicada e validada somente na homologacao; producao nao foi atualizada.
+
 ## 2026-11-04 - Agendamento de gravacoes e transmissoes ao vivo
 
 ### Objetivo

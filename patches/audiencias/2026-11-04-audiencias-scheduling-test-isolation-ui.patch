@@ -1,0 +1,98 @@
+diff --git a/apps/core/tests/test_test_isolation.py b/apps/core/tests/test_test_isolation.py
+new file mode 100644
+index 0000000..97bca0b
+--- /dev/null
++++ b/apps/core/tests/test_test_isolation.py
+@@ -0,0 +1,8 @@
++from channels.layers import InMemoryChannelLayer
++
++from apps.core import models, views
++
++
++def test_test_events_use_an_isolated_channel_layer():
++    assert isinstance(models.channel_layer, InMemoryChannelLayer)
++    assert models.channel_layer is views.channel_layer
+diff --git a/conftest.py b/conftest.py
+new file mode 100644
+index 0000000..82892a6
+--- /dev/null
++++ b/conftest.py
+@@ -0,0 +1,19 @@
++import pytest
++from channels.layers import InMemoryChannelLayer
++
++
++@pytest.fixture(autouse=True)
++def isolate_channel_layers(settings, monkeypatch):
++    """Keep test events away from the Redis used by the running site."""
++    settings.CHANNEL_LAYERS = {
++        'default': {
++            'BACKEND': 'channels.layers.InMemoryChannelLayer',
++        },
++    }
++    channel_layer = InMemoryChannelLayer()
++
++    from apps.core import models, views
++
++    monkeypatch.setattr(models, 'channel_layer', channel_layer)
++    monkeypatch.setattr(views, 'channel_layer', channel_layer)
++    return channel_layer
+diff --git a/static/scss/components/_bem-calendar-table.scss b/static/scss/components/_bem-calendar-table.scss
+index 19187a6..6974276 100644
+--- a/static/scss/components/_bem-calendar-table.scss
++++ b/static/scss/components/_bem-calendar-table.scss
+@@ -14,11 +14,13 @@
+ 
+   &:last-child {
+     padding-right: 3em;
++    width: 16em;
+ 
+     @include bp-smallonly {
+       padding-right: 0;
+       margin-bottom: 2em;
+       margin-top: 1em;
++      width: auto;
+     }
+   }
+ }
+@@ -56,6 +58,24 @@
+   font-weight: $font-weight-regular;
+ }
+ 
++.calendar-table__availability {
++  align-items: center;
++  background-color: hsl(0, 0%, 94%);
++  border: 1px solid hsl(0, 0%, 82%);
++  color: hsl(0, 0%, 25%);
++  display: flex;
++  flex-direction: column;
++  font-size: .8em;
++  line-height: 1.35;
++  min-width: 13em;
++  padding: .65em .8em;
++  text-align: center;
++
++  strong {
++    white-space: nowrap;
++  }
++}
++
+ .calendar-table__date-wrapper {
+   align-items: center;
+   display: flex;
+diff --git a/templates/index.html b/templates/index.html
+index c29eee9..8f66c01 100644
+--- a/templates/index.html
++++ b/templates/index.html
+@@ -75,7 +75,10 @@
+                           {% if agenda.broadcast_type == 'live' %}Aguardar início{% else %}Assistir{% endif %}
+                         </a>
+                       {% else %}
+-                        <span class="button" aria-disabled="true">Disponível em {{ release_at|date:"d/m/Y" }} às {{ release_at|date:"H:i" }}</span>
++                        <span class="calendar-table__availability" aria-disabled="true">
++                          <span>Disponível em</span>
++                          <strong>{{ release_at|date:"d/m/Y" }} às {{ release_at|date:"H:i" }}</strong>
++                        </span>
+                       {% endif %}
+                     </div>
+                   </td>
