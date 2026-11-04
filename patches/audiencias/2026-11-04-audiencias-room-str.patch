@@ -1,0 +1,24 @@
+diff --git a/apps/core/models.py b/apps/core/models.py
+--- a/apps/core/models.py
++++ b/apps/core/models.py
+@@ -74,7 +74,7 @@ class Room(TimestampedMixin):
+         if self.title_reunion:
+             return self.title_reunion
+         else:
+-            return _('room')
++            return str(_('room'))
+ 
+     def is_today(self):
+         if datetime.date.today() == self.date.date():
+diff --git a/apps/core/tests/test_models.py b/apps/core/tests/test_models.py
+--- a/apps/core/tests/test_models.py
++++ b/apps/core/tests/test_models.py
+@@ -24,6 +24,7 @@ def test_room_with_title():
+ def test_room_without_title():
+     room = baker.make(Room, title_reunion='')
+-    assert room.__str__() == _('room')
++    assert str(room) == _('room')
++    assert isinstance(str(room), str)
+ 
+ 
+ @pytest.mark.django_db

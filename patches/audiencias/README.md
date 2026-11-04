@@ -26,6 +26,7 @@ O arquivo `src/apps/audiencias/data.py` pertence ao repositorio principal e ja f
 - `2026-06-02-audiencias-admin-csrf-logout.patch`: patch incremental que separa o cookie CSRF da Audiencias, corrige logout do admin para voltar ao login da Audiencias e atualiza o helper JS de CSRF.
 - `2026-06-08-audiencias-remove-camara-cron-source.patch`: patch incremental que remove tambem do arquivo-fonte de cron a chamada a `get_camara_webservice`, deixando apenas rotinas locais de limpeza.
 - `2026-06-22-audiencias-google-login-nav.patch`: patch incremental que exibe o botão `Continuar com Google` na navegacao propria da Audiencias e corrige o link de recuperacao de senha.
+- `2026-11-04-audiencias-room-str.patch`: patch incremental que garante texto comum no nome de fallback de uma sala sem titulo, evitando erro 500 ao registrar a inclusao no Django Admin 5.2.
 
 ## Ajuste de logout 2026-05-29
 

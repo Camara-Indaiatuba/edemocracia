@@ -4,6 +4,34 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-04 - Cadastro de sala sem titulo no admin da Audiencias
+
+### Objetivo
+
+Corrigir o erro HTTP 500 ao salvar pelo Django Admin uma sala cujo titulo da reuniao ficou vazio.
+
+### Arquivos alterados
+
+- `patches/audiencias/2026-11-04-audiencias-room-str.patch`
+- `patches/audiencias/README.md`
+
+### Resumo tecnico
+
+- O nome de fallback de `Room.__str__()` passa a ser convertido explicitamente para `str`.
+- Isso evita que o Django Admin 5.2 receba um objeto de traducao lazy ao registrar a inclusao no historico.
+- O teste existente de sala sem titulo passa a verificar tanto o texto traduzido quanto o tipo retornado.
+
+### Validacao feita
+
+- A tentativa que gerou o erro foi revertida integralmente e nao deixou sala incompleta.
+- Os 176 testes automatizados da Audiencias passaram na homologacao.
+- `manage.py check` nao encontrou problemas.
+- A validacao direta retornou `sala` com tipo `str`.
+
+### Pendencias ou observacoes
+
+- O patch foi aplicado inicialmente apenas no volume da homologacao e deve ser publicado antes da implantacao em producao.
+
 ## 2026-11-03 - Importacao da Audiencia Publica no 4/2026
 
 ### Objetivo
