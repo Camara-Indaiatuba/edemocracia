@@ -1,6 +1,10 @@
 {% load edem_extras %}
 
+{% if status == "calendar" and not room.is_access_released %}
+<div class="info-card__link info-card__link--disabled" aria-disabled="true">
+{% else %}
 <a class="info-card__link" href="/audiencias/sala/{{ room.id }}">
+{% endif %}
   <li class="info-card info-card--audiencias">
     <div class="info-card__header info-card__header--{{ status }}">
       {% if status == "live" %}
@@ -45,4 +49,8 @@
       </div>
     </div>
   </li>
+{% if status == "calendar" and not room.is_access_released %}
+</div>
+{% else %}
 </a>
+{% endif %}

@@ -1,0 +1,96 @@
+diff --git a/apps/core/serializers.py b/apps/core/serializers.py
+index e307a29..e3710e0 100644
+--- a/apps/core/serializers.py
++++ b/apps/core/serializers.py
+@@ -94,12 +94,16 @@ class RoomSerializer(serializers.ModelSerializer):
+     participants_count = serializers.ReadOnlyField()
+     answered_questions_count = serializers.SerializerMethodField()
+     youtube_id = serializers.SerializerMethodField()
++    is_access_released = serializers.ReadOnlyField()
++    display_status = serializers.ReadOnlyField()
+     videos = VideoSerializer(many=True)
+ 
+     class Meta:
+         model = Room
+         fields = ('id', 'cod_reunion', 'online_users',
+                   'legislative_body_initials', 'youtube_status',
++                  'broadcast_type', 'release_at', 'is_access_released',
++                  'display_status',
+                   'max_online_users', 'created', 'modified', 'is_visible',
+                   'reunion_type', 'title_reunion', 'reunion_object',
+                   'reunion_theme', 'date', 'legislative_body', 'location',
+diff --git a/apps/core/tests/test_api.py b/apps/core/tests/test_api.py
+index 73c122b..d9267a4 100644
+--- a/apps/core/tests/test_api.py
++++ b/apps/core/tests/test_api.py
+@@ -1,10 +1,13 @@
+ import pytest
++from datetime import timedelta
+ from model_bakery import baker
+ from apps.core.models import Room
++from apps.core.serializers import RoomSerializer
+ from apps.core.permissions import ApiKeyPermission
+ from apps.accounts.models import User
+ from django.urls import reverse
+ from django.test import RequestFactory
++from django.utils import timezone
+ 
+ 
+ 
+@@ -26,6 +29,23 @@ def test_rooms_api(client):
+     assert response.data['results'][0]['answered_questions_count'] == 0
+ 
+ 
++@pytest.mark.django_db
++def test_rooms_api_exposes_scheduled_access(client):
++    room = baker.make(
++        Room,
++        broadcast_type=Room.BROADCAST_LIVE,
++        youtube_status=0,
++        release_at=timezone.now() + timedelta(hours=1),
++    )
++
++    data = RoomSerializer(room).data
++
++    assert data['broadcast_type'] == Room.BROADCAST_LIVE
++    assert data['release_at'] is not None
++    assert data['is_access_released'] is False
++    assert data['display_status'] == 'Agendada'
++
++
+ @pytest.mark.django_db
+ def test_users_api(client):
+     baker.make(User, username='testuser', email='test@e.com', is_active=True)
+diff --git a/apps/core/tests/test_views.py b/apps/core/tests/test_views.py
+index f280f03..bd6b2c8 100644
+--- a/apps/core/tests/test_views.py
++++ b/apps/core/tests/test_views.py
+@@ -51,7 +51,8 @@ def test_scheduled_room_cannot_be_opened_before_release(client):
+ 
+     response = client.get(reverse('video_room', kwargs={'pk': room.id}))
+ 
+-    assert response.status_code == 404
++    assert response.status_code == 302
++    assert response.url == reverse('home')
+ 
+ 
+ @pytest.mark.django_db
+diff --git a/apps/core/views.py b/apps/core/views.py
+index fbb9172..ba6c19b 100644
+--- a/apps/core/views.py
++++ b/apps/core/views.py
+@@ -335,6 +335,14 @@ class VideoDetail(DetailView):
+     model = Room
+     template_name = 'room.html'
+ 
++    def dispatch(self, request, *args, **kwargs):
++        room = self.get_queryset().filter(pk=kwargs.get('pk')).first()
++        staff_preview = request.user.is_staff
++        if (room and room.is_active and room.is_visible and
++                not room.is_access_released and not staff_preview):
++            return redirect('home')
++        return super().dispatch(request, *args, **kwargs)
++
+     def get_context_data(self, **kwargs):
+         context = super(VideoDetail, self).get_context_data(**kwargs)
+         if self.request.user.is_authenticated:

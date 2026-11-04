@@ -4,6 +4,26 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-04 - Acesso publico a audiencia ainda agendada
+
+### Objetivo
+
+Impedir que o cartao de uma audiencia futura leve o visitante a uma pagina crua de erro e manter a sala inacessivel antes da liberacao.
+
+### Resumo tecnico
+
+- A API de salas passa a informar formato, horario de liberacao, estado apresentado e se o acesso ja foi liberado.
+- O cartao futuro do portal central deixa de ser link; uma live que ja chegou ao horario e aguarda inicio continua clicavel.
+- O acesso direto antecipado por usuario comum ou anonimo redireciona para `/audiencias/`.
+- A pre-visualizacao antecipada por administradores e equipe permanece disponivel.
+
+### Validacao feita
+
+- Os 193 testes automatizados da Audiencias e os 2 testes do cartao central passaram.
+- Sem autenticacao, `/audiencias/sala/40/` respondeu HTTP 302 com destino `/audiencias/`.
+- O HTML da pagina inicial nao apresentou link para a sala 40 e marcou o cartao como desabilitado.
+- Alteracao aplicada e validada somente na homologacao; producao nao foi atualizada.
+
 ## 2026-11-04 - Isolamento dos testes e horario da agenda
 
 ### Objetivo
