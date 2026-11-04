@@ -27,6 +27,9 @@ Impedir que o formulario administrativo da Audiencias tente cadastrar uma sala s
 - Os 179 testes automatizados da Audiencias passaram na homologacao.
 - `manage.py check` nao encontrou problemas.
 - A validacao direta confirmou as seis mensagens obrigatorias em portugues e os campos avancados opcionais.
+- Alteracao funcional publicada no commit `9c0b035` e aplicada na producao.
+- Na producao, os 20 testes focados passaram, os servicos reiniciaram ativos e a pagina publica respondeu HTTP 200.
+- O arquivo administrativo anterior foi preservado em `/home/filipiadm@camaraindaia.local/backups/audiencias-admin-before-required-fields-20261104-085627.py`.
 
 ## 2026-11-04 - Cadastro de sala sem titulo no admin da Audiencias
 
