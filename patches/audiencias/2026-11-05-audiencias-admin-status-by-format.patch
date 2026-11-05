@@ -1,0 +1,66 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -22,6 +22,9 @@ class RoomAdminForm(forms.ModelForm):
+         for field_name in ROOM_REQUIRED_FIELDS:
+             self.fields[field_name].required = True
+         self.fields['youtube_status'].label = 'Situação'
++        self.fields['youtube_status'].help_text = (
++            'Agendada aguarda a data de liberação. Cancelada deve ser usada '
++            'quando uma audiência prevista não será realizada.')
+ 
+     def clean(self):
+         cleaned_data = super().clean()
+@@ -47,6 +51,9 @@ class RoomAdmin(admin.ModelAdmin):
+         'location', 'cod_reunion', 'reunion_object')
+     inlines = (VideoInline, )
+ 
++    class Media:
++        js = ('js/room-admin-status.js',)
++
+ 
+ class MessageAdmin(admin.ModelAdmin):
+     list_display = ('user', 'room', 'message', 'created')
+diff --git a/static/js/room-admin-status.js b/static/js/room-admin-status.js
+new file mode 100644
+--- /dev/null
++++ b/static/js/room-admin-status.js
+@@ -0,0 +1,38 @@
++(function () {
++  'use strict';
++
++  function updateStatusOptions() {
++    var broadcastType = document.getElementById('id_broadcast_type');
++    var status = document.getElementById('id_youtube_status');
++    if (!broadcastType || !status) return;
++
++    var isLive = broadcastType.value === 'live';
++    var liveOption = status.querySelector('option[value="1"]');
++    var closedOption = status.querySelector('option[value="2"]');
++
++    if (liveOption) {
++      liveOption.hidden = !isLive;
++      liveOption.disabled = !isLive;
++    }
++    if (closedOption) {
++      closedOption.textContent = isLive ? 'Transmissão encerrada' : 'Publicada';
++    }
++
++    if (!isLive && status.value === '1') {
++      status.value = '0';
++    }
++  }
++
++  function initialize() {
++    var broadcastType = document.getElementById('id_broadcast_type');
++    if (!broadcastType) return;
++    broadcastType.addEventListener('change', updateStatusOptions);
++    updateStatusOptions();
++  }
++
++  if (document.readyState === 'loading') {
++    document.addEventListener('DOMContentLoaded', initialize);
++  } else {
++    initialize();
++  }
++}());
