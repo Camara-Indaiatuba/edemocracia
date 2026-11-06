@@ -1,0 +1,145 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+index 78293fe..3334a1c 100644
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -1,5 +1,5 @@
+ from django import forms
+-from django.contrib import admin, messages
++from django.contrib import admin
+ from django.utils import timezone
+ from apps.core.models import (Message, Question, UpDownVote, Room,
+                               RoomAttachment, Video)
+@@ -66,11 +66,21 @@ class RoomAdminForm(forms.ModelForm):
+         cleaned_data = super().clean()
+         status = cleaned_data.get('youtube_status')
+         broadcast_type = cleaned_data.get('broadcast_type')
++        room_date = cleaned_data.get('date')
++        now = timezone.now()
+ 
+         if status == 1 and broadcast_type != Room.BROADCAST_LIVE:
+             self.add_error(
+                 'broadcast_type',
+                 'Somente uma transmissão ao vivo pode usar a situação Ao vivo.')
++        if status == 0 and room_date and room_date <= now:
++            self.add_error(
++                'date',
++                'Uma audiência agendada deve ter data e horário futuros.')
++        if status == 2 and room_date and room_date > now:
++            self.add_error(
++                'date',
++                'Uma audiência publicada ou encerrada não pode ter data futura.')
+         return cleaned_data
+ 
+     def save(self, commit=True):
+@@ -112,19 +122,6 @@ class RoomAdmin(admin.ModelAdmin):
+ 
+         super().save_model(request, obj, form, change)
+ 
+-        if obj.youtube_status == 0 and obj.date and obj.date < now:
+-            self.message_user(
+-                request,
+-                'A audiência está agendada com uma data passada. Revise a '
+-                'situação ou a data informada.',
+-                level=messages.WARNING)
+-        elif obj.youtube_status == 2 and obj.date and obj.date > now:
+-            self.message_user(
+-                request,
+-                'A audiência foi publicada com uma data futura e já está '
+-                'acessível quando estiver visível.',
+-                level=messages.WARNING)
+-
+ 
+ class MessageAdmin(admin.ModelAdmin):
+     list_display = ('user', 'room', 'message', 'created')
+diff --git a/apps/core/tests/test_admin.py b/apps/core/tests/test_admin.py
+index dea6b40..4ae66a2 100644
+--- a/apps/core/tests/test_admin.py
++++ b/apps/core/tests/test_admin.py
+@@ -1,3 +1,5 @@
++from datetime import timedelta
++
+ import pytest
+ from django import forms
+ from django.utils.translation import gettext
+@@ -7,6 +9,25 @@ from apps.core.admin import ROOM_REQUIRED_FIELDS, RoomAdminForm
+ from apps.core.models import Room
+ 
+ 
++def room_form_data(**overrides):
++    data = {
++        'title_reunion': 'Audiência agendada',
++        'legislative_body': 'Câmara Municipal',
++        'reunion_type': 'Audiência Pública',
++        'reunion_object': 'Pauta de teste',
++        'date': timezone.now() + timedelta(hours=1),
++        'broadcast_type': 'recorded',
++        'youtube_status': 0,
++        'online_users': 0,
++        'max_online_users': 0,
++        'views': 0,
++        'visibility_mode': RoomAdminForm.VISIBILITY_MANUAL,
++        'is_active': 'on',
++    }
++    data.update(overrides)
++    return data
++
++
+ def test_room_admin_marks_essential_fields_as_required():
+     form = RoomAdminForm()
+ 
+@@ -65,21 +86,8 @@ def test_visibility_fields_are_replaced_by_exclusive_radio_options():
+ ))
+ def test_visibility_mode_maps_to_legacy_fields(
+         visibility_mode, is_visible, scheduled):
+-    room_date = timezone.now()
+-    form = RoomAdminForm(data={
+-        'title_reunion': 'Audiência agendada',
+-        'legislative_body': 'Câmara Municipal',
+-        'reunion_type': 'Audiência Pública',
+-        'reunion_object': 'Pauta de teste',
+-        'date': room_date,
+-        'broadcast_type': 'recorded',
+-        'youtube_status': 0,
+-        'online_users': 0,
+-        'max_online_users': 0,
+-        'views': 0,
+-        'visibility_mode': visibility_mode,
+-        'is_active': 'on',
+-    })
++    form = RoomAdminForm(data=room_form_data(
++        visibility_mode=visibility_mode))
+ 
+     assert form.is_valid(), form.errors
+     room = form.save(commit=False)
+@@ -101,6 +109,31 @@ def test_visibility_mode_reflects_existing_room(
+     assert form.fields['visibility_mode'].initial == expected
+ 
+ 
++def test_scheduled_room_rejects_past_date():
++    form = RoomAdminForm(data=room_form_data(
++        date=timezone.now() - timedelta(minutes=1)))
++
++    assert form.is_valid() is False
++    assert list(form.errors['date']) == [
++        'Uma audiência agendada deve ter data e horário futuros.']
++
++
++def test_published_room_rejects_future_date():
++    form = RoomAdminForm(data=room_form_data(youtube_status=2))
++
++    assert form.is_valid() is False
++    assert list(form.errors['date']) == [
++        'Uma audiência publicada ou encerrada não pode ter data futura.']
++
++
++def test_published_room_accepts_past_date():
++    form = RoomAdminForm(data=room_form_data(
++        youtube_status=2,
++        date=timezone.now() - timedelta(minutes=1)))
++
++    assert form.is_valid(), form.errors
++
++
+ def test_recorded_room_cannot_be_marked_live():
+     form = RoomAdminForm(data={
+         'youtube_status': 1,

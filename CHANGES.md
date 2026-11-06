@@ -17,14 +17,14 @@ Simplificar o agendamento para usar a data da propria audiencia e permitir escol
 - O campo legado `Is active` foi traduzido para `Ativa` e passou a explicar que deve ser desmarcado somente para desativar completamente a audiencia.
 - Uma audiencia visivel e agendada aparece previamente na agenda, mas permanece bloqueada ate o horario.
 - Uma audiencia invisivel com publicacao automatica aparece no horario; sem essa opcao, continua como rascunho oculto.
-- O admin avisa sobre audiencia agendada no passado ou publicada com data futura.
+- O formulario bloqueia audiencia agendada no passado ou publicada/encerrada com data futura e mostra o erro no campo de data.
 - `Closed time` fica restrito a transmissao ao vivo e deixa de ser preenchido para video gravado.
 - O sinal legado deixou de salvar recursivamente e de gerar notificacoes duplicadas.
 
 ### Validacao feita
 
 - `python manage.py check`: sem problemas.
-- Suite completa da Audiencias: 204 testes aprovados apos os ajustes administrativos.
+- Suite completa da Audiencias: 207 testes aprovados apos os ajustes administrativos.
 - O patch incremental foi conferido por aplicacao reversa contra o codigo ativo.
 - Alteracao aplicada e validada somente na homologacao; producao nao foi atualizada.
 
