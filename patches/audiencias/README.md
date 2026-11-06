@@ -36,6 +36,7 @@ O arquivo `src/apps/audiencias/data.py` pertence ao repositorio principal e ja f
 - `2026-11-05-audiencias-admin-status-by-format.patch`: patch incremental que adapta no admin as situacoes disponiveis para video gravado e transmissao ao vivo.
 - `2026-11-06-audiencias-single-date-auto-visibility.patch`: patch incremental que usa a data da audiencia para a liberacao, troca o segundo campo de data por uma opcao de visibilidade automatica e restringe o horario de encerramento a transmissoes ao vivo.
 - `2026-11-06-audiencias-exclusive-visibility-mode.patch`: patch incremental que substitui os dois checkboxes de visibilidade por tres opcoes de radio mutuamente exclusivas.
+- `2026-11-06-audiencias-active-field-help.patch`: patch incremental que traduz o campo de ativacao da audiencia e explica seu efeito de desativacao completa.
 
 ## Ajuste de logout 2026-05-29
 

@@ -1,0 +1,31 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -42,6 +42,9 @@ class RoomAdminForm(forms.ModelForm):
+         super().__init__(*args, **kwargs)
+         for field_name in ROOM_REQUIRED_FIELDS:
+             self.fields[field_name].required = True
++        self.fields['is_active'].label = 'Ativa'
++        self.fields['is_active'].help_text = (
++            'Desmarque somente para desativar completamente esta audiência.')
+         self.fields['youtube_status'].label = 'Situação'
+         self.fields['youtube_status'].help_text = (
+             'Agendada aguarda a data de liberação. Cancelada deve ser usada '
+diff --git a/apps/core/tests/test_admin.py b/apps/core/tests/test_admin.py
+--- a/apps/core/tests/test_admin.py
++++ b/apps/core/tests/test_admin.py
+@@ -13,6 +13,14 @@ def test_room_admin_marks_essential_fields_as_required():
+         assert form.fields[field_name].required is True
+ 
+ 
++def test_room_admin_explains_active_field():
++    form = RoomAdminForm()
++
++    assert form.fields['is_active'].label == 'Ativa'
++    assert form.fields['is_active'].help_text == (
++        'Desmarque somente para desativar completamente esta audiência.')
++
++
+ def test_room_admin_shows_required_errors_instead_of_saving():
+     form = RoomAdminForm(data={})
+ 
