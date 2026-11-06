@@ -13,7 +13,7 @@ Simplificar o agendamento para usar a data da propria audiencia e permitir escol
 ### Resumo tecnico
 
 - O campo administrativo `Liberar sala em` foi ocultado; a data e o horario da audiencia passam a governar a liberacao.
-- O checkbox `Visivel automaticamente na data e horario` foi colocado logo abaixo de `Visivel`.
+- Os checkboxes de visibilidade foram substituidos pelo campo exclusivo `Exibicao no portal`, com as opcoes `Visivel agora`, `Visivel na data e horario` e `Invisivel ate publicacao manual`.
 - Uma audiencia visivel e agendada aparece previamente na agenda, mas permanece bloqueada ate o horario.
 - Uma audiencia invisivel com publicacao automatica aparece no horario; sem essa opcao, continua como rascunho oculto.
 - O admin avisa sobre audiencia agendada no passado ou publicada com data futura.
@@ -23,7 +23,7 @@ Simplificar o agendamento para usar a data da propria audiencia e permitir escol
 ### Validacao feita
 
 - `python manage.py check`: sem problemas.
-- Suite completa da Audiencias: 198 testes aprovados.
+- Suite completa da Audiencias: 203 testes aprovados apos o ajuste do seletor exclusivo.
 - O patch incremental foi conferido por aplicacao reversa contra o codigo ativo.
 - Alteracao aplicada e validada somente na homologacao; producao nao foi atualizada.
 

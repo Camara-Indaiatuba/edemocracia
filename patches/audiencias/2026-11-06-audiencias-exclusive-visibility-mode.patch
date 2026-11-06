@@ -1,0 +1,153 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+index 92427da..59bd5b2 100644
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -15,17 +15,27 @@ ROOM_REQUIRED_FIELDS = (
+ 
+ 
+ class RoomAdminForm(forms.ModelForm):
+-    publish_automatically = forms.BooleanField(
+-        label='Visível automaticamente na data e horário',
+-        required=False,
++    VISIBILITY_NOW = 'now'
++    VISIBILITY_SCHEDULED = 'scheduled'
++    VISIBILITY_MANUAL = 'manual'
++    VISIBILITY_CHOICES = (
++        (VISIBILITY_NOW, 'Visível agora'),
++        (VISIBILITY_SCHEDULED, 'Visível na data e horário'),
++        (VISIBILITY_MANUAL, 'Invisível até publicação manual'),
++    )
++
++    visibility_mode = forms.ChoiceField(
++        label='Exibição no portal',
++        choices=VISIBILITY_CHOICES,
++        initial=VISIBILITY_MANUAL,
++        widget=forms.RadioSelect,
+         help_text=(
+-            'Se a audiência estiver invisível, ela aparecerá no portal '
+-            'automaticamente quando chegar a data e o horário informados.'))
++            'Escolha quando esta audiência deverá aparecer publicamente.'))
+ 
+     class Meta:
+         model = Room
+         fields = '__all__'
+-        exclude = ('release_at',)
++        exclude = ('release_at', 'is_visible')
+ 
+     def __init__(self, *args, **kwargs):
+         super().__init__(*args, **kwargs)
+@@ -35,12 +45,18 @@ class RoomAdminForm(forms.ModelForm):
+         self.fields['youtube_status'].help_text = (
+             'Agendada aguarda a data de liberação. Cancelada deve ser usada '
+             'quando uma audiência prevista não será realizada.')
+-        if not self.is_bound and self.instance and self.instance.release_at:
+-            self.fields['publish_automatically'].initial = True
++        if not self.is_bound and self.instance:
++            if self.instance.is_visible:
++                visibility_mode = self.VISIBILITY_NOW
++            elif self.instance.release_at:
++                visibility_mode = self.VISIBILITY_SCHEDULED
++            else:
++                visibility_mode = self.VISIBILITY_MANUAL
++            self.fields['visibility_mode'].initial = visibility_mode
+         field_order = list(self.fields)
+-        field_order.remove('publish_automatically')
+-        visible_position = field_order.index('is_visible') + 1
+-        field_order.insert(visible_position, 'publish_automatically')
++        field_order.remove('visibility_mode')
++        active_position = field_order.index('is_active')
++        field_order.insert(active_position, 'visibility_mode')
+         self.order_fields(field_order)
+ 
+     def clean(self):
+@@ -56,9 +72,11 @@ class RoomAdminForm(forms.ModelForm):
+ 
+     def save(self, commit=True):
+         instance = super().save(commit=False)
++        visibility_mode = self.cleaned_data['visibility_mode']
++        instance.is_visible = visibility_mode == self.VISIBILITY_NOW
+         instance.release_at = (
+             instance.date
+-            if self.cleaned_data.get('publish_automatically') else None)
++            if visibility_mode == self.VISIBILITY_SCHEDULED else None)
+         if commit:
+             instance.save()
+             self.save_m2m()
+diff --git a/apps/core/tests/test_admin.py b/apps/core/tests/test_admin.py
+index 6d06719..671c57a 100644
+--- a/apps/core/tests/test_admin.py
++++ b/apps/core/tests/test_admin.py
+@@ -1,7 +1,10 @@
++import pytest
++from django import forms
+ from django.utils.translation import gettext
+ from django.utils import timezone
+ 
+ from apps.core.admin import ROOM_REQUIRED_FIELDS, RoomAdminForm
++from apps.core.models import Room
+ 
+ 
+ def test_room_admin_marks_essential_fields_as_required():
+@@ -34,17 +37,26 @@ def test_room_admin_keeps_advance_fields_optional():
+         assert form.fields[field_name].required is False
+ 
+ 
+-def test_release_date_is_replaced_by_automatic_visibility_option():
++def test_visibility_fields_are_replaced_by_exclusive_radio_options():
+     form = RoomAdminForm()
+ 
+     assert 'release_at' not in form.fields
+-    assert form.fields['publish_automatically'].required is False
++    assert 'is_visible' not in form.fields
++    assert isinstance(form.fields['visibility_mode'].widget, forms.RadioSelect)
++    assert list(form.fields['visibility_mode'].choices) == list(
++        RoomAdminForm.VISIBILITY_CHOICES)
+     field_names = list(form.fields)
+-    assert field_names.index('publish_automatically') == (
+-        field_names.index('is_visible') + 1)
++    assert field_names.index('visibility_mode') == (
++        field_names.index('is_active') - 1)
+ 
+ 
+-def test_automatic_visibility_uses_the_room_date_internally():
++@pytest.mark.parametrize(('visibility_mode', 'is_visible', 'scheduled'), (
++    (RoomAdminForm.VISIBILITY_NOW, True, False),
++    (RoomAdminForm.VISIBILITY_SCHEDULED, False, True),
++    (RoomAdminForm.VISIBILITY_MANUAL, False, False),
++))
++def test_visibility_mode_maps_to_legacy_fields(
++        visibility_mode, is_visible, scheduled):
+     room_date = timezone.now()
+     form = RoomAdminForm(data={
+         'title_reunion': 'Audiência agendada',
+@@ -57,13 +69,28 @@ def test_automatic_visibility_uses_the_room_date_internally():
+         'online_users': 0,
+         'max_online_users': 0,
+         'views': 0,
+-        'publish_automatically': 'on',
++        'visibility_mode': visibility_mode,
+         'is_active': 'on',
+     })
+ 
+     assert form.is_valid(), form.errors
+     room = form.save(commit=False)
+-    assert room.release_at == room.date
++    assert room.is_visible is is_visible
++    assert (room.release_at == room.date) is scheduled
++
++
++@pytest.mark.parametrize(('is_visible', 'release_at', 'expected'), (
++    (True, timezone.now(), RoomAdminForm.VISIBILITY_NOW),
++    (False, timezone.now(), RoomAdminForm.VISIBILITY_SCHEDULED),
++    (False, None, RoomAdminForm.VISIBILITY_MANUAL),
++))
++def test_visibility_mode_reflects_existing_room(
++        is_visible, release_at, expected):
++    room = Room(is_visible=is_visible, release_at=release_at)
++
++    form = RoomAdminForm(instance=room)
++
++    assert form.fields['visibility_mode'].initial == expected
+ 
+ 
+ def test_recorded_room_cannot_be_marked_live():
