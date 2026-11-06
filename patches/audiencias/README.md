@@ -34,6 +34,7 @@ O arquivo `src/apps/audiencias/data.py` pertence ao repositorio principal e ja f
 - `2026-11-04-audiencias-scheduled-access-ux.patch`: patch incremental que informa ao portal central se a sala foi liberada e redireciona acessos publicos antecipados para a agenda.
 - `2026-11-04-audiencias-room-list-no-cache.patch`: patch incremental que remove o cache da listagem de salas para refletir imediatamente mudancas de status e visibilidade no portal central.
 - `2026-11-05-audiencias-admin-status-by-format.patch`: patch incremental que adapta no admin as situacoes disponiveis para video gravado e transmissao ao vivo.
+- `2026-11-06-audiencias-single-date-auto-visibility.patch`: patch incremental que usa a data da audiencia para a liberacao, troca o segundo campo de data por uma opcao de visibilidade automatica e restringe o horario de encerramento a transmissoes ao vivo.
 
 ## Ajuste de logout 2026-05-29
 

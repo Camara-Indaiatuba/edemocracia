@@ -4,6 +4,29 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-06 - Data unica e visibilidade automatica de audiencias
+
+### Objetivo
+
+Simplificar o agendamento para usar a data da propria audiencia e permitir escolher se uma sala invisivel deve aparecer automaticamente quando chegar o horario.
+
+### Resumo tecnico
+
+- O campo administrativo `Liberar sala em` foi ocultado; a data e o horario da audiencia passam a governar a liberacao.
+- O checkbox `Visivel automaticamente na data e horario` foi colocado logo abaixo de `Visivel`.
+- Uma audiencia visivel e agendada aparece previamente na agenda, mas permanece bloqueada ate o horario.
+- Uma audiencia invisivel com publicacao automatica aparece no horario; sem essa opcao, continua como rascunho oculto.
+- O admin avisa sobre audiencia agendada no passado ou publicada com data futura.
+- `Closed time` fica restrito a transmissao ao vivo e deixa de ser preenchido para video gravado.
+- O sinal legado deixou de salvar recursivamente e de gerar notificacoes duplicadas.
+
+### Validacao feita
+
+- `python manage.py check`: sem problemas.
+- Suite completa da Audiencias: 198 testes aprovados.
+- O patch incremental foi conferido por aplicacao reversa contra o codigo ativo.
+- Alteracao aplicada e validada somente na homologacao; producao nao foi atualizada.
+
 ## 2026-11-04 - Acesso publico a audiencia ainda agendada
 
 ### Objetivo

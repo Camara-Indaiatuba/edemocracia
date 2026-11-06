@@ -1,0 +1,423 @@
+diff --git a/apps/core/admin.py b/apps/core/admin.py
+index 890eef1..92427da 100644
+--- a/apps/core/admin.py
++++ b/apps/core/admin.py
+@@ -1,5 +1,6 @@
+ from django import forms
+-from django.contrib import admin
++from django.contrib import admin, messages
++from django.utils import timezone
+ from apps.core.models import (Message, Question, UpDownVote, Room,
+                               RoomAttachment, Video)
+ 
+@@ -14,9 +15,17 @@ ROOM_REQUIRED_FIELDS = (
+ 
+ 
+ class RoomAdminForm(forms.ModelForm):
++    publish_automatically = forms.BooleanField(
++        label='Visível automaticamente na data e horário',
++        required=False,
++        help_text=(
++            'Se a audiência estiver invisível, ela aparecerá no portal '
++            'automaticamente quando chegar a data e o horário informados.'))
++
+     class Meta:
+         model = Room
+         fields = '__all__'
++        exclude = ('release_at',)
+ 
+     def __init__(self, *args, **kwargs):
+         super().__init__(*args, **kwargs)
+@@ -26,22 +35,35 @@ class RoomAdminForm(forms.ModelForm):
+         self.fields['youtube_status'].help_text = (
+             'Agendada aguarda a data de liberação. Cancelada deve ser usada '
+             'quando uma audiência prevista não será realizada.')
++        if not self.is_bound and self.instance and self.instance.release_at:
++            self.fields['publish_automatically'].initial = True
++        field_order = list(self.fields)
++        field_order.remove('publish_automatically')
++        visible_position = field_order.index('is_visible') + 1
++        field_order.insert(visible_position, 'publish_automatically')
++        self.order_fields(field_order)
+ 
+     def clean(self):
+         cleaned_data = super().clean()
+         status = cleaned_data.get('youtube_status')
+         broadcast_type = cleaned_data.get('broadcast_type')
+ 
+-        if status == 0 and not cleaned_data.get('release_at'):
+-            self.add_error(
+-                'release_at',
+-                'Informe quando a sala agendada deverá ser liberada.')
+         if status == 1 and broadcast_type != Room.BROADCAST_LIVE:
+             self.add_error(
+                 'broadcast_type',
+                 'Somente uma transmissão ao vivo pode usar a situação Ao vivo.')
+         return cleaned_data
+ 
++    def save(self, commit=True):
++        instance = super().save(commit=False)
++        instance.release_at = (
++            instance.date
++            if self.cleaned_data.get('publish_automatically') else None)
++        if commit:
++            instance.save()
++            self.save_m2m()
++        return instance
++
+ 
+ class VideoInline(admin.TabularInline):
+     model = Video
+@@ -51,7 +73,7 @@ class RoomAdmin(admin.ModelAdmin):
+     form = RoomAdminForm
+     list_display = ('reunion_type', 'title_reunion', 'date', 'is_visible',
+                     'is_active')
+-    list_filter = ['youtube_status', 'broadcast_type', 'date', 'release_at']
++    list_filter = ['youtube_status', 'broadcast_type', 'date']
+     search_fields = (
+         'title_reunion', 'legislative_body_initials', 'legislative_body',
+         'location', 'cod_reunion', 'reunion_object')
+@@ -60,6 +82,28 @@ class RoomAdmin(admin.ModelAdmin):
+     class Media:
+         js = ('js/room-admin-status.js',)
+ 
++    def save_model(self, request, obj, form, change):
++        now = timezone.now()
++        if obj.broadcast_type == Room.BROADCAST_RECORDED:
++            obj.closed_time = None
++        elif obj.youtube_status == 2 and not obj.closed_time:
++            obj.closed_time = now
++
++        super().save_model(request, obj, form, change)
++
++        if obj.youtube_status == 0 and obj.date and obj.date < now:
++            self.message_user(
++                request,
++                'A audiência está agendada com uma data passada. Revise a '
++                'situação ou a data informada.',
++                level=messages.WARNING)
++        elif obj.youtube_status == 2 and obj.date and obj.date > now:
++            self.message_user(
++                request,
++                'A audiência foi publicada com uma data futura e já está '
++                'acessível quando estiver visível.',
++                level=messages.WARNING)
++
+ 
+ class MessageAdmin(admin.ModelAdmin):
+     list_display = ('user', 'room', 'message', 'created')
+diff --git a/apps/core/management/commands/release_scheduled_rooms.py b/apps/core/management/commands/release_scheduled_rooms.py
+index 714c83f..dc2ae3a 100644
+--- a/apps/core/management/commands/release_scheduled_rooms.py
++++ b/apps/core/management/commands/release_scheduled_rooms.py
+@@ -1,33 +1,45 @@
+ from django.core.management.base import BaseCommand
++from django.db.models import Q
+ from django.utils import timezone
+ 
+ from apps.core.models import Room
+ 
+ 
+ class Command(BaseCommand):
+-    help = 'Publica vídeos gravados cuja liberação agendada já venceu.'
++    help = 'Atualiza audiências cuja data e horário agendados já chegaram.'
+ 
+     def handle(self, *args, **options):
+         now = timezone.now()
+         rooms = list(Room.objects.filter(
+-            youtube_status=0,
+-            broadcast_type=Room.BROADCAST_RECORDED,
+-            release_at__lte=now,
++            date__lte=now,
+             is_active=True,
+-            is_visible=True,
+-        ))
+-
+-        if rooms:
+-            room_ids = [room.id for room in rooms]
+-            Room.objects.filter(id__in=room_ids).update(
+-                youtube_status=2,
+-                closed_time=now,
+-                modified=now,
+-            )
+-            for room in rooms:
++        ).filter(
++            Q(youtube_status=0) |
++            Q(release_at__isnull=False, is_visible=False)
++        ).exclude(youtube_status=3))
++
++        published = 0
++        made_visible = 0
++        for room in rooms:
++            update_fields = ['modified']
++            is_recording = room.broadcast_type == Room.BROADCAST_RECORDED
++
++            if is_recording and room.youtube_status == 0:
+                 room.youtube_status = 2
+-                room.closed_time = now
+-                room.send_notification(is_closed=True)
++                room.closed_time = None
++                update_fields.extend(['youtube_status', 'closed_time'])
++                published += 1
++
++            if room.release_at and not room.is_visible:
++                room.is_visible = True
++                update_fields.append('is_visible')
++                made_visible += 1
++
++            if len(update_fields) > 1:
++                room.modified = now
++                room.save(update_fields=update_fields)
+ 
+         self.stdout.write(
+-            self.style.SUCCESS('%d sala(s) gravada(s) publicada(s).' % len(rooms)))
++            self.style.SUCCESS(
++                '%d gravação(ões) publicada(s); %d sala(s) tornada(s) '
++                'visível(is).' % (published, made_visible)))
+diff --git a/apps/core/models.py b/apps/core/models.py
+index 77684a0..52b9a60 100644
+--- a/apps/core/models.py
++++ b/apps/core/models.py
+@@ -389,9 +389,15 @@ def room_post_save(sender, instance, created, **kwargs):
+                                message=message)
+     if instance.youtube_status in [2, 3]:
+         is_closed = True
+-        if not instance.closed_time:
++        if (instance.broadcast_type == Room.BROADCAST_LIVE and
++                not instance.closed_time):
+             instance.closed_time = timezone.now()
+-            instance.save()
++            sender.objects.filter(pk=instance.pk).update(
++                closed_time=instance.closed_time)
++        elif (instance.broadcast_type == Room.BROADCAST_RECORDED and
++                instance.closed_time):
++            instance.closed_time = None
++            sender.objects.filter(pk=instance.pk).update(closed_time=None)
+     instance.send_notification(
+         is_closed=is_closed,
+         status_changed=getattr(instance, '_youtube_status_changed', False))
+diff --git a/apps/core/tests/test_admin.py b/apps/core/tests/test_admin.py
+index 72f2a23..6d06719 100644
+--- a/apps/core/tests/test_admin.py
++++ b/apps/core/tests/test_admin.py
+@@ -34,19 +34,42 @@ def test_room_admin_keeps_advance_fields_optional():
+         assert form.fields[field_name].required is False
+ 
+ 
+-def test_scheduled_room_requires_release_date():
+-    form = RoomAdminForm(data={'youtube_status': 0})
++def test_release_date_is_replaced_by_automatic_visibility_option():
++    form = RoomAdminForm()
+ 
+-    assert form.is_valid() is False
+-    assert list(form.errors['release_at']) == [
+-        'Informe quando a sala agendada deverá ser liberada.']
++    assert 'release_at' not in form.fields
++    assert form.fields['publish_automatically'].required is False
++    field_names = list(form.fields)
++    assert field_names.index('publish_automatically') == (
++        field_names.index('is_visible') + 1)
++
++
++def test_automatic_visibility_uses_the_room_date_internally():
++    room_date = timezone.now()
++    form = RoomAdminForm(data={
++        'title_reunion': 'Audiência agendada',
++        'legislative_body': 'Câmara Municipal',
++        'reunion_type': 'Audiência Pública',
++        'reunion_object': 'Pauta de teste',
++        'date': room_date,
++        'broadcast_type': 'recorded',
++        'youtube_status': 0,
++        'online_users': 0,
++        'max_online_users': 0,
++        'views': 0,
++        'publish_automatically': 'on',
++        'is_active': 'on',
++    })
++
++    assert form.is_valid(), form.errors
++    room = form.save(commit=False)
++    assert room.release_at == room.date
+ 
+ 
+ def test_recorded_room_cannot_be_marked_live():
+     form = RoomAdminForm(data={
+         'youtube_status': 1,
+         'broadcast_type': 'recorded',
+-        'release_at': timezone.now(),
+     })
+ 
+     assert form.is_valid() is False
+diff --git a/apps/core/tests/test_commands.py b/apps/core/tests/test_commands.py
+index f6c4ce1..73ba70c 100644
+--- a/apps/core/tests/test_commands.py
++++ b/apps/core/tests/test_commands.py
+@@ -16,6 +16,7 @@ def test_release_scheduled_recording(send_notification):
+         Room,
+         youtube_status=0,
+         broadcast_type=Room.BROADCAST_RECORDED,
++        date=timezone.now() - timedelta(minutes=1),
+         release_at=timezone.now() - timedelta(minutes=1),
+         is_active=True,
+         is_visible=True,
+@@ -26,8 +27,9 @@ def test_release_scheduled_recording(send_notification):
+     room.refresh_from_db()
+ 
+     assert room.youtube_status == 2
+-    assert room.closed_time is not None
+-    send_notification.assert_called_once_with(is_closed=True)
++    assert room.closed_time is None
++    send_notification.assert_called_once_with(
++        is_closed=True, status_changed=True)
+ 
+ 
+ @pytest.mark.django_db
+@@ -37,6 +39,7 @@ def test_release_command_keeps_live_room_waiting(send_notification):
+         Room,
+         youtube_status=0,
+         broadcast_type=Room.BROADCAST_LIVE,
++        date=timezone.now() - timedelta(minutes=1),
+         release_at=timezone.now() - timedelta(minutes=1),
+         is_active=True,
+         is_visible=True,
+@@ -49,3 +52,96 @@ def test_release_command_keeps_live_room_waiting(send_notification):
+     assert room.youtube_status == 0
+     assert room.display_status == 'Aguardando o início da transmissão'
+     send_notification.assert_not_called()
++
++
++@pytest.mark.django_db
++@patch('apps.core.models.Room.send_notification')
++def test_release_command_makes_hidden_recording_visible(send_notification):
++    room = baker.make(
++        Room,
++        youtube_status=0,
++        broadcast_type=Room.BROADCAST_RECORDED,
++        date=timezone.now() - timedelta(minutes=1),
++        release_at=timezone.now() - timedelta(minutes=1),
++        is_active=True,
++        is_visible=False,
++    )
++    send_notification.reset_mock()
++
++    call_command('release_scheduled_rooms')
++    room.refresh_from_db()
++
++    assert room.youtube_status == 2
++    assert room.is_visible is True
++    send_notification.assert_called_once_with(
++        is_closed=True, status_changed=True)
++
++
++@pytest.mark.django_db
++@patch('apps.core.models.Room.send_notification')
++def test_release_command_keeps_manual_draft_hidden(send_notification):
++    room = baker.make(
++        Room,
++        youtube_status=0,
++        broadcast_type=Room.BROADCAST_RECORDED,
++        date=timezone.now() - timedelta(minutes=1),
++        release_at=None,
++        is_active=True,
++        is_visible=False,
++    )
++    send_notification.reset_mock()
++
++    call_command('release_scheduled_rooms')
++    room.refresh_from_db()
++
++    assert room.youtube_status == 2
++    assert room.is_visible is False
++    send_notification.assert_called_once_with(
++        is_closed=True, status_changed=True)
++
++
++@pytest.mark.django_db
++@patch('apps.core.models.Room.send_notification')
++def test_release_command_opens_scheduled_live_room(send_notification):
++    room = baker.make(
++        Room,
++        youtube_status=0,
++        broadcast_type=Room.BROADCAST_LIVE,
++        date=timezone.now() - timedelta(minutes=1),
++        release_at=timezone.now() - timedelta(minutes=1),
++        is_active=True,
++        is_visible=False,
++    )
++    send_notification.reset_mock()
++
++    call_command('release_scheduled_rooms')
++    room.refresh_from_db()
++
++    assert room.youtube_status == 0
++    assert room.is_visible is True
++    assert room.display_status == 'Aguardando o início da transmissão'
++    send_notification.assert_called_once_with(
++        is_closed=False, status_changed=False)
++
++
++@pytest.mark.django_db
++@patch('apps.core.models.Room.send_notification')
++def test_release_command_makes_published_recording_visible(send_notification):
++    room = baker.make(
++        Room,
++        youtube_status=2,
++        broadcast_type=Room.BROADCAST_RECORDED,
++        date=timezone.now() - timedelta(minutes=1),
++        release_at=timezone.now() - timedelta(minutes=1),
++        is_active=True,
++        is_visible=False,
++    )
++    send_notification.reset_mock()
++
++    call_command('release_scheduled_rooms')
++    room.refresh_from_db()
++
++    assert room.youtube_status == 2
++    assert room.is_visible is True
++    send_notification.assert_called_once_with(
++        is_closed=True, status_changed=False)
+diff --git a/apps/core/tests/test_models.py b/apps/core/tests/test_models.py
+index 5aa2087..ab92175 100644
+--- a/apps/core/tests/test_models.py
++++ b/apps/core/tests/test_models.py
+@@ -43,7 +43,12 @@ def test_room_is_tomorrow():
+ 
+ @pytest.mark.django_db
+ def test_room_time_to_close():
+-    room = baker.make(Room, closed_time=timezone.now(), youtube_status=2)
++    room = baker.make(
++        Room,
++        closed_time=timezone.now(),
++        youtube_status=2,
++        broadcast_type=Room.BROADCAST_LIVE,
++    )
+     assert room.time_to_close() < 900 # 15 minutes
+ 
+ 
+@@ -116,6 +121,8 @@ def test_closed_status_depends_on_broadcast_type():
+ 
+     assert recorded.display_status == 'Publicada'
+     assert live.display_status == 'Transmissão encerrada'
++    assert recorded.closed_time is None
++    assert live.closed_time is not None
+ 
+ 
+ @pytest.mark.django_db
+diff --git a/static/js/room-admin-status.js b/static/js/room-admin-status.js
+index 729c79f..8113383 100644
+--- a/static/js/room-admin-status.js
++++ b/static/js/room-admin-status.js
+@@ -21,6 +21,11 @@
+     if (!isLive && status.value === '1') {
+       status.value = '0';
+     }
++
++    var closedTimeRow = document.querySelector('.field-closed_time');
++    if (closedTimeRow) {
++      closedTimeRow.hidden = !isLive;
++    }
+   }
+ 
+   function initialize() {
