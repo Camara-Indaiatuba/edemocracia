@@ -38,6 +38,7 @@ O arquivo `src/apps/audiencias/data.py` pertence ao repositorio principal e ja f
 - `2026-11-06-audiencias-exclusive-visibility-mode.patch`: patch incremental que substitui os dois checkboxes de visibilidade por tres opcoes de radio mutuamente exclusivas.
 - `2026-11-06-audiencias-active-field-help.patch`: patch incremental que traduz o campo de ativacao da audiencia e explica seu efeito de desativacao completa.
 - `2026-11-06-audiencias-status-date-validation.patch`: patch incremental que impede salvar audiencia agendada no passado ou publicada/encerrada com data futura.
+- `2026-11-09-audiencias-realtime-status.patch`: patch incremental que inclui situacao e visibilidade nas mensagens em tempo real e impede audiencias agendadas de aparecerem como ao vivo antes da recarga.
 
 ## Ajuste de logout 2026-05-29
 

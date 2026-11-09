@@ -4,6 +4,22 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-09 - Situacao correta na atualizacao em tempo real
+
+### Resumo
+
+- As notificacoes da audiencia e do video passaram a informar `youtube_status` e `is_visible` para a pagina inicial.
+- Uma audiencia agendada visivel deixa de ser inserida no bloco `Ao Vivo`; a pagina reconstroi automaticamente a previsao com os dados atuais.
+- Audiencias invisiveis ou canceladas sao removidas dos blocos sem depender de recarga manual.
+- O bundle JavaScript foi recompilado e sua sintaxe foi validada.
+
+### Validacao feita
+
+- `python manage.py check`: sem problemas.
+- Suite completa da Audiencias: 208 testes aprovados.
+- O navegador automatizado confirmou a conexao ao WebSocket da pagina inicial e o bundle servido contem a nova classificacao.
+- Alteracao aplicada e validada somente na homologacao; producao ainda nao foi atualizada com esta correcao.
+
 ## 2026-11-09 - Agendamento atualizado em producao
 
 ### Resumo
