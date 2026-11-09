@@ -18,7 +18,8 @@ Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMT
 - `python manage.py check`: sem problemas.
 - Suite completa da Audiencias: 208 testes aprovados.
 - O navegador automatizado confirmou a conexao ao WebSocket da pagina inicial e o bundle servido contem a nova classificacao.
-- Alteracao aplicada e validada somente na homologacao; producao ainda nao foi atualizada com esta correcao.
+- Antes da implantacao foi validado backup do codigo ativo em `/home/filipiadm@camaraindaia.local/backups/edemocracia-pre-realtime-20261109-142047`.
+- Correcao aplicada na producao; a suite de 208 testes passou e o dominio oficial serviu o novo bundle com HTTP 200.
 
 ## 2026-11-09 - Agendamento atualizado em producao
 
