@@ -4,6 +4,17 @@ Este arquivo registra as correcoes e mudancas feitas neste ambiente para que o t
 
 Regra importante: nao registrar senhas, tokens, chaves privadas, credenciais SMTP, chaves OAuth ou valores reais de producao neste arquivo. Quando necessario, citar apenas o nome da variavel ou o tipo de segredo.
 
+## 2026-11-09 - Agendamento atualizado em producao
+
+### Resumo
+
+- A sequencia de correcoes de agendamento e visibilidade foi promovida para `main` e aplicada na VM08.
+- Antes da implantacao foram validados backups dos tres bancos e do codigo ativo de Audiencias em `/home/filipiadm@camaraindaia.local/backups/edemocracia-pre-scheduling-20261109-133822`.
+- Os 207 testes da Audiencias e os 2 testes de integracao do portal central passaram em producao antes do reinicio.
+- O portal oficial, a pagina de Audiencias e o JavaScript administrativo responderam corretamente apos o reinicio.
+- A sala 36, `Audiencia Publica n. 5/2026`, ficou agendada como video gravado, invisivel ate a publicacao automatica em 11/11/2026 as 19h.
+- O cron de liberacao automatica permaneceu ativo no container `audienciasweb`.
+
 ## 2026-11-06 - Data unica e visibilidade automatica de audiencias
 
 ### Objetivo
